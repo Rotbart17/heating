@@ -30,9 +30,7 @@ class sensor:
     # Tabelle die hier bearbeitet wird
     tn = None
     
-    # Threadlist
-    threads = list()
-    # Thread variable
+    # Thread Merk Variable
     x = None
 
 
@@ -53,13 +51,13 @@ class sensor:
         self.tn = tablename
        
         try:
-            self.conn = sqlite3.connect(settings.DBPATH)
+            sensor.conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
         except Error as e:
             logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
             exit(1)
         try:
-            c = self.conn.cursor()
+            c = sensor.conn.cursor()
             create_table_sql = sql_create_sensor_table_p1 + self.tn + sql_create_sensor_table_p2
             c.execute(create_table_sql)
             logging.info('Tabelle' + self.tn +' erstellt')
@@ -72,35 +70,35 @@ class sensor:
         settings.SensorList.append(self)
         logging.info('Sensor '+self.tn+' in die Sensorliste eingehängt!')
         # ok jetzt ist eigetlich alles vorbereitet, jetzt noch die Sensorabfrage starten
-        self.startthread
+        sensor.startthread(c)
 
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
-        self.threadstop = True
-        # wait for Thread end
-        self.x.join()
-        self.conn.close()
+        sensor.threadstop = True
+        # wait for Thread to end
+        sensor.x.join()
+        sensor.conn.close()
         logging.info('fSensorobjekt '+self.tn+'gelöscht')
         
 
     # DB Tabelle leeren
-    def cleanup(self):
-        c = self.conn.cursor()
-        c.execute('DELETE FROM '+ self.tn +';')
-        self.conn.commit()
-        print('We have deleted', c.rowcount, 'records from '+ self.tn + '!')
-        self.conn.close()
-        logging.warning('fSensortabelle '+self.tn+' gelehrt')
+    def cleanup(self,conn,tablename):
+        c = conn.cursor()
+        c.execute('DELETE FROM '+ tablename +';')
+        c.commit()
+        print('We have deleted', c.rowcount, 'records from '+ tablename + '!')
+        conn.close()
+        logging.warning('fSensortabelle '+tablename+' gelehrt')
 
 
     # DB Tabelle löschen
-    def delete(self):     
-        c = self.conn.cursor()
-        c.execute('DROP TABLE '+ self.tn)
-        self.conn.commit()
-        self.conn.close()
-        logging.warning('fSensortabelle '+self.tn+' gelöscht')
+    def delete(self,conn,tablename):     
+        c = conn.cursor()
+        c.execute('DROP TABLE '+ tablename)
+        conn.commit()
+        conn.close()
+        logging.warning('fSensortabelle '+tablename+' gelöscht')
 
 
     # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
@@ -112,39 +110,38 @@ class sensor:
 
 
     # Wert in Temperatur wandeln
-    def convertvalue(self):
+    def convertvalue(self,rawtemp):
+        self.rawtemp = rawtemp
         pass
         
 
     # Wert in DB speichern 
-    def storevalue(self):
-        c = self.conn.cursor()
+    def storevalue(self,temperature,conn):
         dt = datetime.datetime.now()
-        sql = "INSERT INTO " + self.tn + " (value, begin_date) VALUES(" + self.temperature + " , " + dt + "); " 
-        cur = self.conn.cursor()
-        cur.execute(sql)
+        sql = "INSERT INTO " + self.tn + " (value, begin_date) VALUES(" + temperature + " , " + dt + "); " 
+        conn.execute(sql)
         self.conn.commit()
         logging.debug('fSensorwert in '+self.tn+' gespeichert!')
     
 
     # Die Daten Wandeln und speichern
-    def processvalue(self):
-        while (not self.threadstop):
-            self.rawtemp = self.getvalue()
-            self.temperature = self.convertvalue(self.rawtemp)
-            self.storevalue()
-            time.sleep(self.waittime)
+    def processvalue(self,conn):
+        while (not sensor.threadstop):
+            self.rawtemp = sensor.getvalue()
+            self.temperature = sensor.convertvalue(self.rawtemp)
+            sensor.storevalue(self.temperature,conn)
+            time.sleep(sensor.waittime)
         # Wenn Ende dann abbrechen
         # Warten, dass Thread wieder zurückkommt.
 
 
 
     # Messthread starten    
-    def startthread(self):
-        self.x = threading.Thread(target=self.processvalue, args=(1,))
-        self.threads.append(self.x)
-        self.x.start()
-        self.x.join
+    def startthread(self,conn):
+        global threads
+        x = threading.Thread(target=sensor.processvalue, args=(conn,))
+        threads.append(self.x)
+        x.start()
 
 
 # Klasse Kesselsensor anlegen 
@@ -165,7 +162,7 @@ class kesselsensor(sensor):
     def getvalue(self) -> float:
         
         if settings.V_Mode == True:
-            return(randomValue)
+            return(2,38)  #entspricht 25Grad
         else:
         #  Abfrage
             logging.debug('Sensorwert '+self.tn+'abfragen')
@@ -174,9 +171,10 @@ class kesselsensor(sensor):
 
 
     # Wert in Temperatur wandeln
-    def convertvalue(self, self.rawtemp) -> float:
-        # wahllose umrechnung für den Kesselsensor habe ich keine Werte
-        temp = self.rawtemp *10
+    def convertvalue(self, rt) -> float:
+        # umrechnung für den Kesselsensor 
+        self.rt = rt
+        temp = (-7,79670769172508*pow(rt,3))+(39,9983314997706*pow(rt,2))+(-109,299890516815*rt)+163,716704847826
         logging.debug('Sensorwert '+self.tn+'wandeln')
         return (temp)
 
