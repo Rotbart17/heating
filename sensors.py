@@ -15,6 +15,7 @@ class sensor:
 
     # connection zur DB
     conn = None
+    
     # Zeit bis zur nächsten Abfrage eines Sensors in sec
     waittime = 300
 
@@ -27,11 +28,12 @@ class sensor:
     # Thread zu Messung anhalten
     threadstop = False
 
-    # Tabelle die hier bearbeitet wird
-    tn = None
+    # Sensortabelle die hier bearbeitet wird
+    tn : str
+    tn = ""
     
-    # Thread Merk Variable
-    x = None
+    # Thread Merk Variable, damit man den Thread später wieder anhalten kann
+    # x 
 
 
     # DB Tabelle anlegen wenn notwendig
@@ -47,17 +49,16 @@ class sensor:
                                         end_date text,           \
                                         error integer            \
                                     ); "
-
         self.tn = tablename
        
         try:
-            sensor.conn = sqlite3.connect(settings.DBPATH)
+            self.conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
         except Error as e:
             logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
             exit(1)
         try:
-            c = sensor.conn.cursor()
+            c = self.conn.cursor()
             create_table_sql = sql_create_sensor_table_p1 + self.tn + sql_create_sensor_table_p2
             c.execute(create_table_sql)
             logging.info('Tabelle' + self.tn +' erstellt')
@@ -68,18 +69,18 @@ class sensor:
         # bsp: for f in SensorList:
         #          f.DoSomething()
         settings.SensorList.append(self)
-        logging.info('Sensor '+self.tn+' in die Sensorliste eingehängt!')
+        logging.info('Sensor '+ self.tn +' in die Sensorliste eingehängt!')
         # ok jetzt ist eigetlich alles vorbereitet, jetzt noch die Sensorabfrage starten
-        sensor.startthread(c)
+        self.startthread(self.conn)
 
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
-        sensor.threadstop = True
+        self.threadstop = True
         # wait for Thread to end
-        sensor.x.join()
-        sensor.conn.close()
-        logging.info('fSensorobjekt '+self.tn+'gelöscht')
+        self.x.join()
+        self.conn.close()
+        logging.info("Sensorobjekt " + self.tn + " gelöscht.")
         
 
     # DB Tabelle leeren
@@ -104,7 +105,7 @@ class sensor:
     # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
     def getvalue(self):
         pass
-        # Abfrage
+        # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
         # return (self.rawtemp)
         
 
@@ -112,6 +113,7 @@ class sensor:
     # Wert in Temperatur wandeln
     def convertvalue(self,rawtemp):
         self.rawtemp = rawtemp
+        # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
         pass
         
 
@@ -120,16 +122,16 @@ class sensor:
         dt = datetime.datetime.now()
         sql = "INSERT INTO " + self.tn + " (value, begin_date) VALUES(" + temperature + " , " + dt + "); " 
         conn.execute(sql)
-        self.conn.commit()
-        logging.debug('fSensorwert in '+self.tn+' gespeichert!')
+        conn.commit()
+        logging.debug('fSensorwert in {self.tn} gespeichert!')
     
 
     # Die Daten Wandeln und speichern
     def processvalue(self,conn):
-        while (not sensor.threadstop):
-            self.rawtemp = sensor.getvalue()
-            self.temperature = sensor.convertvalue(self.rawtemp)
-            sensor.storevalue(self.temperature,conn)
+        while (not self.threadstop):
+            self.rawtemp = self.getvalue()
+            self.temperature = self.convertvalue(self.rawtemp)
+            self.storevalue(self.temperature,conn)
             time.sleep(sensor.waittime)
         # Wenn Ende dann abbrechen
         # Warten, dass Thread wieder zurückkommt.
@@ -139,16 +141,15 @@ class sensor:
     # Messthread starten    
     def startthread(self,conn):
         global threads
-        x = threading.Thread(target=sensor.processvalue, args=(conn,))
-        threads.append(self.x)
-        x.start()
+        self.x = threading.Thread(target=sensor.processvalue, args=(conn,))
+        self.x.start()
 
 
 # Klasse Kesselsensor anlegen 
 class kesselsensor(sensor):
-    tablename = "Kesselsensor"
     def __init__(self, tablename):
-        super().__init__(tablename)
+        self.tn = tablename
+        super().__init__(self.tn)
         return
 
 
