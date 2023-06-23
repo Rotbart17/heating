@@ -1,6 +1,6 @@
 import time
 import sqlite3
-from sqlite3 import Error
+from sqlite3 import Error 
 import sys
 import logging
 import threading
@@ -20,10 +20,12 @@ class sensor:
     waittime = 300
 
     # Wert des Sensors
-    rawtemp = None
+    rawtemp : float
+    rawtemp = 0.0
 
     # Temperatur in Grad
-    temperature = None
+    temperature: float
+    temperature = 0.0
 
     # Thread zu Messung anhalten
     threadstop = False
@@ -50,15 +52,15 @@ class sensor:
                                         error integer            \
                                     ); "
         self.tn = tablename
-       
+                     
         try:
-            self.conn = sqlite3.connect(settings.DBPATH)
+            conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
         except Error as e:
             logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
             exit(1)
         try:
-            c = self.conn.cursor()
+            c = conn.cursor()
             create_table_sql = sql_create_sensor_table_p1 + self.tn + sql_create_sensor_table_p2
             c.execute(create_table_sql)
             logging.info('Tabelle' + self.tn +' erstellt')
@@ -84,12 +86,12 @@ class sensor:
         
 
     # DB Tabelle leeren
-    def cleanup(self,conn,tablename):
-        c = conn.cursor()
+    def cleanup(self,tablename):
+        c = self.conn.cursor()
         c.execute('DELETE FROM '+ tablename +';')
         c.commit()
         print('We have deleted', c.rowcount, 'records from '+ tablename + '!')
-        conn.close()
+        c.close()
         logging.warning('fSensortabelle '+tablename+' gelehrt')
 
 
@@ -103,19 +105,21 @@ class sensor:
 
 
     # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-    def getvalue(self):
+    def getvalue(self) -> float:
         pass
         # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
-        # return (self.rawtemp)
+        return (self.rawtemp)
         
 
 
-    # Wert in Temperatur wandeln
-    def convertvalue(self,rawtemp):
-        self.rawtemp = rawtemp
+    # Wert in Temperatur wandeln, diese Klasse wird in der UNterklasse ersetzt
+    def convertvalue(self) ->float: 
         # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
+        # self.temperature = 1.1 
         pass
-        
+        return (self.temperature)
+
+      
 
     # Wert in DB speichern 
     def storevalue(self,temperature,conn):
@@ -130,7 +134,7 @@ class sensor:
     def processvalue(self,conn):
         while (not self.threadstop):
             self.rawtemp = self.getvalue()
-            self.temperature = self.convertvalue(self.rawtemp)
+            self.temperature = self.convertvalue()
             self.storevalue(self.temperature,conn)
             time.sleep(sensor.waittime)
         # Wenn Ende dann abbrechen
@@ -148,14 +152,14 @@ class sensor:
 # Klasse Kesselsensor anlegen 
 class kesselsensor(sensor):
     def __init__(self, tablename):
-        self.tn = tablename
+        # self.tn = tablename
         super().__init__(self.tn)
         return
 
 
     # Deconstructor wenn instanz gelöscht wird.
     def __del__(self):
-        logging.debug('fSensor '+self.tn+'stoppen')
+        logging.debug('fSensor {self.tn} stoppen')
         return super().__del__()
         
 
@@ -163,7 +167,7 @@ class kesselsensor(sensor):
     def getvalue(self) -> float:
         
         if settings.V_Mode == True:
-            return(2,38)  #entspricht 25Grad
+            return(2.38)  #entspricht 25Grad
         else:
         #  Abfrage
             logging.debug('Sensorwert '+self.tn+'abfragen')
@@ -172,10 +176,10 @@ class kesselsensor(sensor):
 
 
     # Wert in Temperatur wandeln
-    def convertvalue(self, rt) -> float:
+    def convertvalue(self) -> float:
         # umrechnung für den Kesselsensor 
-        self.rt = rt
-        temp = (-7,79670769172508*pow(rt,3))+(39,9983314997706*pow(rt,2))+(-109,299890516815*rt)+163,716704847826
-        logging.debug('Sensorwert '+self.tn+'wandeln')
+        rt = self.rawtemp
+        temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
+        logging.debug('Sensorwert {self.tn} wandeln')
         return (temp)
 
