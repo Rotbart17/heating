@@ -1,6 +1,7 @@
 # DB muss erstellt werden wenn nötig so wie der Zugriff auf die Tabellen
 import dbinit
 import sensors
+import settings
 
 
 
@@ -10,6 +11,7 @@ import sensors
 
 def main():
     print("Nix Besonderes!")
+    ks = sensors.kesselsensor("Kesselsensor")
     return
 
 

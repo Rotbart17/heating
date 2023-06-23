@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 import logging
 import settings
-from settings import SensorList, DBPATH, tablename, TableList
+from settings import SensorList, DBPATH, tablename, ListofTables
 import os
 
 # hier sind alle DB Przeduren gebündelt, die nicht in Classen definert sind.
