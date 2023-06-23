@@ -21,7 +21,7 @@ logging.basicConfig(
 # Konstanten
 
 # Pfad zu Datenbank
-DBPATH = "r./heizung.db"
+DBPATH = "heizung.db"
 
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
 # Liste damit man alle Sensoren in einer Schleife bearbeiten kann.
