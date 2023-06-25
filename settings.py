@@ -35,11 +35,11 @@ SENSORTABLELIST = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassers
 tablename=None
 
 # Liste aller Tabellen die man sonst so braucht
-TableList= []
+TableList = []
 
 # Schaltet die virtuellen Sensoren / Daten ein um alles ohne Sensoren testen 
 # zu können False = Echte Daten, True = Fakedaten
 V_Mode = False
 
 # Liste alle Threads, vielleicht kann man die ja noch brauchen
-ThreadList = []
+ThreadList = [] 

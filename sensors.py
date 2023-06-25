@@ -133,7 +133,8 @@ class kesselsensor(sensor):
         global threads
         self.x = threading.Thread(target=self.sensor_envlope, args=(self.tn,))
         logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        self.x.setDaemon(True)
+        settings.ThreadList.append(self.x)
+        # self.x.setDaemon(True)
         self.x.start()
         logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
         
@@ -147,7 +148,7 @@ class kesselsensor(sensor):
             else:
             #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
                 rawtemp = 2.38
-                logging.debug('Sensorwert '+tn+'abfragen')
+                logging.debug('Sensorwert '+tn+' abfragen')
             return (rawtemp)
         
         # Wert in Temperatur wandeln
@@ -178,6 +179,7 @@ class kesselsensor(sensor):
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
+            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
