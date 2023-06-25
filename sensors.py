@@ -122,34 +122,11 @@ class sensor:
 
       
 
-    # Wert in DB speichern 
-    def storevalue(self,temperature,conn):
-        dt = datetime.datetime.now()
-        sql = "INSERT INTO " + self.tn + " (value, begin_date) VALUES(" + temperature + " , " + dt + "); " 
-        conn.execute(sql)
-        conn.commit()
-        logging.debug('fSensorwert in {self.tn} gespeichert!')
+ 
     
-
-    # Die Daten Wandeln und speichern
-    def processvalue(self,name:str):
-        while (sensor.threadstop != True):
-            self.rawtemp = self.getvalue()
-            self.temperature = self.convertvalue()
-            self.storevalue(self.temperature,conn)
-            logging.info('Sensorabfrage '+ name +' erfolgt!')
-            time.sleep(sensor.waittime)
-        # Wenn Ende dann abbrechen
-        # Warten, dass Thread wieder zurückkommt.
-
-
-
     # Messthread starten    
     def startthread(self):
-        global threads
-        self.x = threading.Thread(target=sensor.processvalue, args=(self.tn,))
-        logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        self.x.start()
+        pass
 
 
 # Klasse Kesselsensor anlegen 
@@ -159,30 +136,57 @@ class kesselsensor(sensor):
         super().__init__(self.tn)
         return
 
-
     # Deconstructor wenn instanz gelöscht wird.
     def __del__(self):
         logging.debug('fSensor {self.tn} stoppen')
         return super().__del__()
+    
+    def startthread(self):
+        global threads
+        self.x = threading.Thread(target=self.sensor_envlope, args=(self.tn,))
+        logging.info('Starte Sensorabfrage '+ self.tn + '!')
+        self.x.start()
         
-
-    # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-    def getvalue(self) -> float:
+    def sensor_envlope(self,tablename):
+        tn = tablename
+        # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
+        def getvalue() -> float:
+            
+            if settings.V_Mode == True:
+                rawtemp = 2.38  #entspricht 25Grad
+            else:
+            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
+                rawtemp = 2.38
+                logging.debug('Sensorwert '+tn+'abfragen')
+            return (rawtemp)
         
-        if settings.V_Mode == True:
-            return(2.38)  #entspricht 25Grad
-        else:
-        #  Abfrage
-            logging.debug('Sensorwert '+self.tn+'abfragen')
-        return (self.rawtemp)
+        # Wert in Temperatur wandeln
+        def convertvalue(rawtemp:float) -> float:
+            # umrechnung für den Kesselsensor 
+            rt = rawtemp
+            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
+            logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
+            return (temp)
         
+        # Wert in DB speichern 
+        def storevalue(temperature,conn):
+            dt = datetime.datetime.now()
+            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + temperature + " , " + dt + "); " 
+            conn.execute(sql)
+            conn.commit()
+            logging.debug('Sensorwert in '+tn+' gespeichert!')
 
-
-    # Wert in Temperatur wandeln
-    def convertvalue(self) -> float:
-        # umrechnung für den Kesselsensor 
-        rt = self.rawtemp
-        temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
-        logging.debug('Sensorwert {self.tn} wandeln')
-        return (temp)
+    # Die Daten Wandeln und speichern
+        def processvalue(name:str):
+            conn = sqlite3.connect(settings.DBPATH)
+            while (sensor.threadstop != True):
+                rawtemp = getvalue()
+                temperature = convertvalue(rawtemp)
+                storevalue(temperature,conn)
+                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                time.sleep(sensor.waittime)
+            # Wenn Ende dann abbrechen
+            conn.close()
+            # Warten, dass Thread wieder zurückkommt.
+        processvalue(self.tn)
 
