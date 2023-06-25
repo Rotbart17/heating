@@ -9,6 +9,10 @@ import sensors
 def main():
     ks= sensors.kesselsensor("Kesselsensor")
     print("Nix war los")
+    print("schauen wir Mal ob das mit them Thread nun fnktioniert")
+    sensors.sensor.threadstop=True
+    print("ich bin echt neugierig!")
+    
 
 
 

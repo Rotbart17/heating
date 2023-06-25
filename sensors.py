@@ -17,15 +17,7 @@ class sensor:
     conn = None
     
     # Zeit bis zur nächsten Abfrage eines Sensors in sec
-    waittime = 30
-
-    # Wert des Sensors
-    rawtemp : float
-    rawtemp = 0.0
-
-    # Temperatur in Grad
-    temperature: float
-    temperature = 0.0
+    waittime = 10
 
     # Thread zu Messung anhalten
     threadstop = False
@@ -93,7 +85,7 @@ class sensor:
         c.commit()
         print('We have deleted', c.rowcount, 'records from '+ tablename + '!')
         c.close()
-        logging.warning('fSensortabelle '+tablename+' gelehrt')
+        logging.warning('Sensortabelle '+tablename+' gelehrt')
 
 
     # DB Tabelle löschen
@@ -102,7 +94,7 @@ class sensor:
         c.execute('DROP TABLE '+ tablename)
         conn.commit()
         conn.close()
-        logging.warning('fSensortabelle '+tablename+' gelöscht')
+        logging.warning('Sensortabelle '+tablename+' gelöscht')
 
 
     # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
@@ -119,16 +111,12 @@ class sensor:
         # self.temperature = 1.1 
         pass
         return (self.temperature)
-
-      
-
- 
-    
+         
     # Messthread starten    
     def startthread(self):
         pass
 
-
+# -------------------------------
 # Klasse Kesselsensor anlegen 
 class kesselsensor(sensor):
     def __init__(self, tablename):
@@ -145,7 +133,9 @@ class kesselsensor(sensor):
         global threads
         self.x = threading.Thread(target=self.sensor_envlope, args=(self.tn,))
         logging.info('Starte Sensorabfrage '+ self.tn + '!')
+        self.x.setDaemon(True)
         self.x.start()
+        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -171,10 +161,11 @@ class kesselsensor(sensor):
         # Wert in DB speichern 
         def storevalue(temperature,conn):
             dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + temperature + " , " + dt + "); " 
+            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
             conn.execute(sql)
             conn.commit()
             logging.debug('Sensorwert in '+tn+' gespeichert!')
+            
 
     # Die Daten Wandeln und speichern
         def processvalue(name:str):

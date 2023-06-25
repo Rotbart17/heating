@@ -21,7 +21,7 @@ logging.basicConfig(
 # Konstanten
 
 # Pfad zu Datenbank
-DBPATH = "heating/heizung.db"
+DBPATH = "/home/ernst/Devel/heating/heizung.db"
 
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
 # Liste damit man alle Sensoren in einer Schleife bearbeiten kann.
@@ -35,8 +35,11 @@ SENSORTABLELIST = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassers
 tablename=None
 
 # Liste aller Tabellen die man sonst so braucht
-ListofTables= []
+TableList= []
 
 # Schaltet die virtuellen Sensoren / Daten ein um alles ohne Sensoren testen 
-# zu können
+# zu können False = Echte Daten, True = Fakedaten
 V_Mode = False
+
+# Liste alle Threads, vielleicht kann man die ja noch brauchen
+ThreadList = []
