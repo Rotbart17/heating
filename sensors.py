@@ -136,7 +136,7 @@ class kesselsensor(sensor):
         settings.ThreadList.append(self.x)
         # self.x.setDaemon(True)
         self.x.start()
-        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
+        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -175,11 +175,11 @@ class kesselsensor(sensor):
                 rawtemp = getvalue()
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
-                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
-            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
+            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
@@ -204,7 +204,7 @@ class aussensensor(sensor):
         settings.ThreadList.append(self.x)
         # self.x.setDaemon(True)
         self.x.start()
-        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
+        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -212,18 +212,21 @@ class aussensensor(sensor):
         def getvalue() -> float:
             
             if settings.V_Mode == True:
-                rawtemp = 2.38  #entspricht 25Grad
+                rawtemp = 5180  #entspricht 10Grad 5180Ohm
             else:
             #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 2.38
+                rawtemp = 5180 
                 logging.debug('Sensorwert '+tn+' abfragen')
             return (rawtemp)
         
         # Wert in Temperatur wandeln
         def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Kesselsensor 
+            # umrechnung für den Aussensensor 
             rt = rawtemp
-            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
+            #  x: Widerstand
+	        #  y:Temperatur
+	        #  y=-0,079\*x+419,211	
+            temp = -0.079*rt+419.211
             logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
             return (temp)
         
@@ -243,11 +246,11 @@ class aussensensor(sensor):
                 rawtemp = getvalue()
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
-                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
-            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
+            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
@@ -272,7 +275,7 @@ class innensensor(sensor):
         settings.ThreadList.append(self.x)
         # self.x.setDaemon(True)
         self.x.start()
-        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
+        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -280,18 +283,21 @@ class innensensor(sensor):
         def getvalue() -> float:
             
             if settings.V_Mode == True:
-                rawtemp = 2.38  #entspricht 25Grad
+                rawtemp = 4350  #entspricht 18 Grad 4350Ohm
             else:
             #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 2.38
+                rawtemp = 4350
                 logging.debug('Sensorwert '+tn+' abfragen')
             return (rawtemp)
         
         # Wert in Temperatur wandeln
         def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Kesselsensor 
+            # umrechnung für den Innensensor 
             rt = rawtemp
-            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
+            # x: Widerstand
+	        # Y: Temperatur
+            # y=-0,05x+235,5
+            temp = -0.05*rt+235.5
             logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
             return (temp)
         
@@ -311,11 +317,11 @@ class innensensor(sensor):
                 rawtemp = getvalue()
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
-                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
-            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
+            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
@@ -339,7 +345,7 @@ class brauchwassersensor(sensor):
         settings.ThreadList.append(self.x)
         # self.x.setDaemon(True)
         self.x.start()
-        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
+        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -356,7 +362,7 @@ class brauchwassersensor(sensor):
         
         # Wert in Temperatur wandeln
         def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Kesselsensor 
+            # umrechnung für den Brauchwassersensor 
             rt = rawtemp
             temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
             logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
@@ -378,11 +384,11 @@ class brauchwassersensor(sensor):
                 rawtemp = getvalue()
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
-                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
-            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
+            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
@@ -411,7 +417,7 @@ class brennersensor(sensor):
         settings.ThreadList.append(self.x)
         # self.x.setDaemon(True)
         self.x.start()
-        logging.info('Sensorabfrage '+ self.tn + ' gestartet!')
+        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
         tn = tablename
@@ -450,11 +456,11 @@ class brennersensor(sensor):
                 rawtemp = getvalue()
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
-                logging.info('Sensorabfrage '+ name +' ist erfolgt!')
+                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
             conn.close()
-            logging.debug('Sensorabfrage '+ name +' ist jetzt beendet!')
+            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
