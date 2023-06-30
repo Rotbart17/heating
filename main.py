@@ -9,7 +9,7 @@ import time
 
 def main():
     ks= sensors.sensor("Kesselsensor")
-    ks2= sensors("Aussensensor")
+    ks2= sensors.sensor("Aussensensor")
     print("Nix war los")
     print("schauen wir Mal ob das mit dem Thread nun funktioniert")
     time.sleep(30)
