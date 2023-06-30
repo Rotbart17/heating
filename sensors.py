@@ -1,6 +1,6 @@
 import time
 import sqlite3
-from sqlite3 import Error 
+from sqlite3 import Error, Connection
 import sys
 import logging
 import threading
@@ -10,12 +10,12 @@ from settings import SensorList, DBPATH
 
 # Definitionen der Sensorklasse
 # schaun wir mal was ich schon gelernt habe
-
+# -------------------------------------------------------------------------------------------
 class sensor:
 
     # connection zur DB
-    conn = None
-    
+    conn : Connection
+        
     # Zeit bis zur nächsten Abfrage eines Sensors in sec
     waittime = 10
 
@@ -29,9 +29,13 @@ class sensor:
     # Thread Merk Variable, damit man den Thread später wieder anhalten kann
     # x 
 
+    
+    
 
     # DB Tabelle anlegen wenn notwendig
     def __init__(self,tablename): 
+        
+        self.tn = tablename
         # create a table from the create_table_sql statement
         # :param conn: Connection object
         # :param create_table_sql: a CREATE TABLE statement
@@ -43,8 +47,7 @@ class sensor:
                                         end_date text,           \
                                         error integer            \
                                     ); "
-        self.tn = tablename
-                     
+                
         try:
             self.conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
@@ -71,20 +74,21 @@ class sensor:
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
+        logging.debug('fSensor {self.tn} stoppen')
         self.threadstop = True
         # wait for Thread to end
         self.x.join()
-        self.conn.close()
+        sensor.conn.close()
         logging.info("Sensorobjekt " + self.tn + " gelöscht.")
         
 
     # DB Tabelle leeren
     def cleanup(self,tablename):
-        c = self.conn.cursor()
+        c = sensor.conn.cursor()
         c.execute('DELETE FROM '+ tablename +';')
-        c.commit()
+        sensor.conn.commit()
         print('We have deleted', c.rowcount, 'records from '+ tablename + '!')
-        c.close()
+        sensor.conn.close()
         logging.warning('Sensortabelle '+tablename+' gelehrt')
 
 
@@ -97,38 +101,6 @@ class sensor:
         logging.warning('Sensortabelle '+tablename+' gelöscht')
 
 
-    # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-    def getvalue(self) -> float:
-        pass
-        # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
-        return (self.rawtemp)
-        
-
-
-    # Wert in Temperatur wandeln, diese Klasse wird in der UNterklasse ersetzt
-    def convertvalue(self) ->float: 
-        # Abfrage wird jeweils in der Unterklasse definiert, da sensorspezifisch
-        # self.temperature = 1.1 
-        pass
-        return (self.temperature)
-         
-    # Messthread starten    
-    def startthread(self):
-        pass
-
-# -------------------------------
-# Klasse Kesselsensor anlegen 
-class kesselsensor(sensor):
-    def __init__(self, tablename):
-        self.tn = tablename
-        super().__init__(self.tn)
-        return
-
-    # Deconstructor wenn instanz gelöscht wird.
-    def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
-        return super().__del__()
-    
     def startthread(self):
         global threads
         self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tn, args=(self.tn,))
@@ -139,15 +111,40 @@ class kesselsensor(sensor):
         logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
     def sensor_envlope(self,tablename):
+      
         tn = tablename
+        # einstweilen Mal Dummywerte zurückgeben bis ich die echten Funktionen habe
+        def kessel(tn) -> float:
+            pass
+            return (settings.rawvaluedict[tn]())
+
+        def innen(tn) -> float:
+            pass
+            return (settings.rawvaluedict[tn]())
+    
+        def aussen(tn) -> float:
+            pass
+            return (settings.rawvaluedict[tn]())
+        
+        def brauchwasser(tn) -> float:
+            pass
+            return (settings.rawvaluedict[tn]())
+
+        # Dictionary für den Wertabfrage der Sensoren
+        getfromspecificsensor = {
+            "Kesselsensor" : kessel,
+            "Aussensensor" : aussen,
+            "Innensensor" : innen,
+            "Brauchwassersensor" : brauchwasser
+        }
+
         # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-        def getvalue() -> float:
-            
+        def getvalue(name) -> float:
+            tn = name
             if settings.V_Mode == True:
-                rawtemp = 2.38  #entspricht 25Grad
+                rawtemp = settings.rawvaluedict[tn]()  #entspricht 25Grad
             else:
-            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 2.38
+                rawtemp = getfromspecificsensor[tn](tn)
                 logging.debug('Sensorwert '+tn+' abfragen')
             return (rawtemp)
         
@@ -155,7 +152,7 @@ class kesselsensor(sensor):
         def convertvalue(rawtemp:float) -> float:
             # umrechnung für den Kesselsensor 
             rt = rawtemp
-            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
+            temp = float(eval(settings.sensordict[tn]))
             logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
             return (temp)
         
@@ -172,7 +169,7 @@ class kesselsensor(sensor):
         def processvalue(name:str):
             conn = sqlite3.connect(settings.DBPATH)
             while (sensor.threadstop != True):
-                rawtemp = getvalue()
+                rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
@@ -183,284 +180,5 @@ class kesselsensor(sensor):
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tn)
 
-
-# -------------------------------
-# Klasse Aussensensor anlegen 
-class aussensensor(sensor):
-    def __init__(self, tablename):
-        self.tn = tablename
-        super().__init__(self.tn)
-        return
-
-    # Deconstructor wenn instanz gelöscht wird.
-    def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
-        return super().__del__()
-    
-    def startthread(self):
-        global threads
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tn, args=(self.tn,))
-        logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        settings.ThreadList.append(self.x)
-        # self.x.setDaemon(True)
-        self.x.start()
-        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
         
-    def sensor_envlope(self,tablename):
-        tn = tablename
-        # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-        def getvalue() -> float:
-            
-            if settings.V_Mode == True:
-                rawtemp = 5180  #entspricht 10Grad 5180Ohm
-            else:
-            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 5180 
-                logging.debug('Sensorwert '+tn+' abfragen')
-            return (rawtemp)
         
-        # Wert in Temperatur wandeln
-        def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Aussensensor 
-            rt = rawtemp
-            #  x: Widerstand
-	        #  y:Temperatur
-	        #  y=-0,079\*x+419,211	
-            temp = -0.079*rt+419.211
-            logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
-            return (temp)
-        
-        # Wert in DB speichern 
-        def storevalue(temperature,conn):
-            dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
-            conn.execute(sql)
-            conn.commit()
-            logging.debug('Sensorwert in '+tn+' gespeichert!')
-            
-
-    # Die Daten Wandeln und speichern
-        def processvalue(name:str):
-            conn = sqlite3.connect(settings.DBPATH)
-            while (sensor.threadstop != True):
-                rawtemp = getvalue()
-                temperature = convertvalue(rawtemp)
-                storevalue(temperature,conn)
-                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(sensor.waittime)
-            # Wenn Ende dann abbrechen
-            conn.close()
-            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
-            # Warten, dass Thread wieder zurückkommt.
-        processvalue(self.tn)
-
-
-# -------------------------------
-# Klasse Innensensor anlegen 
-class innensensor(sensor):
-    def __init__(self, tablename):
-        self.tn = tablename
-        super().__init__(self.tn)
-        return
-
-    # Deconstructor wenn instanz gelöscht wird.
-    def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
-        return super().__del__()
-    
-    def startthread(self):
-        global threads
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tn, args=(self.tn,))
-        logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        settings.ThreadList.append(self.x)
-        # self.x.setDaemon(True)
-        self.x.start()
-        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
-        
-    def sensor_envlope(self,tablename):
-        tn = tablename
-        # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-        def getvalue() -> float:
-            
-            if settings.V_Mode == True:
-                rawtemp = 4350  #entspricht 18 Grad 4350Ohm
-            else:
-            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 4350
-                logging.debug('Sensorwert '+tn+' abfragen')
-            return (rawtemp)
-        
-        # Wert in Temperatur wandeln
-        def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Innensensor 
-            rt = rawtemp
-            # x: Widerstand
-	        # Y: Temperatur
-            # y=-0,05x+235,5
-            temp = -0.05*rt+235.5
-            logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
-            return (temp)
-        
-        # Wert in DB speichern 
-        def storevalue(temperature,conn):
-            dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
-            conn.execute(sql)
-            conn.commit()
-            logging.debug('Sensorwert in '+tn+' gespeichert!')
-            
-
-    # Die Daten Wandeln und speichern
-        def processvalue(name:str):
-            conn = sqlite3.connect(settings.DBPATH)
-            while (sensor.threadstop != True):
-                rawtemp = getvalue()
-                temperature = convertvalue(rawtemp)
-                storevalue(temperature,conn)
-                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(sensor.waittime)
-            # Wenn Ende dann abbrechen
-            conn.close()
-            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
-            # Warten, dass Thread wieder zurückkommt.
-        processvalue(self.tn)
-
-# -------------------------------
-# Klasse Brauchwassersensor anlegen 
-class brauchwassersensor(sensor):
-    def __init__(self, tablename):
-        self.tn = tablename
-        super().__init__(self.tn)
-        return
-
-    # Deconstructor wenn instanz gelöscht wird.
-    def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
-        return super().__del__()
-    
-    def startthread(self):
-        global threads
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tn, args=(self.tn,))
-        logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        settings.ThreadList.append(self.x)
-        # self.x.setDaemon(True)
-        self.x.start()
-        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
-        
-    def sensor_envlope(self,tablename):
-        tn = tablename
-        # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-        def getvalue() -> float:
-            
-            if settings.V_Mode == True:
-                rawtemp = 2.38  #entspricht 25Grad
-            else:
-            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 2.38
-                logging.debug('Sensorwert '+tn+' abfragen')
-            return (rawtemp)
-        
-        # Wert in Temperatur wandeln
-        def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Brauchwassersensor 
-            rt = rawtemp
-            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
-            logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
-            return (temp)
-        
-        # Wert in DB speichern 
-        def storevalue(temperature,conn):
-            dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
-            conn.execute(sql)
-            conn.commit()
-            logging.debug('Sensorwert in '+tn+' gespeichert!')
-            
-
-    # Die Daten Wandeln und speichern
-        def processvalue(name:str):
-            conn = sqlite3.connect(settings.DBPATH)
-            while (sensor.threadstop != True):
-                rawtemp = getvalue()
-                temperature = convertvalue(rawtemp)
-                storevalue(temperature,conn)
-                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(sensor.waittime)
-            # Wenn Ende dann abbrechen
-            conn.close()
-            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
-            # Warten, dass Thread wieder zurückkommt.
-        processvalue(self.tn)
-
-# -------------------------------
-# Klasse Brennersensor anlegen
-# ZZZ Hier muss noch hand angelegt werden
-# Der Benner hat nur an/aus/Störung und keine Werte 
-# aber ggf. sollte man das auch protokollieren?
-# aber eine Brennerstörung ist ein Event die muss 
-# sofort was auslösen
-class brennersensor(sensor):
-    def __init__(self, tablename):
-        self.tn = tablename
-        super().__init__(self.tn)
-        return
-
-    # Deconstructor wenn instanz gelöscht wird.
-    def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
-        return super().__del__()
-    
-    def startthread(self):
-        global threads
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tn, args=(self.tn,))
-        logging.info('Starte Sensorabfrage '+ self.tn + '!')
-        settings.ThreadList.append(self.x)
-        # self.x.setDaemon(True)
-        self.x.start()
-        logging.debug('Sensorabfrage '+ self.tn + ' gestartet!')
-        
-    def sensor_envlope(self,tablename):
-        tn = tablename
-        # hier muss die spezielle Abfrage für den Sensor bei der Vererbung eingesetzt werden
-        def getvalue() -> float:
-            
-            if settings.V_Mode == True:
-                rawtemp = 2.38  #entspricht 25Grad
-            else:
-            #  Abfrage hier muss die Abfrage des Sensors eingabaut werden
-                rawtemp = 2.38
-                logging.debug('Sensorwert '+tn+' abfragen')
-            return (rawtemp)
-        
-        # Wert in Temperatur wandeln
-        def convertvalue(rawtemp:float) -> float:
-            # umrechnung für den Kesselsensor 
-            rt = rawtemp
-            temp = (-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826
-            logging.debug('Sensorwert '+tn+ ' '+ str(rt)+ '->'+ str(temp)+' wandeln')
-            return (temp)
-        
-        # Wert in DB speichern 
-        def storevalue(temperature,conn):
-            dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
-            conn.execute(sql)
-            conn.commit()
-            logging.debug('Sensorwert in '+tn+' gespeichert!')
-            
-
-    # Die Daten Wandeln und speichern
-        def processvalue(name:str):
-            conn = sqlite3.connect(settings.DBPATH)
-            while (sensor.threadstop != True):
-                rawtemp = getvalue()
-                temperature = convertvalue(rawtemp)
-                storevalue(temperature,conn)
-                logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(sensor.waittime)
-            # Wenn Ende dann abbrechen
-            conn.close()
-            logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
-            # Warten, dass Thread wieder zurückkommt.
-        processvalue(self.tn)
-

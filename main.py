@@ -8,8 +8,8 @@ import time
 # Constanten
 
 def main():
-    ks= sensors.kesselsensor("Kesselsensor")
-    ks2= sensors.kesselsensor("Kesselsensor2")
+    ks= sensors.sensor("Kesselsensor")
+    ks2= sensors("Aussensensor")
     print("Nix war los")
     print("schauen wir Mal ob das mit dem Thread nun funktioniert")
     time.sleep(30)

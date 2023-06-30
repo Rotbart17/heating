@@ -38,7 +38,14 @@ sensordict = {
     "Kesselsensor" : "(-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826",
     "Aussensensor" : "(-2.1331945*pow(rt,3)) + (16.44056044*pow(tr,2)) - (57.79703416*rt) + 104.0119689",
     "Innensensor" : "",
-    "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*x) +163.7167048",
+    "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*x) +163.7167048"
+}
+# Dictinary für die Sensor Dummy Werte wenn V_Mode=True
+rawvaluedict = {
+    "Kesselsensor" : 2.38,
+    "Aussensensor" : 5180,
+    "Innensensor" : 4350,
+    "Brauchwassersensor" : 3.57
 }
 
 # Arbeitstabellenname
