@@ -7,7 +7,11 @@ import time
 
 # Constanten
 
+
+
 def main():
+    settings.init_vars()
+
     ks= sensors.sensor("Kesselsensor")
     ks2= sensors.sensor("Aussensensor")
     print("Nix war los")
@@ -15,7 +19,7 @@ def main():
     time.sleep(30)
     sensors.sensor.threadstop=True
     print("ich bin echt neugierig!")
-    time.sleep(20)
+    time.sleep(200)
 
     # Ende Funktionen
     # Threads wieder einsammeln

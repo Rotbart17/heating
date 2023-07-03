@@ -36,16 +36,16 @@ SENSORTABLELIST = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassers
 # Code für jede Class kopiert werden.
 sensordict = {
     "Kesselsensor" : "(-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826",
-    "Aussensensor" : "(-2.1331945*pow(rt,3)) + (16.44056044*pow(tr,2)) - (57.79703416*rt) + 104.0119689",
+    "Aussensensor" : "(-2.1331945*pow(rt,3)) + (16.44056044*pow(rt,2)) - (57.79703416*rt) + 104.0119689",
     "Innensensor" : "",
-    "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*x) +163.7167048"
+    "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*rt) +163.7167048"
 }
 # Dictinary für die Sensor Dummy Werte wenn V_Mode=True
 rawvaluedict = {
     "Kesselsensor" : 2.38,
-    "Aussensensor" : 5180,
+    "Aussensensor" : 3.57,
     "Innensensor" : 4350,
-    "Brauchwassersensor" : 3.57
+    "Brauchwassersensor" : 2.38
 }
 
 # Arbeitstabellenname
@@ -58,5 +58,31 @@ TableList = []
 # zu können False = Echte Daten, True = Fakedaten
 V_Mode = False
 
-# Liste alle Threads, vielleicht kann man die ja noch brauchen
+# Liste aller Threads, vielleicht kann man die ja noch brauchen
 ThreadList = [] 
+
+# Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
+# 
+Winter_j_n : bool
+Kessel : float
+Bauchwasser : float
+Innen : float
+Punmpe_oben_an : bool
+Pumpe_unten_an : bool
+Pumpe_Bauchwasser_an : bool
+Brenner_an : bool
+Brenner_Stoerung : bool
+Hand_Dusche : bool
+
+# Init der globalen Variablen
+def init_vars():
+    Winter_j_n = True
+    Kessel = 0
+    Bauchwasser = 0
+    Innen = 0
+    Punmpe_oben_an = False
+    Pumpe_unten_an = False
+    Pumpe_Bauchwasser_an = False
+    Brenner_an = False
+    Brenner_Stoerung = False
+    Hand_Dusche = False

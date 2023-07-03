@@ -116,19 +116,19 @@ class sensor:
         # einstweilen Mal Dummywerte zurückgeben bis ich die echten Funktionen habe
         def kessel(tn) -> float:
             pass
-            return (settings.rawvaluedict[tn]())
+            return (settings.rawvaluedict[tn])
 
         def innen(tn) -> float:
             pass
-            return (settings.rawvaluedict[tn]())
+            return (settings.rawvaluedict[tn])
     
         def aussen(tn) -> float:
             pass
-            return (settings.rawvaluedict[tn]())
+            return (settings.rawvaluedict[tn])
         
         def brauchwasser(tn) -> float:
             pass
-            return (settings.rawvaluedict[tn]())
+            return (settings.rawvaluedict[tn])
 
         # Dictionary für den Wertabfrage der Sensoren
         getfromspecificsensor = {
