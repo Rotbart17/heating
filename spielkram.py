@@ -1,7 +1,5 @@
-
-
-
 #!/usr/bin/env python3
+
 from nicegui import ui
 
 with ui.header().classes(replace='row items-center') as header:
