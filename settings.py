@@ -62,7 +62,7 @@ V_Mode = False
 ThreadList = [] 
 
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
-# Die Vorbelegung der Werte ist dann in dbinit.py
+# Die Vorbelegung der Werte ist dann weiter unten.
 Winter_j_n : bool
 Kessel : float
 Bauchwasser : float
@@ -75,20 +75,23 @@ Brenner_an : bool
 Brenner_Stoerung : bool
 Hand_Dusche : bool
 
+# die Tabelle der Anzeigeschicht heisst:
+WorkDataView = "Workdataview"
+
 # SQL Statement für die Tabelle der Anxzeigeschicht
 sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
 sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                Winter_j_n integer,              \
+                                Winter text,              \
                                 Kessel real,         \
                                 Brauchwasser real,           \
                                 Innen real,           \
                                 Aussen real,           \
-                                Pumpe_oben_an integer,           \
-                                Pumpe_unten_an integer,           \
-                                Pumpe_Brauchwasser_an real,           \
-                                Brenner_an integer,           \
-                                Brenner_Stoerung integer,           \
-                                Hand_Dusche integer            \
+                                Pumpe_oben_an text,           \
+                                Pumpe_unten_an text,           \
+                                Pumpe_Brauchwasser_an text,           \
+                                Brenner_an text,           \
+                                Brenner_Stoerung text,           \
+                                Hand_Dusche text            \
                             ); "
 
 # Init der Anzeige Tabelle und der Steuerwerte
@@ -97,7 +100,7 @@ Kessel = 0
 Brauchwasser = 0
 Innen = 0
 Aussen = 0
-Punmpe_oben_an = False
+Pumpe_oben_an = False
 Pumpe_unten_an = False
 Pumpe_Brauchwasser_an = False
 Brenner_an = False

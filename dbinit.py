@@ -114,7 +114,7 @@ def drop_db(conn):
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():
     # jetzt die Worktabelle definieren und initialisieren
-    tn = "workdata-view"
+    tn = settings.WorkDataView
  
     try:
         conn = sqlite3.connect(settings.DBPATH)
@@ -132,11 +132,16 @@ def init_db_environment():
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
     # so nun mal ein paar Init-datenschreiben
-    sql = f"UPDATE {tn} SET (Winter_j_n={settings.Winter_j_n}, Kessel={settings.Kessel}, Brauchwasser={settings.Brauchwasser}, \
-                            Innen={settings.Innen}, Aussen= {settings.Aussen}, Pumpe_oben_an= {settings.Pumpe_oben_an}, \
-                            Pumpe_unten_an= {settings.Pumpe_unten_an}, Pumpe_Brauchwasser_an= {settings.Pumpe_Brauchwasser_an}, \
-                            Brenner_an= {settings.Brenner_an}, Brenner_Stoerung= {settings.Brenner_Stoerung}, \
-                            Hand_Dusche = {settings.Hand_Dusche});"
+    sql = f"UPDATE {tn} SET Winter_j_n= \"{settings.Winter_j_n}\", \
+                            Kessel={settings.Kessel}, \
+                            Brauchwasser={settings.Brauchwasser}, \
+                            Innen={settings.Innen}, Aussen= {settings.Aussen}, \
+                            Pumpe_oben_an= \"{settings.Pumpe_oben_an}\",  \
+                            Pumpe_unten_an= \"{settings.Pumpe_unten_an}\", \
+                            Pumpe_Brauchwasser_an= \"{settings.Pumpe_Brauchwasser_an}\", \
+                            Brenner_an= \"{settings.Brenner_an}\", \
+                            Brenner_Stoerung= \"{settings.Brenner_Stoerung}\", \
+                            Hand_Dusche= \"{settings.Hand_Dusche}\" ;"
     c.execute(sql)
     conn.commit()
     conn.close()
