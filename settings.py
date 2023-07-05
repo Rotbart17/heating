@@ -62,27 +62,44 @@ V_Mode = False
 ThreadList = [] 
 
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
-# 
+# Die Vorbelegung der Werte ist dann in dbinit.py
 Winter_j_n : bool
 Kessel : float
 Bauchwasser : float
 Innen : float
-Punmpe_oben_an : bool
+Aussen : float
+Pumpe_oben_an : bool
 Pumpe_unten_an : bool
-Pumpe_Bauchwasser_an : bool
+Pumpe_Brauchwasser_an : bool
 Brenner_an : bool
 Brenner_Stoerung : bool
 Hand_Dusche : bool
 
-# Init der globalen Variablen
-def init_vars():
-    Winter_j_n = True
-    Kessel = 0
-    Bauchwasser = 0
-    Innen = 0
-    Punmpe_oben_an = False
-    Pumpe_unten_an = False
-    Pumpe_Bauchwasser_an = False
-    Brenner_an = False
-    Brenner_Stoerung = False
-    Hand_Dusche = False
+# SQL Statement für die Tabelle der Anxzeigeschicht
+sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
+sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                                Winter_j_n integer,              \
+                                Kessel real,         \
+                                Brauchwasser real,           \
+                                Innen real,           \
+                                Aussen real,           \
+                                Pumpe_oben_an integer,           \
+                                Pumpe_unten_an integer,           \
+                                Pumpe_Brauchwasser_an real,           \
+                                Brenner_an integer,           \
+                                Brenner_Stoerung integer,           \
+                                Hand_Dusche integer            \
+                            ); "
+
+# Init der Anzeige Tabelle und der Steuerwerte
+Winter_j_n = True
+Kessel = 0
+Brauchwasser = 0
+Innen = 0
+Aussen = 0
+Punmpe_oben_an = False
+Pumpe_unten_an = False
+Pumpe_Brauchwasser_an = False
+Brenner_an = False
+Brenner_Stoerung = False
+Hand_Dusche = False

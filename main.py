@@ -10,8 +10,8 @@ import time
 
 
 def main():
-    settings.init_vars()
-
+    dbinit.init_db_environment()
+    
     ks= sensors.sensor("Kesselsensor")
     ks2= sensors.sensor("Aussensensor")
     print("Nix war los")
