@@ -63,7 +63,7 @@ ThreadList = []
 
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
 # Die Vorbelegung der Werte ist dann weiter unten.
-Winter_j_n : bool
+Winter: bool
 Kessel : float
 Bauchwasser : float
 Innen : float
@@ -95,7 +95,7 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                             ); "
 
 # Init der Anzeige Tabelle und der Steuerwerte
-Winter_j_n = True
+Winter= True
 Kessel = 0
 Brauchwasser = 0
 Innen = 0

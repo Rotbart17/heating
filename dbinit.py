@@ -132,7 +132,7 @@ def init_db_environment():
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
     # so nun mal ein paar Init-datenschreiben
-    sql = f"UPDATE {tn} SET Winter_j_n= \"{settings.Winter_j_n}\", \
+    sql = f"UPDATE {tn} SET Winter= \"{settings.Winter}\", \
                             Kessel={settings.Kessel}, \
                             Brauchwasser={settings.Brauchwasser}, \
                             Innen={settings.Innen}, Aussen= {settings.Aussen}, \
