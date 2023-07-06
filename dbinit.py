@@ -131,17 +131,21 @@ def init_db_environment():
     except Error as e:
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
-    # so nun mal ein paar Init-datenschreiben
-    sql = f"UPDATE {tn} SET Winter= \"{settings.Winter}\", \
-                            Kessel={settings.Kessel}, \
-                            Brauchwasser={settings.Brauchwasser}, \
-                            Innen={settings.Innen}, Aussen= {settings.Aussen}, \
-                            Pumpe_oben_an= \"{settings.Pumpe_oben_an}\",  \
-                            Pumpe_unten_an= \"{settings.Pumpe_unten_an}\", \
-                            Pumpe_Brauchwasser_an= \"{settings.Pumpe_Brauchwasser_an}\", \
-                            Brenner_an= \"{settings.Brenner_an}\", \
-                            Brenner_Stoerung= \"{settings.Brenner_Stoerung}\", \
-                            Hand_Dusche= \"{settings.Hand_Dusche}\" ;"
+    # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
+    # und einzige Zeile dieser Tabelle erzeugen
+
+    sql = f"INSERT or REPLACE into {tn} (\
+                            Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
+                            Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
+                            Brenner_Stoerung, Hand_Dusche ) \
+                            values( \
+                            \"{settings.Winter}\",{settings.Kessel},{settings.Brauchwasser}, \
+                              {settings.Innen},   {settings.Aussen}, \"{settings.Pumpe_oben_an}\",\
+                            \"{settings.Pumpe_unten_an}\", \"{settings.Pumpe_Brauchwasser_an}\", \
+                            \"{settings.Brenner_an}\",     \"{settings.Brenner_Stoerung}\",\
+                            \"{settings.Hand_Dusche}\" \
+                            );"
+
     c.execute(sql)
     conn.commit()
     conn.close()
