@@ -135,10 +135,10 @@ def init_db_environment():
     # und einzige Zeile dieser Tabelle erzeugen
 
     sql = f"INSERT or REPLACE into {tn} (\
-                            Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
+                            id, Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
                             Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
                             Brenner_Stoerung, Hand_Dusche ) \
-                            values( \
+                            values( 1, \
                             \"{settings.Winter}\",{settings.Kessel},{settings.Brauchwasser}, \
                               {settings.Innen},   {settings.Aussen}, \"{settings.Pumpe_oben_an}\",\
                             \"{settings.Pumpe_unten_an}\", \"{settings.Pumpe_Brauchwasser_an}\", \
