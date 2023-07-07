@@ -57,19 +57,46 @@ def create_sensor_table(conn,tablename):
 
 
 # Tabelle anlegen wenn sie noch nicht existiert
-def create_table(conn, tablename, sql_create_table_p1, sql_create_table_p2):
-   
+def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
+
+    try:
+        conn = sqlite3.connect(settings.DBPATH)
+        logging.info('DB-Verbindung geöffnet')
+        
+    except Error as e:
+        logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
+        exit(1)
     try:
         c = conn.cursor()
-        cts = sql_create_table_p1 + tablename + sql_create_table_p2
-        c.execute(cts)
+        create_table_sql = sql_create_table_p1 + tablename + sql_create_table_p2
+        c.execute(create_table_sql)
+        conn.close()
+        logging.info('Tabelle' + tablename +' erstellt')
     except Error as e:
-        logging.error('fTabelle '+tablename+' konnte nicht erstellt werden! Programm wird beendet')
+        logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
-    finally:
-        logging.info('fTabelle: '+tablename+' erstellt')
-        return(True)
-    
+    return
+
+# Tabelle initialisieren
+def init_table(tablename,init_sql):
+    try:
+        conn = sqlite3.connect(settings.DBPATH)
+        logging.info('DB-Verbindung geöffnet')
+        
+    except Error as e:
+        logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
+        exit(1)
+    try:
+        c = conn.cursor()
+        c.execute(init_sql)
+        conn.commit()
+        conn.close()
+        logging.info('Tabelle' + tablename +' initialisiert')
+    except Error as e:
+        logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
+        exit(1)
+    return    
+
     
 # Tabelle mit inhalt löschen
 def drop_table(conn,tablename):
@@ -111,48 +138,23 @@ def drop_db(conn):
         return(True)
 
 
+
+
+
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():
-    # jetzt die Worktabelle definieren und initialisieren
+    
+    # jetzt die Anzeigeworktabelle definieren und initialisieren
     tn = settings.WorkDataView
- 
-    try:
-        conn = sqlite3.connect(settings.DBPATH)
-        logging.info('DB-Verbindung geöffnet')
-        
-    except Error as e:
-        logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
-        exit(1)
-    try:
-        c = conn.cursor()
-        create_table_sql = settings.sql_create_view_table_p1 + tn + settings.sql_create_view_table_p2
-        c.execute(create_table_sql)
-        logging.info('Tabelle' + tn +' erstellt')
-    except Error as e:
-        logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
-        exit(1)
+    create_table(tn,settings.sql_create_view_table_p1, settings.sql_create_view_table_p2 )
+    
     # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
     # und einzige Zeile dieser Tabelle erzeugen
-
-    sql = f"INSERT or REPLACE into {tn} (\
-                            id, Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
-                            Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
-                            Brenner_Stoerung, Hand_Dusche ) \
-                            values( 1, \
-                            \"{settings.Winter}\",{settings.Kessel},{settings.Brauchwasser}, \
-                              {settings.Innen},   {settings.Aussen}, \"{settings.Pumpe_oben_an}\",\
-                            \"{settings.Pumpe_unten_an}\", \"{settings.Pumpe_Brauchwasser_an}\", \
-                            \"{settings.Brenner_an}\",     \"{settings.Brenner_Stoerung}\",\
-                            \"{settings.Hand_Dusche}\" \
-                            );"
-
-    c.execute(sql)
-    conn.commit()
-    conn.close()
-
-
+ 
+    init_table(tn,settings.init_WorkDataView_sql)
+    
     # so, die Tabelle existiert. Initdaten sind reingeschrieben.
-    # weitere Tabellen, die naoch benötigt werden
-    # Anzeigetabelle
+    
+    # weitere Tabellen, die noch benötigt werden
     # Parametertabelle?
 

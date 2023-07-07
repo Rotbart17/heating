@@ -22,6 +22,8 @@ logging.basicConfig(
 
 # Pfad zu Datenbank
 DBPATH = "/home/ernst/Devel/heating/heizung.db"
+FastApiDBPath= "sqlite:///heizung.db"
+FastApiAPPName = "Heizung"
 
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
 # Liste damit man alle Sensoren in einer Schleife bearbeiten kann.
@@ -65,7 +67,7 @@ ThreadList = []
 # Die Vorbelegung der Werte ist dann weiter unten.
 Winter: bool
 Kessel : float
-Bauchwasser : float
+Brauchwasser : float
 Innen : float
 Aussen : float
 Pumpe_oben_an : bool
@@ -74,6 +76,20 @@ Pumpe_Brauchwasser_an : bool
 Brenner_an : bool
 Brenner_Stoerung : bool
 Hand_Dusche : bool
+
+# Init der Anzeige Tabelle und der Steuerwerte
+Winter= True
+Kessel = 0
+Brauchwasser = 0
+Innen = 0
+Aussen = 0
+Pumpe_oben_an = False
+Pumpe_unten_an = False
+Pumpe_Brauchwasser_an = False
+Brenner_an = False
+Brenner_Stoerung = False
+Hand_Dusche = False
+
 
 # die Tabelle der Anzeigeschicht heisst:
 WorkDataView = "Workdataview"
@@ -94,15 +110,16 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Hand_Dusche text            \
                             ); "
 
-# Init der Anzeige Tabelle und der Steuerwerte
-Winter= True
-Kessel = 0
-Brauchwasser = 0
-Innen = 0
-Aussen = 0
-Pumpe_oben_an = False
-Pumpe_unten_an = False
-Pumpe_Brauchwasser_an = False
-Brenner_an = False
-Brenner_Stoerung = False
-Hand_Dusche = False
+# InitWorkDataView SQL, schreit die erste Zeile mit Basiswerten
+init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
+                        id, Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
+                        Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
+                        Brenner_Stoerung, Hand_Dusche ) \
+                        values( 1, \
+                        \"{Winter}\",{Kessel},   {Brauchwasser}, \
+                          {Innen},   {Aussen}, \"{Pumpe_oben_an}\",\
+                        \"{Pumpe_unten_an}\",  \"{Pumpe_Brauchwasser_an}\", \
+                        \"{Brenner_an}\",      \"{Brenner_Stoerung}\",\
+                        \"{Hand_Dusche}\" \
+                        );"
+

@@ -9,8 +9,11 @@ import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
 from fastapi.middleware.cors import CORSMiddleware
 from databases import Database
+from nicegui import ui
 
+# Wo ist die DB die Connected wird
 database = Database("sqlite:///heizung.db")
+# Wie heisst die APP für FastAPI
 app= FastAPI(title="Heizung")
 
 @app.on_event("startup")
@@ -31,9 +34,10 @@ async def fetch_data(id: int):
     results = await database.fetch_all(query=query)
     return results
 
-@app.get("/getdata", status_code=200)
+@app.get("/getdata")
 async def fetch_view_data():
-    sql= f"SELECT * {settings.WorkDataView} ;"
+    global results
+    sql= f"SELECT * from {settings.WorkDataView} ;"
     results = await database.fetch_all(query=sql)
     if not results:
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
@@ -47,3 +51,17 @@ async def fetch_view_data():
 #
 # Openapi Schema
 # http://127.0.0.1:8000/openapi.json
+
+
+
+
+
+# with ui.row():
+#    ui.label('Aussen').style('color: #888; font-weight: bold')
+#    ui.label(results[Aussen]).style('color: #888; font-weight: bold')
+    
+
+
+# ui.run()
+
+
