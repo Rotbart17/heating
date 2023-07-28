@@ -27,19 +27,20 @@ bis:str='12:01'
 
 
 # Definitionen der verschiedenen Tagesmöglichkeiten die man für die Einstellungen hat
-tagesdefinition ={1:'Mo',2:'Die',3:'Mi',4:'Do',5:'Fr',6:'Sa',7:'So',8:'Mo-Fr',9:'Sa-So'}
+tagefeld=['Mo','Die','Mi','Do','Fr','Sa','So','Mo-Fr','Sa-So']
 # Definition der verschiedenen Heizungsmodi
-typen = {1: 'Brauchw', 2: 'Heizen', 3: 'Nachtabsenk.'}
+typfeld = ['Brauchw', 'Heizen', 'Nachtabsenk.']
 
 
 
 # Wird aufgerufen wenn man bei einer Zabellenzeile die Checkbox markiert
 # dann werden mal ale Werte der tabelle in die globale Variable befördert.
 def handle_click():
-    ui.notify(table.selected)
-    
+    # ui.notify(table.selected)
+    # print(table.selected)
     if table.selected != []:
         global id, typ,tage,von,bis
+        id =table.selected[0]['id']
         typ=table.selected[0]['typ']
         tage=table.selected[0]['tage']
         von=table.selected[0]['von']
@@ -49,7 +50,7 @@ def handle_click():
    
 # löscht eine markierte Tabellenzeile
 def remove():
-    ui.notify(table.selected)
+    # ui.notify(table.selected)
     if table.selected!=None:
         table.remove_rows(table.selected[0])
 
@@ -65,13 +66,13 @@ def isTimeFormat(input):
 def settyp(value):
     global typ
     typ=value
-    ui.notify(typen[typ])
+    # ui.notify(typ)
 
 # Setzt die Tage
 def settage(value):
     global tage
     tage=value
-    ui.notify(tagesdefinition[tage])
+    # ui.notify(tage)
 
 # Setzt den Beginn einer Aufgabe
 def setvon(value):
@@ -79,7 +80,8 @@ def setvon(value):
     if erg == True:
         global von
         von=value
-        ui.notify(von)
+        # ui.notify(von)
+        
     return(erg)
 
 # setzt  das Ende einer Aufgabe
@@ -88,7 +90,7 @@ def setbis(value):
     if erg == True:
         global bis
         bis=value
-        ui.notify(bis)
+        # ui.notify(bis)
         vontemp=time.strptime(von, '%H:%M')
         bistemp=time.strptime(bis, '%H:%M')
         # der Beginn des Zeitintervalls sollte schon vor dem Ende liegen.
@@ -102,12 +104,15 @@ with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
         # schliesst den Dialog
         def close_add():
             global id, typ, tage, von, bis
-            table.add_rows({'id': id, 'typ':typen[typ], 'tage':tagesdefinition[tage], 'von':von, 'bis': bis})
+            table.add_rows({'id': id, 'typ':typ, 'tage':tage, 'von':von, 'bis': bis})
+            print('Neu Angelegt:',id,typ,tage,von,bis)
             id +=1
             tabledialogadd.close()
+           
+
         print(typ,tage)
-        ui.select(options=typen, label='Typ', with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
-        ui.select(options=tagesdefinition, label='Tage', on_change=lambda e: settage(e.value)).classes('w-40')
+        ui.select(options=typfeld, label='Typ', with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
+        ui.select(options=tagefeld, label='Tage', on_change=lambda e: settage(e.value)).classes('w-40')
         ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
         ui.input(label='Zeit bis', value='12:05',placeholder='Zeit', validation={'Ungültig!! (Format oder Intervall)': lambda value: setbis(value)==True}).classes('w-30')
     ui.button('OK', on_click=close_add)
@@ -135,7 +140,13 @@ with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
         s3=ui.input(label='Zeit von', value=von, placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
         s4=ui.input(label='Zeit bis', value=bis, placeholder='Zeit', validation={'Ungültig!! (Format oder Intervall)': lambda value: setbis(value)==True}).classes('w-30')
                    
-    ui.button('OK', on_click=close_edit)  
+        ui.button('OK', on_click=close_edit)  
+    tabledialogedit.open()
+
+def settemp(value):
+    global kesseltemp
+    kesseltemp=value
+    ui.notify('Kesseltemp',kesseltemp)
 
 # hier beginnt die Anzeige der Seite ------
 # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
