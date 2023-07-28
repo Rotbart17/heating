@@ -2,11 +2,13 @@
 #!/usr/bin/env python3
 
 import os
-import random
 from   nicegui import ui
 import time
 
 
+
+# globale Variablen für dieses Modul
+# Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
 columns = [
     {'name': 'id',       'label' :'ID' ,      'field' : 'id', 'required': True, 'align': 'left'},
     {'name': 'typ',      'label': 'Typ',      'field': 'typ', 'required': True},
@@ -14,8 +16,9 @@ columns = [
     {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von', 'required': True},
     {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis', 'required': True},
 ]
-ts={}
-rows = []
+
+# ts={}
+rows = []  # leeres Feld für die Zeilen der Tabelle
 id : int=0
 typ :int=0
 tage:int=0
@@ -30,7 +33,8 @@ typen = {1: 'Brauchw', 2: 'Heizen', 3: 'Nachtabsenk.'}
 
 
 
-# Wird aufgerufen wenn man bei einer tabellenzeit die Checkbox markiert
+# Wird aufgerufen wenn man bei einer Zabellenzeile die Checkbox markiert
+# dann werden mal ale Werte der tabelle in die globale Variable befördert.
 def handle_click():
     ui.notify(table.selected)
     
@@ -42,42 +46,43 @@ def handle_click():
         bis=table.selected[0]['bis']
         print(typ,tage,von, bis)
 
-
    
-# löscht eine Tabellenzeile
+# löscht eine markierte Tabellenzeile
 def remove():
     ui.notify(table.selected)
     if table.selected!=None:
         table.remove_rows(table.selected[0])
 
-
- #Prüft ob es eine Gültige Zeit ist
+# Prüft ob es eine gültige Zeit ist
 def isTimeFormat(input):
     try:
         time.strptime(input, '%H:%M')
         return True
     except ValueError:
         return False
-    
+
+# setzt den Typ    
 def settyp(value):
     global typ
     typ=value
     ui.notify(typen[typ])
 
+# Setzt die Tage
 def settage(value):
     global tage
     tage=value
     ui.notify(tagesdefinition[tage])
 
+# Setzt den Beginn einer Aufgabe
 def setvon(value):
     erg=isTimeFormat(value)
     if erg == True:
         global von
         von=value
         ui.notify(von)
-        
     return(erg)
 
+# setzt  das Ende einer Aufgabe
 def setbis(value):
     erg=isTimeFormat(value)
     if erg == True:
@@ -91,11 +96,7 @@ def setbis(value):
             erg=False     
     return(erg)
 
-
-
-
-
-# def dialog für das hinzufügen von Werten
+# Definition des Dialog für das Hinzufügen von Werten
 with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
     with ui.row():
         # schliesst den Dialog
@@ -109,19 +110,19 @@ with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
         ui.select(options=tagesdefinition, label='Tage', on_change=lambda e: settage(e.value)).classes('w-40')
         ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
         ui.input(label='Zeit bis', value='12:05',placeholder='Zeit', validation={'Ungültig!! (Format oder Intervall)': lambda value: setbis(value)==True}).classes('w-30')
-       
     ui.button('OK', on_click=close_add)
 
+# Daten für den Anzeigedialog updaten
 def updateeditdialog():
     s1.update()
     s2.update()
     s3.update()
     s4.update()
-    tabledialogedit.open
+    tabledialogedit.open()
 
 
 
-# mache eine Tabellenzeile Editierbar
+# macht eine Tabellenzeile Editierbar
 with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
     with ui.row():
         # schliesst den Dialog
@@ -137,7 +138,7 @@ with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
     ui.button('OK', on_click=close_edit)  
 
 # hier beginnt die Anzeige der Seite ------
-# Zuerst 3 Knöpfe und dann die Tabelle
+# Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
 with ui.row():
     ui.button('Neu', on_click=tabledialogadd.open)
     ui.button('Ändern', on_click=updateeditdialog)
