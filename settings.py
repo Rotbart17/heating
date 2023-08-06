@@ -66,7 +66,10 @@ ThreadList = []
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
 # Die Vorbelegung der Werte ist dann weiter unten.
 Winter: bool
+Wintertemp: float
 Kessel : float
+MaxKessel: float
+ErrorKessel: float
 Brauchwasser : float
 Innen : float
 Aussen : float
@@ -79,7 +82,10 @@ Hand_Dusche : bool
 
 # Init der Anzeige Tabelle und der Steuerwerte
 Winter= True
+Wintertemp=17
 Kessel = 0
+MaxKessel = 0
+ErrorKessel= 90
 Brauchwasser = 0
 Innen = 0
 Aussen = 0
