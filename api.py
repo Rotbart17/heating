@@ -1,9 +1,5 @@
-# Zum Test erstmal ein Beispiel aus Stackoverflow
-# das muss ersetzt werden mit 
-# der Abfrage der Tabelle für die Anzeige der Einzelwerte
-# Setzen der Einzelwerte
-# der Abfrage der Wertepaare für die Grafiken der Sensoren 
-
+#!/usr/bin/env python3
+# in diesem Modul wird die API für die Oberfläche definiert,
 
 import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
@@ -16,14 +12,16 @@ database = Database("sqlite:///heizung.db")
 # Wie heisst die APP für FastAPI
 app= FastAPI(title="Heizung")
 
+# was passiert beim Startup der API
 @app.on_event("startup")
 async def database_connect():
     await database.connect()
 
-
+# was passiert beim Stopen der API
 @app.on_event("shutdown")
 async def database_disconnect():
     await database.disconnect()
+
 
 
 # http://172.0.0.1:8000/test/1
@@ -34,6 +32,7 @@ async def fetch_data(id: int):
     results = await database.fetch_all(query=query)
     return results
 
+# holt alle Std-Daten für die Anzeige
 @app.get("/getdata")
 async def fetch_view_data():
     global results
@@ -42,6 +41,38 @@ async def fetch_view_data():
     if not results:
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
     return results
+
+
+# holt alle Daten für Brauchwassergrafik
+# holt alle Daten für Kesselgrafik
+# holt alle Daten für Innen-grafik
+# holt alle Daten für Aussengrafik
+# holt alle Daten für Kesselkennliniengrafik
+# Schreibt alle Daten für Kesselkennliniengrafik
+# Schreibt Wintertemp
+# Schreibt Brauchwassertemp
+# holt Loginfo
+# löscht Fehlerstatus
+
+
+
+# wir brauchen für diese Daten Lese und Schreibfunktionen
+# Winter= True
+# Wintertemp=17
+# Kessel = 0
+# ErrorKessel= 90
+# Brauchwasser = 0
+# Innen = 0
+# Aussen = 0
+# Pumpe_oben_an = False
+# Pumpe_unten_an = False
+# Pumpe_Brauchwasser_an = False
+# Brenner_an = False
+# Brenner_Stoerung = False
+# Hand_Dusche = False
+
+
+
 
 
 # nicht vergessen! Zum reload nach Codechange!

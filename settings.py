@@ -104,6 +104,7 @@ WorkDataView = "Workdataview"
 sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
 sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Winter text,              \
+                                Wintertemp real,           \
                                 Kessel real,         \
                                 Brauchwasser real,           \
                                 Innen real,           \
@@ -116,14 +117,14 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Hand_Dusche text            \
                             ); "
 
-# InitWorkDataView SQL, schreit die erste Zeile mit Basiswerten
+# InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
-                        id, Winter, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
+                        id, Winter, Wintertemp, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
                         Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
                         Brenner_Stoerung, Hand_Dusche ) \
                         values( 1, \
-                        \"{Winter}\",{Kessel},   {Brauchwasser}, \
-                          {Innen},   {Aussen}, \"{Pumpe_oben_an}\",\
+                        \"{Winter}\",\"{Wintertemp}\", \"{Kessel}\", \"{Brauchwasser}\", \
+                        \"{Innen}\",  \"{Aussen}\", \"{Pumpe_oben_an}\",\
                         \"{Pumpe_unten_an}\",  \"{Pumpe_Brauchwasser_an}\", \
                         \"{Brenner_an}\",      \"{Brenner_Stoerung}\",\
                         \"{Hand_Dusche}\" \
