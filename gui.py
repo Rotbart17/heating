@@ -326,16 +326,17 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             with splitter.after:
                 # hier brauchen wir nun Kesseltemperatur, Sommer Winterumschaltung Temp
                 def settemp(value):
-                    settings.MaxKessel=value
-                    ui.notify('Kesseltemp',settings.MaxKessel)
+                    settings.KesselSoll=value
+                    ui.notify('Kesseltemp: '+str(settings.KesselSoll))
 
                 def setwinter(value):
                     
                     settings.Wintertemp=value
-                    ui.notify('Winter ab',settings.Wintertemp)
+                    ui.notify('Winter ab: '+str(settings.Wintertemp))
 
+# ZZ das muss noch umgebaut werden. die Kesselsolltemperatur wird über die Kurbve festgelegt
                 ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2')
-                ui.number(label='Max. Kesseltemperatur [Grad]', min=15.0, max=settings.ErrorKessel, value=55.0, format='%.1f',
+                ui.number(label='Max. Kesseltemperatur [Grad]', min=15.0, max=settings.KesselError, value=55.0, format='%.1f',
                           on_change=lambda e: settemp(e.value)).classes('ml-8 mb-2')
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
                           on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')

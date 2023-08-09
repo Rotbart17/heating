@@ -64,40 +64,45 @@ V_Mode = False
 ThreadList = [] 
 
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
-# Die Vorbelegung der Werte ist dann weiter unten.
-Winter: bool
-Wintertemp: float
-Kessel : float
-MaxKessel: float
-ErrorKessel: float
-Brauchwasser : float
-Innen : float
-Aussen : float
-Pumpe_oben_an : bool
-Pumpe_unten_an : bool
-Pumpe_Brauchwasser_an : bool
-Brenner_an : bool
-Brenner_Stoerung : bool
-Hand_Dusche : bool
-
 # Init der Anzeige Tabelle und der Steuerwerte
-Winter= True
-Wintertemp=17
-Kessel = 0
-MaxKessel = 0
-ErrorKessel= 90
-Brauchwasser = 0
-Innen = 0
-Aussen = 0
-Pumpe_oben_an = False
-Pumpe_unten_an = False
-Pumpe_Brauchwasser_an = False
-Brenner_an = False
-Brenner_Stoerung = False
-Hand_Dusche = False
+
+# Bei Winter == True haben wir Heizbetrieb
+# Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
+Winter : bool = True
+Wintertemp: float =17
+
+# Kessel ist die aktuelle Kesseltemperatur
+# KesselSoll ist die KesselSolltemperatur
+# KesselError ist die Temperatur bei der ein Fehler ausgelöst wird
+Kessel : float= 0
+KesselSoll : float = 0
+KesselError : float = 90
+
+# Brauchwasser ist die aktuelle Brauchwassertemperatur
+# BrauchwasserSoll ist die Solltemperatur des Brauchwassers
+# BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
+Brauchwasser :float = 0
+BrauchwasserSoll : float = 55
+BrauchwasserError : float = 70
+Pumpe_Brauchwasser_an : bool = False
+Hand_Dusche : bool = False
+
+# Innen ist die aktuelle Innentemperatur
+Innen : float = 0
+# Innen ist die aktuelle Aussentemperatur
+Aussen : float = 0
+
+# Signalisiert ob die Pumpen an /  aus sind
+Pumpe_oben_an : bool = False
+Pumpe_unten_an : bool = False
+
+# Signalisiert ob der Brenner an ist und ob es eie Störung gibt
+Brenner_an : bool = False
+Brenner_Stoerung : bool = False
 
 
-# die Tabelle der Anzeigeschicht heisst:
+
+# die Tabelle der Anzeigeschicht heisst:----------
 WorkDataView = "Workdataview"
 
 # SQL Statement für die Tabelle der Anxzeigeschicht
@@ -130,3 +135,23 @@ init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
                         \"{Hand_Dusche}\" \
                         );"
 
+# was brauchen wir denn alles an Tabellen:
+# Brauchwassergrafik
+# Kesselgrafik
+# Innen-grafik
+# Aussengrafik
+# Kesselkennliniengrafik
+
+# Wintertemp
+# Brauchwassertemp 
+# Loginfo
+# löscht Fehlerstatus
+# Zeitsteuertabelle
+
+# die Tabelle der Brauchwassertemperatur Werte heisst:----------
+RawWaterValue="RawWaterValue"
+# die Tabelle der Kesseltemperatur Werte heisst:----------
+
+# die Tabelle der Innentemperatur Werte heisst:----------
+# die Tabelle der Aussentemperatur Werte heisst:----------
+# die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------

@@ -8,6 +8,9 @@ import os
 
 # hier sind alle DB Przeduren gebündelt, die nicht in Classen definert sind.
 
+
+
+
 # create SQlite DB 
 def create_db(db_file):
     conn = None
@@ -42,17 +45,17 @@ def close_connection(conn):
         return(True)
 
 
-# hier werden nur Senostabellen angelegt
-def create_sensor_table(conn,tablename):
-    sql_create_sensor_table_p1 = " CREATE TABLE IF NOT EXISTS" 
-    sql_create_sensor_table_p2 = " (         id integer PRIMARY KEY, \
-                                            value real,              \
-                                            begin_date text,         \
-                                            end_date text,           \
-                                            error integer,           \
-                                            burner_on integer        \
-                                        ); "
-    create_table(conn, tablename, sql_create_sensor_table_p1,sql_create_sensor_table_p2)
+# hier werden nur Sensortabellen angelegt
+# def create_sensor_table(conn,tablename):
+#     sql_create_sensor_table_p1 = " CREATE TABLE IF NOT EXISTS" 
+#     sql_create_sensor_table_p2 = " (         id integer PRIMARY KEY, \
+#                                            value real,              \
+#                                            begin_date text,         \
+#                                             end_date text,           \
+#                                            error integer,           \
+#                                            burner_on integer        \
+#                                        ); "
+#   create_table(tablename, sql_create_sensor_table_p1,sql_create_sensor_table_p2)
 
 
 
@@ -158,3 +161,15 @@ def init_db_environment():
     # weitere Tabellen, die noch benötigt werden
     # Parametertabelle?
 
+# was brauchen wir denn alles an Tabellen:
+# Brauchwassergrafik
+# Kesselgrafik
+# Innen-grafik
+# Aussengrafik
+# Kesselkennliniengrafik
+
+# Wintertemp
+# Brauchwassertemp 
+# Loginfo
+# löscht Fehlerstatus
+# Zeitsteuertabelle
