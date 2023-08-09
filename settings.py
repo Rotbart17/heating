@@ -103,7 +103,7 @@ Brenner_Stoerung : bool = False
 
 
 # die Tabelle der Anzeigeschicht heisst:----------
-WorkDataView = "Workdataview"
+WorkDataView = "WorkDataView"
 
 # SQL Statement für die Tabelle der Anxzeigeschicht
 sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
@@ -111,6 +111,7 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Winter text,              \
                                 Wintertemp real,           \
                                 Kessel real,         \
+                                KesselSoll real,   \
                                 Brauchwasser real,           \
                                 Innen real,           \
                                 Aussen real,           \
@@ -124,23 +125,23 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
-                        id, Winter, Wintertemp, Kessel, Brauchwasser, Innen, Aussen, Pumpe_oben_an,  \
-                        Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
+                        id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
+                        Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
                         Brenner_Stoerung, Hand_Dusche ) \
                         values( 1, \
-                        \"{Winter}\",\"{Wintertemp}\", \"{Kessel}\", \"{Brauchwasser}\", \
-                        \"{Innen}\",  \"{Aussen}\", \"{Pumpe_oben_an}\",\
+                        \"{Winter}\",\"{Wintertemp}\", \"{Kessel}\", \"{KesselSoll}\",  \
+                        \"{Brauchwasser}\", \"{Innen}\",  \"{Aussen}\", \"{Pumpe_oben_an}\",\
                         \"{Pumpe_unten_an}\",  \"{Pumpe_Brauchwasser_an}\", \
                         \"{Brenner_an}\",      \"{Brenner_Stoerung}\",\
                         \"{Hand_Dusche}\" \
                         );"
 
 # was brauchen wir denn alles an Tabellen:
-# Brauchwassergrafik
-# Kesselgrafik
-# Innen-grafik
-# Aussengrafik
-# Kesselkennliniengrafik
+# Brauchwassergrafik -> kommt über den Sensor
+# Kesselgrafik -> kommt über den Sensor
+# Innen-grafik -> kommt über den Sensor
+# Aussengrafik -> kommt über den Sensor
+# Kesselkennliniengrafik: machen wir direkter
 
 # Wintertemp
 # Brauchwassertemp 
@@ -148,10 +149,21 @@ init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
 # löscht Fehlerstatus
 # Zeitsteuertabelle
 
-# die Tabelle der Brauchwassertemperatur Werte heisst:----------
-RawWaterValue="RawWaterValue"
-# die Tabelle der Kesseltemperatur Werte heisst:----------
 
-# die Tabelle der Innentemperatur Werte heisst:----------
-# die Tabelle der Aussentemperatur Werte heisst:----------
 # die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
+KesselSollTemperatur="KesselSollTemperatur"
+    
+sql_kennlinie_p1=sql_create_view_table_p1
+sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                                value_x real,              \
+                                value_y real,           \
+                    );"
+# die Kennlinie für KesselSollTemperatur ist:
+# Y=-1.2 x+56 + k
+# Default für k=0:
+# + 10 Grad => 44Grad
+#    0 Grad => 56Grad
+# - 10 Grad => 68Grad
+# initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
+# GUI für jeden einzelnen Wert.
+
