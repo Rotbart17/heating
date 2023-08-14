@@ -154,7 +154,13 @@ def init_Kesselvalues(name):
         tempdict[x]= y
         
         # die Daten müssen nun in die Datenbank
-        sql = settings.sql_init_Kesselkennlinie
+        sql = f"INSERT OR REPLACE INTO {settings.KesselSollTemperatur} ( \
+                            value_x,  \
+                            value_y) \
+                            VALUES(  \
+                            \"{x}\", \
+                            \"{y}\"  \
+                            );"
         init_table(tn,sql,x,y)
 
 

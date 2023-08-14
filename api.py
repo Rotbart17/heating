@@ -3,9 +3,9 @@
 
 import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
-from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.cors import CORSMiddleware
 from databases import Database
-from nicegui import ui
+
 
 # Wo ist die DB die Connected wird
 database = Database("sqlite:///heizung.db")
@@ -33,7 +33,7 @@ async def fetch_data(id: int):
     return results
 
 # holt alle Std-Daten für die Anzeige
-@app.get("/getdata")
+@app.get("/getviewdata")
 async def fetch_view_data():
     global results
     sql= f"SELECT * from {settings.WorkDataView} ;"
@@ -42,12 +42,23 @@ async def fetch_view_data():
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
     return results
 
+# holt alle Daten für Kesselkennliniengrafik
+@app.get("/gettankdataset")
+async def fetch_tank_dataset():
+    global results
+    sql= f"SELECT * from {settings.KesselSollTemperatur} ;"
+    results = await database.fetch_all(query=sql)
+    if not results:
+        raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
+    return results
+
+
 
 # holt alle Daten für Brauchwassergrafik
 # holt alle Daten für Kesselgrafik
 # holt alle Daten für Innen-grafik
 # holt alle Daten für Aussengrafik
-# holt alle Daten für Kesselkennliniengrafik
+
 # Schreibt alle Daten für Kesselkennliniengrafik
 # Schreibt Wintertemp
 # Schreibt Brauchwassertemp

@@ -154,11 +154,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('w-30 ml-8')
                 malen()
             with ui.row():                         
+                ui.label(f'Kessel-Soll-Temp = {settings.KesselSoll}').classes('text-base')
                 ui.label(f'Kessel-Temp = {settings.Kessel}').classes('text-base')
-                ui.label(f'Brenner läuft').classes('ml-4').classes('text-base')
-                brenner_spin=ui.spinner(type='ball', color='red' ,size='sm')
                 malen()
-                ui.label('Brennerstörung').classes('text-base')
+                ui.label(f'Brenner läuft').classes('text-base')
+                brenner_spin=ui.spinner(type='ball', color='red' ,size='sm')
+                ui.label('Brennerstörung').classes('text-base').classes('ml-2')
                 brennerstoerung_spin=ui.spinner(size='sm',color='red')
             with ui.row(): 
                 ui.label(f'Brauchw = {settings.Brauchwasser}').classes('text-base')
@@ -167,7 +168,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 malen()
                 ui.label('H-Pumpe oben').classes('text-base')
                 pumpe_oben=ui.spinner(size='sm')
-                ui.label('H-Pumpe unten').classes('text-base ml-4')
+                ui.label('H-Pumpe unten').classes('text-base ml-2')
                 pumpe_unten=ui.spinner(size='sm')
            
     # Zweiter Reiter ------------------
@@ -273,7 +274,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
                 # Daten für den Anzeigedialog updaten
                 def updateeditdialog():
-                    print("vor dem Edit Dialog:",handle_id,typ,tage,von,bis)
+                    # print("vor dem Edit Dialog:",handle_id,typ,tage,von,bis)
                     if handle_id !=0:
                         s1.value=typ
                         s2.value=tage
@@ -324,20 +325,14 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             # Rechte Seite nach dem Trennstrich -----------------------------------
 
             with splitter.after:
-                # hier brauchen wir nun Kesseltemperatur, Sommer Winterumschaltung Temp
-                def settemp(value):
-                    settings.KesselSoll=value
-                    ui.notify('Kesseltemp: '+str(settings.KesselSoll))
-
+                # hier brauchen wir nun Sommer Winterumschaltung Temp
                 def setwinter(value):
-                    
                     settings.Wintertemp=value
                     ui.notify('Winter ab: '+str(settings.Wintertemp))
 
 # ZZ das muss noch umgebaut werden. die Kesselsolltemperatur wird über die Kurbve festgelegt
                 ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2')
-                ui.number(label='Max. Kesseltemperatur [Grad]', min=15.0, max=settings.KesselError, value=55.0, format='%.1f',
-                          on_change=lambda e: settemp(e.value)).classes('ml-8 mb-2')
+
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
                           on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')
                 

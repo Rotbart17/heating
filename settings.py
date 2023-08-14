@@ -155,7 +155,7 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 # initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
 # GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
 KesselKennlinie="((-1.2)*x)+56 + k"
-sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} ( \
+sql_init_Kesselkennlinie = "INSERT OR REPLACE INTO {KesselSollTemperatur} ( \
                             value_x,  \
                             value_y) \
                             VALUES(  \
