@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 import logging
 import settings
-from settings import SensorList, DBPATH, tablename
+from settings import SensorList, DBPATH
 import os
 
 # hier sind alle DB Przeduren gebündelt, die nicht in Classen definert sind.
@@ -81,20 +81,20 @@ def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
     return
 
 # Tabelle initialisieren
-def init_table(tablename,init_sql):
+def init_table(tablename,init_sql, x:float | None=None, y: float |None=None ):
     try:
         conn = sqlite3.connect(settings.DBPATH)
         logging.info('DB-Verbindung geöffnet')
         
     except Error as e:
-        logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
+        logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
         exit(1)
     try:
         c = conn.cursor()
         c.execute(init_sql)
         conn.commit()
         conn.close()
-        logging.info('Tabelle' + tablename +' initialisiert')
+        logging.info('Tabelle' + tablename + ' ' +str(x)+ ' ' + str(y)+ ' initialisiert')
     except Error as e:
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
@@ -142,6 +142,23 @@ def drop_db(conn):
 
 
 
+tempdict={}
+def init_Kesselvalues(name):
+    k=0
+    tn= name
+    # alles mal 10, damit man range() mit int verwenden kann.
+    # die Kennlinie geht von -30 bis 30 Grad Schrit 0.5
+    for i in range(-300,300,5):
+        x= float(i/10)
+        y=eval(settings.KesselKennlinie)
+        tempdict[x]= y
+        
+        # die Daten müssen nun in die Datenbank
+        sql = settings.sql_init_Kesselkennlinie
+        init_table(tn,sql,x,y)
+
+
+
 
 
 # Datenbank und "alle" Tabellen anlegen
@@ -155,8 +172,21 @@ def init_db_environment():
     # und einzige Zeile dieser Tabelle erzeugen
  
     init_table(tn,settings.init_WorkDataView_sql)
-    
     # so, die Tabelle existiert. Initdaten sind reingeschrieben.
+
+    # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
+    # Werten füllen
+    tn= settings.KesselSollTemperatur
+    create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
+    init_Kesselvalues(tn)
+
+    # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis)
+    tn= settings.ZeitSteuerung
+    create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
+    # hier kein Init! Die ersten Daten kommen über die GUI.
+
+
+
     
     # weitere Tabellen, die noch benötigt werden
     # Parametertabelle?
@@ -172,4 +202,4 @@ def init_db_environment():
 # Brauchwassertemp 
 # Loginfo
 # löscht Fehlerstatus
-# Zeitsteuertabelle
+

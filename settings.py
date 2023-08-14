@@ -50,11 +50,6 @@ rawvaluedict = {
     "Brauchwassersensor" : 2.38
 }
 
-# Arbeitstabellenname
-tablename=None
-
-# Liste aller Tabellen die man sonst so braucht
-TableList = []
 
 # Schaltet die virtuellen Sensoren / Daten ein um alles ohne Sensoren testen 
 # zu können False = Echte Daten, True = Fakedaten
@@ -74,9 +69,11 @@ Wintertemp: float =17
 # Kessel ist die aktuelle Kesseltemperatur
 # KesselSoll ist die KesselSolltemperatur
 # KesselError ist die Temperatur bei der ein Fehler ausgelöst wird
-Kessel : float= 0
+Kessel : float = 0
 KesselSoll : float = 0
 KesselError : float = 90
+x : float = 0 
+y : float = 0
 
 # Brauchwasser ist die aktuelle Brauchwassertemperatur
 # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
@@ -136,18 +133,9 @@ init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
                         \"{Hand_Dusche}\" \
                         );"
 
-# was brauchen wir denn alles an Tabellen:
-# Brauchwassergrafik -> kommt über den Sensor
-# Kesselgrafik -> kommt über den Sensor
-# Innen-grafik -> kommt über den Sensor
-# Aussengrafik -> kommt über den Sensor
-# Kesselkennliniengrafik: machen wir direkter
 
-# Wintertemp
-# Brauchwassertemp 
-# Loginfo
-# löscht Fehlerstatus
-# Zeitsteuertabelle
+# Loginfo -> noch unklar
+# löscht Fehlerstatus -> noch unklar
 
 
 # die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
@@ -155,8 +143,8 @@ KesselSollTemperatur="KesselSollTemperatur"
     
 sql_kennlinie_p1=sql_create_view_table_p1
 sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                value_x real,              \
-                                value_y real,           \
+                    value_x real,              \
+                    value_y real           \
                     );"
 # die Kennlinie für KesselSollTemperatur ist:
 # Y=-1.2 x+56 + k
@@ -165,5 +153,25 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 #    0 Grad => 56Grad
 # - 10 Grad => 68Grad
 # initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
-# GUI für jeden einzelnen Wert.
+# GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
+KesselKennlinie="((-1.2)*x)+56 + k"
+sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} ( \
+                            value_x,  \
+                            value_y) \
+                            VALUES(  \
+                            \"{x}\", \
+                            \"{y}\"  \
+                            );"
+
+
+# die Tabelle für die Zeitsteuerung heisst:----------
+ZeitSteuerung="ZeitSteuerung"
+sql_zeitsteuerung_p1=sql_create_view_table_p1
+sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                                line_id integer,      \
+                                type text,           \
+                                tage text,           \
+                                von text,            \
+                                bis text             \
+                        );"
 
