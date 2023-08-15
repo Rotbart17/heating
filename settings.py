@@ -163,6 +163,8 @@ sql_init_Kesselkennlinie = "INSERT OR REPLACE INTO {KesselSollTemperatur} ( \
                             \"{y}\"  \
                             );"
 
+tankdataset_x=[]
+tankdataset_y=[]
 
 # die Tabelle für die Zeitsteuerung heisst:----------
 ZeitSteuerung="ZeitSteuerung"

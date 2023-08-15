@@ -6,7 +6,7 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-
+import api
 
 # globale Variablen un Funktionen für den 2 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
@@ -79,8 +79,9 @@ with ui.header().classes(replace='row items-center') as header:
     with ui.tabs() as tabs:
         
         information=ui.tab('Information')
-        einstellungen=ui.tab('Einstellungen')
-    label = ui.label().classes('row col-7 justify-end')
+        einstellungen=ui.tab('Heizbetrieb')
+        kesselsteuerung=ui.tab('Kesselsteuerung')
+    label = ui.label().classes('row col-5 justify-end')
     ui.timer(1.0, lambda: label.set_text(f'{datetime.now():%H:%M}'))  
 
 
@@ -240,7 +241,6 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                         global von
                         von=value
                         # ui.notify(von)
-                        
                     return(erg)
 
                 # setzt  das Ende einer Aufgabe
@@ -330,14 +330,19 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     settings.Wintertemp=value
                     ui.notify('Winter ab: '+str(settings.Wintertemp))
 
-# ZZ das muss noch umgebaut werden. die Kesselsolltemperatur wird über die Kurbve festgelegt
                 ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2')
-
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
                           on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')
                 
-                
-
+    with ui.tab_panel(kesselsteuerung):
+        # ui.label('Kesselsteuerung')           
+        # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
+        # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
+        api.get_tank_dataset_x
+        api.get_tank_dataset_y
+        fig = go.Figure(go.Scatter(y = settings.tankdataset_y, x=settings.tankdataset_x))
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+        ui.plotly(fig).classes('w-5/6')  
 
 
 
