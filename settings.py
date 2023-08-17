@@ -121,17 +121,11 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                             ); "
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
-init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
+init_WorkDataView_sql = f"INSERT or REPLACE INTO ? (\
                         id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
                         Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
                         Brenner_Stoerung, Hand_Dusche ) \
-                        values( 1, \
-                        \"{Winter}\",\"{Wintertemp}\", \"{Kessel}\", \"{KesselSoll}\",  \
-                        \"{Brauchwasser}\", \"{Innen}\",  \"{Aussen}\", \"{Pumpe_oben_an}\",\
-                        \"{Pumpe_unten_an}\",  \"{Pumpe_Brauchwasser_an}\", \
-                        \"{Brenner_an}\",      \"{Brenner_Stoerung}\",\
-                        \"{Hand_Dusche}\" \
-                        );"
+                        values( 1, ?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
 
 # Loginfo -> noch unklar
@@ -141,11 +135,12 @@ init_WorkDataView_sql = f"INSERT or REPLACE into {WorkDataView} (\
 # die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
 KesselSollTemperatur="KesselSollTemperatur"
     
-sql_kennlinie_p1=sql_create_view_table_p1
+sql_kennlinie_p1="CREATE TABLE IF NOT EXISTS " 
 sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                     value_x real,              \
                     value_y real           \
                     );"
+
 # die Kennlinie für KesselSollTemperatur ist:
 # Y=-1.2 x+56 + k
 # Default für k=0:
@@ -155,13 +150,7 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 # initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
 # GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
 KesselKennlinie="((-1.2)*x)+56 + k"
-sql_init_Kesselkennlinie = "INSERT OR REPLACE INTO {KesselSollTemperatur} ( \
-                            value_x,  \
-                            value_y) \
-                            VALUES(  \
-                            \"{x}\", \
-                            \"{y}\"  \
-                            );"
+sql_init_Kesselkennlinie = "INSERT OR REPLACE INTO ? (value_x, value_y) VALUES(?,?);"
 
 tankdataset_x=[]
 tankdataset_y=[]

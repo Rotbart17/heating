@@ -81,7 +81,7 @@ def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
     return
 
 # Tabelle initialisieren
-def init_table(tablename,init_sql, x:float | None=None, y: float |None=None ):
+def init_table(init_sql, data):
     try:
         conn = sqlite3.connect(settings.DBPATH)
         logging.info('DB-Verbindung geöffnet')
@@ -91,10 +91,10 @@ def init_table(tablename,init_sql, x:float | None=None, y: float |None=None ):
         exit(1)
     try:
         c = conn.cursor()
-        c.execute(init_sql)
+        c.execute(init_sql,data)
         conn.commit()
         conn.close()
-        logging.info('Tabelle' + tablename + ' ' +str(x)+ ' ' + str(y)+ ' initialisiert')
+        logging.info('Tabelle' + data + ' initialisiert')
     except Error as e:
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
@@ -152,16 +152,12 @@ def init_Kesselvalues(name):
         x= float(i/10)
         y=eval(settings.KesselKennlinie)
         tempdict[x]= y
-        
+
         # die Daten müssen nun in die Datenbank
-        sql = f"INSERT OR REPLACE INTO {settings.KesselSollTemperatur} ( \
-                            value_x,  \
-                            value_y) \
-                            VALUES(  \
-                            \"{x}\", \
-                            \"{y}\"  \
-                            );"
-        init_table(tn,sql,x,y)
+        data=[(settings.KesselSollTemperatur,x,y)]
+       
+        sql = settings.sql_init_Kesselkennlinie
+        init_table(tn,sql,data)
 
 
 
@@ -176,9 +172,18 @@ def init_db_environment():
     
     # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
     # und einzige Zeile dieser Tabelle erzeugen
- 
-    init_table(tn,settings.init_WorkDataView_sql)
+
+    data=[(settings.WorkDataView,   settings.Winter, settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
+           settings.Brauchwasser,   settings.Innen,  settings.Aussen,     settings.Pumpe_oben_an, \
+           settings.Pumpe_unten_an, settings.Pumpe_Brauchwasser_an,       settings.Brenner_an, \
+           settings.Brenner_Stoerung, settings.Hand_Dusche)]
+
+    init_table(settings.init_WorkDataView_sql,data)
     # so, die Tabelle existiert. Initdaten sind reingeschrieben.
+        
+
+
+
 
     # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
     # Werten füllen
