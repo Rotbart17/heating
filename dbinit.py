@@ -74,7 +74,7 @@ def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
         create_table_sql = sql_create_table_p1 + tablename + sql_create_table_p2
         c.execute(create_table_sql)
         conn.close()
-        logging.info('Tabelle' + tablename +' erstellt')
+        logging.info('Tabelle: ' + tablename +' erstellt')
     except Error as e:
         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
         exit(1)
@@ -94,9 +94,9 @@ def init_table(init_sql, data):
         c.execute(init_sql,data)
         conn.commit()
         conn.close()
-        logging.info('Tabelle' + data + ' initialisiert')
+        logging.info('Tabelle initialisiert')
     except Error as e:
-        logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
+        logging.error('Es konnte das SQL nicht ausgeführt werden:'+ init_sql + 'Daten:'+ str(data)+ ' Programm wird beendet!')
         exit(1)
     return    
 
@@ -134,18 +134,18 @@ def drop_db(conn):
     try:
         os.remove(settings.DBPATH)
     except OSError:
-        logging.info('fDatenbank konnte nicht gelöscht werden.')
+        logging.info('Datenbank konnte nicht gelöscht werden.')
         return (False)
     finally:
-        logging.info('fDatenbank gelöscht.')
+        logging.info('Datenbank gelöscht.')
         return(True)
 
 
 
-tempdict={}
+
 def init_Kesselvalues(name):
+    tempdict={}
     k=0
-    tn= name
     # alles mal 10, damit man range() mit int verwenden kann.
     # die Kennlinie geht von -30 bis 30 Grad Schrit 0.5
     for i in range(-300,300,5):
@@ -154,10 +154,9 @@ def init_Kesselvalues(name):
         tempdict[x]= y
 
         # die Daten müssen nun in die Datenbank
-        data=[(settings.KesselSollTemperatur,x,y)]
-       
+        data=(settings.KesselSollTemperatur,x,y)
         sql = settings.sql_init_Kesselkennlinie
-        init_table(tn,sql,data)
+        init_table(sql,data)
 
 
 
@@ -172,18 +171,20 @@ def init_db_environment():
     
     # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
     # und einzige Zeile dieser Tabelle erzeugen
+    #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
+    #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
+    #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
+    #                    Brenner_Stoerung, Hand_Dusche ) \
+    #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-    data=[(settings.WorkDataView,   settings.Winter, settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
-           settings.Brauchwasser,   settings.Innen,  settings.Aussen,     settings.Pumpe_oben_an, \
-           settings.Pumpe_unten_an, settings.Pumpe_Brauchwasser_an,       settings.Brenner_an, \
-           settings.Brenner_Stoerung, settings.Hand_Dusche)]
+    data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
+           settings.Brauchwasser,   settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
+           str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
+           str(settings.Brenner_Stoerung), str(settings.Hand_Dusche) )
 
     init_table(settings.init_WorkDataView_sql,data)
     # so, die Tabelle existiert. Initdaten sind reingeschrieben.
         
-
-
-
 
     # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
     # Werten füllen
