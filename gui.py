@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 import settings
 import api
+from databases import Database
 
 # globale Variablen un Funktionen für den 2 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
@@ -344,6 +345,24 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         ui.plotly(fig).classes('w-5/6')  
 
+
+# hier sind die Inits, die die Basis werte für die Anzeig setzen
+async def ini_gui_data():
+    # Wo ist die DB die Connected wird
+    global database
+    database = Database("sqlite:///heizung.db")
+    # Wie heisst die APP für FastAPI
+    await database.connect()
+
+
+# alles beenden...
+async def de_ini_gui_data():
+    await database.disconnect()
+
+    
+
+app.on_connect(ini_gui_data)
+app.on_disconnect(de_ini_gui_data)
 
 
 # mal die ganzen Aktivitätskenzeichen zu Anfang löschen

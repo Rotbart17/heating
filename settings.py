@@ -36,10 +36,12 @@ SENSORTABLELIST = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassers
 
 # Sensor Dictionary um jede Sensorklasse mit der richtigen Formel zu versorgen, sonst muss der 
 # Code für jede Class kopiert werden.
+# DieFormel übersetzt die Messwerte (Tabelle aus dem Handbuch) in Temperaturen
+
 sensordict = {
     "Kesselsensor" : "(-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826",
     "Aussensensor" : "(-2.1331945*pow(rt,3)) + (16.44056044*pow(rt,2)) - (57.79703416*rt) + 104.0119689",
-    "Innensensor" : "",
+    "Innensensor" : "(-0.05*rt+235.5)",
     "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*rt) +163.7167048"
 }
 # Dictinary für die Sensor Dummy Werte wenn V_Mode=True
@@ -68,10 +70,10 @@ Wintertemp: float =17
 
 # Kessel ist die aktuelle Kesseltemperatur
 # KesselSoll ist die KesselSolltemperatur
-# KesselError ist die Temperatur bei der ein Fehler ausgelöst wird
+# KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
 Kessel : float = 0
 KesselSoll : float = 0
-KesselError : float = 90
+KesselMax : float = 90
 
 
 # Brauchwasser ist die aktuelle Brauchwassertemperatur
@@ -151,6 +153,7 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 KesselKennlinie="((-1.2)*x)+56 + k"
 sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
 
+# Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
 tankdataset_x=[]
 tankdataset_y=[]
 

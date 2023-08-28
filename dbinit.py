@@ -108,10 +108,10 @@ def drop_table(conn,tablename):
     try:
         cursor.execute(t)
     except Error as e:
-        logging.error('fTabelle '+tablename+' konte nicht gelöscht werden.')
+        logging.error('Tabelle '+tablename+' konte nicht gelöscht werden.')
         exit(1)
     finally:
-        logging.info('fTabelle '+tablename+' gelöscht.')
+        logging.info('Tabelle '+tablename+' gelöscht.')
         return(True)
 
 
@@ -122,10 +122,10 @@ def empty_table(conn, tablename):
     try:
         cursor.execute(t)
     except Error as e:
-        logging.error('fDaten in '+tablename+' konten nicht gelöscht werden.')
+        logging.error('Daten in '+tablename+' konten nicht gelöscht werden.')
         exit(1)
     finally:
-        logging.info('fDaten in '+tablename+' gelöscht.')
+        logging.info('Daten in '+tablename+' gelöscht.')
         return(True)
 
 # Tabelle mit inhalt löschen
@@ -154,10 +154,36 @@ def init_Kesselvalues(name):
         tempdict[x]= y
 
         # die Daten müssen nun in die Datenbank
-        data=(settings.KesselSollTemperatur,x,y)
+        data=(x,y)
         sql = settings.sql_init_Kesselkennlinie
         init_table(sql,data)
 
+# Prüft ob daten in der Tabelle sind
+# False= keine Daten drin
+# True =Daten in der Tabelle
+
+def checktable(tablename):
+    erg=False
+    t=0
+    try:
+        conn = sqlite3.connect(settings.DBPATH)
+        logging.info('DB-Verbindung geöffnet')
+        
+    except Error as e:
+        logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
+        exit(1)
+    try:
+        c = conn.cursor()
+        t=c.execute(f"SELECT COUNT(*) FROM {tablename}").fetchone()[0]
+        conn.close()
+        logging.info('Tabelle '+tablename+' enthält :'+str(t)+' Datensätze')
+        if t>0 :
+            erg=True
+    except Error as e:
+        logging.info('Es konnte die Tabelle '+ tablename +' nicht abgefragt werden!')
+            
+    return (erg)    
+    
 
 
 
@@ -167,51 +193,44 @@ def init_db_environment():
     
     # jetzt die Anzeigeworktabelle definieren und initialisieren
     tn = settings.WorkDataView
-    create_table(tn,settings.sql_create_view_table_p1, settings.sql_create_view_table_p2 )
-    
-    # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
-    # und einzige Zeile dieser Tabelle erzeugen
-    #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
-    #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
-    #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
-    #                    Brenner_Stoerung, Hand_Dusche ) \
-    #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    if checktable(tn)==False:
+        create_table(tn,settings.sql_create_view_table_p1, settings.sql_create_view_table_p2 )
+        
+        # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
+        # und einzige Zeile dieser Tabelle erzeugen
+        #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
+        #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
+        #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
+        #                    Brenner_Stoerung, Hand_Dusche ) \
+        #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-    data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
-           settings.Brauchwasser,   settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
-           str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
-           str(settings.Brenner_Stoerung), str(settings.Hand_Dusche) )
+        data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
+            settings.Brauchwasser,   settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
+            str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
+            str(settings.Brenner_Stoerung), str(settings.Hand_Dusche) )
 
-    init_table(settings.init_WorkDataView_sql,data)
-    # so, die Tabelle existiert. Initdaten sind reingeschrieben.
+        init_table(settings.init_WorkDataView_sql,data)
+        # so, die Tabelle existiert. Initdaten sind reingeschrieben.
         
 
     # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
-    # Werten füllen
+    # Werten füllen aber nur, wenn nicht schon welche da sind.
     tn= settings.KesselSollTemperatur
-    create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
-    init_Kesselvalues(tn)
+    if checktable(tn)==False:
+        create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
+        init_Kesselvalues(tn)
 
     # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis)
     tn= settings.ZeitSteuerung
     create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
-    # hier kein Init! Die ersten Daten kommen über die GUI.
+    # hier kein Init! Die ersten Daten kommen über die GUI. Oder sind schon drin.
 
 
 
     
-    # weitere Tabellen, die noch benötigt werden
-    # Parametertabelle?
+   
 
-# was brauchen wir denn alles an Tabellen:
-# Brauchwassergrafik
-# Kesselgrafik
-# Innen-grafik
-# Aussengrafik
-# Kesselkennliniengrafik
-
-# Wintertemp
-# Brauchwassertemp 
 # Loginfo
 # löscht Fehlerstatus
+
 

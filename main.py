@@ -12,8 +12,10 @@ import time
 def main():
     dbinit.init_db_environment()
     
-    ks= sensors.sensor("Kesselsensor")
-    ks2= sensors.sensor("Aussensensor")
+    kss= sensors.sensor("Kesselsensor")
+    ass= sensors.sensor("Aussensensor")
+    bws= sensors.sensor("Brauchwassersensor")
+    iss= sensors.sensor("Innensensor")
     print("Nix war los")
     print("schauen wir Mal ob das mit dem Thread nun funktioniert")
     time.sleep(30)
