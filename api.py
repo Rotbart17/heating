@@ -37,7 +37,7 @@ async def fetch_data(id: int):
 # holt alle Std-Daten für die Anzeige
 @app.get("/getviewdata")
 async def get_view_data():
-    sql= f"SELECT * from {settings.WorkDataView} ;"
+    sql= f"SELECT * from {settings.WorkDataView} WHERE id=1;"
     results = await database.fetch_all(query=sql)
         
     if not results:

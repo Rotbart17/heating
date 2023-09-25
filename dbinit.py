@@ -6,8 +6,7 @@ import settings
 from settings import SensorList, DBPATH
 import os
 
-# hier sind alle DB Przeduren gebündelt, die nicht in Classen definert sind.
-
+# hier sind alle DB Prozeduren gebündelt, die nicht in Classen definert sind.
 
 
 
@@ -229,8 +228,9 @@ def init_db_environment():
 
     
    
-
+# noch offene Punkte
 # Loginfo
 # löscht Fehlerstatus
-
+tankdataset_x=[]
+tankdataset_y=[]
 

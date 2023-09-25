@@ -6,6 +6,7 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
+import guidb
 import api
 from databases import Database
 
@@ -335,6 +336,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
                           on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')
                 
+    # Dritter Reiter ------------------            
     with ui.tab_panel(kesselsteuerung):
         # ui.label('Kesselsteuerung')           
         # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
@@ -346,23 +348,11 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         ui.plotly(fig).classes('w-5/6')  
 
 
-# hier sind die Inits, die die Basis werte für die Anzeig setzen
-async def ini_gui_data():
-    # Wo ist die DB die Connected wird
-    global database
-    database = Database("sqlite:///heizung.db")
-    # Wie heisst die APP für FastAPI
-    await database.connect()
-
-
-# alles beenden...
-async def de_ini_gui_data():
-    await database.disconnect()
 
     
 
-app.on_connect(ini_gui_data)
-app.on_disconnect(de_ini_gui_data)
+app.on_connect(guidb.init_gui_data)
+app.on_disconnect(guidb.de_init_gui_data)
 
 
 # mal die ganzen Aktivitätskenzeichen zu Anfang löschen
