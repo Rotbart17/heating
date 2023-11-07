@@ -207,4 +207,22 @@ class data:
     # Signalisiert ob der Brenner an ist und ob es eie Störung gibt
     Brenner_an : bool = False
     Brenner_Stoerung : bool = False
-     
+
+    # hier müssen die aktuellen Werte aus der DB eingelesen werden.
+    # da die GUI immer nach dem DB Modul gestartet wird, müssen 
+    # hier Werte vorhanden sein. SInd sie es nicht ist das ein fatler
+    # Fehler
+    def __post_init__():
+        pass
+
+
+    # nun muss für jede Variable eine "Setter"-funktion geschrieben werden.
+    # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
+    @property
+    def Winter(self):
+        return self.Winter
+    
+    @Winter.setter
+    def Winter(self,value):
+        # so hier muss das in die DB geschrieben werden
+        pass
