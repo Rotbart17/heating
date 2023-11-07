@@ -45,5 +45,5 @@ async def get_view_data():
     settings.Brenner_an=results[0][11]
     settings.Brenner_Stoerung=results[0][12]
     settings.Hand_Dusche=results[0][13]
-    
+    print(results)
     return results

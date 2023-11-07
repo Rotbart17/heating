@@ -341,8 +341,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # ui.label('Kesselsteuerung')           
         # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
         # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-        api.get_tank_dataset_x
-        api.get_tank_dataset_y
+        api.get_tank_dataset_x()
+        api.get_tank_dataset_y()
         fig = go.Figure(go.Scatter(y = settings.tankdataset_y, x=settings.tankdataset_x))
         fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         ui.plotly(fig).classes('w-5/6')  

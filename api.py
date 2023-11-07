@@ -4,24 +4,34 @@
 import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
 # from fastapi.middleware.cors import CORSMiddleware
-from databases import Database
-
+# from databases import Database
+import aiosqlite
+# import sqlite3
+import asyncio
 
 
 # Wo ist die DB die Connected wird
-database = Database("sqlite:///heizung.db")
+# database = Database("sqlite:///heizung.db")
+
 # Wie heisst die APP für FastAPI
 app= FastAPI(title="Heizung")
 
+
 # was passiert beim Startup der API
-@app.on_event("startup")
-async def database_connect():
-    await database.connect()
+# @app.on_event("startup")
+def startup():
+    pass
+    # global database
+    # database = aiosqlite.connect(settings.DBPATH)
+    # async def database_connect():
+    #    await database.connect()
 
 # was passiert beim Stopen der API
 @app.on_event("shutdown")
-async def database_disconnect():
-    await database.disconnect()
+async def shutdown():
+    await database.close()
+    # async def database_disconnect():
+    #    await database.disconnect()
 
 
 
@@ -30,15 +40,19 @@ async def database_disconnect():
 # nur Spielkram zum experimentieren
 @app.get("/test/{id}")
 async def fetch_data(id: int):
-    query = "SELECT * FROM Kesselsensor WHERE id={}".format(int(str(id)))
-    results = await database.fetch_all(query=query)
-    return results
+    database = await aiosqlite.connect(settings.DBPATH)
+    sql = "SELECT * FROM Kesselsensor WHERE id={}".format(int(str(id)))
+    cursor = await database.execute(sql)
+    result= await cursor.fetchall()
+    return result
 
 # holt alle Std-Daten für die Anzeige
 @app.get("/getviewdata")
 async def get_view_data():
+    database = await aiosqlite.connect(settings.DBPATH)
     sql= f"SELECT * from {settings.WorkDataView} WHERE id=1;"
-    results = await database.fetch_all(query=sql)
+    cursor = await database.execute(sql)
+    results = await cursor.fetchall()
         
     if not results:
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
@@ -59,21 +73,23 @@ async def get_view_data():
     return results
 
 # holt alle x Daten für Kesselkennliniengrafik
-@app.get("/gettankdatasetx")
+# @app.get("/gettankdatasetx")
 async def get_tank_dataset_x():
     sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
-    results = await database.fetch_all(query=sql)
+    cursor= await database.execute(sql)
+    results = cursor.fetch_all()
     if not results:
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
     settings.tankdataset_x=results
-    # print(settings.tankdataset_x)
+    print(settings.tankdataset_x)
     return results
 
 # holt alle y Daten für Kesselkennliniengrafik
-@app.get("/gettankdatasety")
+# @app.get("/gettankdatasety")
 async def get_tank_dataset_y():
     sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
-    results = await database.fetch_all(query=sql)
+    cursor= await database.execute(sql)
+    results = await cursor.fetch_all()
     if not results:
         raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
     settings.tankdataset_y=results
@@ -129,8 +145,18 @@ async def get_tank_dataset_y():
 #    ui.label('Aussen').style('color: #888; font-weight: bold')
 #    ui.label(results[Aussen]).style('color: #888; font-weight: bold')
     
+def main():
+    startup()
+    asyncio.run(get_view_data())
+    get_tank_dataset_x()
+    get_tank_dataset_y()
 
 
 # ui.run()
+if __name__ == '__main__':
+    
+    main()
+    print("Ende!")
+    
 
 

@@ -2,6 +2,7 @@
 # hier sind slle globalen Variablen und verwendeten Basiseinstellungen gesammelt
 
 import logging
+from dataclasses import dataclass
 
 # Muster für logging
 # logging.debug('debug')
@@ -168,3 +169,42 @@ sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 bis text             \
                         );"
 
+
+##### Start der Idee mit der Idee  der Dataclass
+@dataclass
+class data:
+    # Bei Winter == True haben wir Heizbetrieb
+    # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
+    Winter : bool = True
+    Wintertemp: float =17
+
+    # Kessel ist die aktuelle Kesseltemperatur
+    # KesselSoll ist die KesselSolltemperatur
+    # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
+    Kessel : float = 0
+    KesselSoll : float = 0
+    KesselMax : float = 90
+
+
+    # Brauchwasser ist die aktuelle Brauchwassertemperatur
+    # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
+    # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
+    Brauchwasser :float = 0
+    BrauchwasserSoll : float = 55
+    BrauchwasserError : float = 70
+    Pumpe_Brauchwasser_an : bool = False
+    Hand_Dusche : bool = False
+
+    # Innen ist die aktuelle Innentemperatur
+    Innen : float = 0
+    # Innen ist die aktuelle Aussentemperatur
+    Aussen : float = 0
+
+    # Signalisiert ob die Pumpen an /  aus sind
+    Pumpe_oben_an : bool = False
+    Pumpe_unten_an : bool = False
+
+    # Signalisiert ob der Brenner an ist und ob es eie Störung gibt
+    Brenner_an : bool = False
+    Brenner_Stoerung : bool = False
+     
