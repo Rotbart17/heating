@@ -213,6 +213,9 @@ class data:
     # hier Werte vorhanden sein. SInd sie es nicht ist das ein fatler
     # Fehler
     def __post_init__():
+        if checktable(WorkDataView)==False:
+            logging.error(f'Die Tabelle {WorkDataView} ist leer. Programm wird beendet')
+            exit(1) 
         pass
 
 
