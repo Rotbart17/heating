@@ -2,7 +2,7 @@
 # hier sind slle globalen Variablen und verwendeten Basiseinstellungen gesammelt
 
 import logging
-from dataclasses import dataclass
+
 
 # Muster für logging
 # logging.debug('debug')
@@ -45,7 +45,8 @@ sensordict = {
     "Innensensor" : "(-0.05*rt+235.5)",
     "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*rt) +163.7167048"
 }
-# Dictinary für die Sensor Dummy Werte wenn V_Mode=True
+# Dictinary für die Sensor Dummy Werte wenn V_Mode=True. Es sind Werte die entsprechend umgerechnet werden 
+# müssen, damit die Formeln auch ausgetestet werden, Wenn auch mom. nur mit einem Wert. 
 rawvaluedict = {
     "Kesselsensor" : 2.38,
     "Aussensensor" : 3.57,
@@ -66,37 +67,48 @@ ThreadList = []
 
 # Bei Winter == True haben wir Heizbetrieb
 # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
+# Winter wird in Abhängigkeit von der Wintertemp automatisch gesetzt. Und von der GUI
+# in geschrieben.
+# Wintertemp wird nur von der GUI verändert
+
 Winter : bool = True
 Wintertemp: float =17
 
-# Kessel ist die aktuelle Kesseltemperatur
-# KesselSoll ist die KesselSolltemperatur
-# KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
+# Kessel ist die aktuelle Kesseltemperatur, kommt vom Sensor, wird nur gelesen
+# KesselSoll ist die KesselSolltemperatur, wird mit der Kurve ermittelt. Kurve wird in der Gui angepasst
+# die ktuelle KesselSoll wird nur angezeigt und im Regelkreis gesetzt
+# und nur von dort verändert.
+# KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird. Fixwert hier im Programm, wird nur gelesen
 Kessel : float = 0
 KesselSoll : float = 0
 KesselMax : float = 90
 
 
-# Brauchwasser ist die aktuelle Brauchwassertemperatur
-# BrauchwasserSoll ist die Solltemperatur des Brauchwassers
-# BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
+# Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
+# BrauchwasserSoll ist die Solltemperatur des Brauchwassers, Wird in der GUI eingestellt und nur dort geschrieben
+# BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird, Fixwert hier im Programm
 Brauchwasser :float = 0
 BrauchwasserSoll : float = 55
 BrauchwasserError : float = 70
+
+# Pumpe_Brauchwasser_an wird von dem Prozess der Brauchwasser überwachung verändert. GUI zeigt nur an.
 Pumpe_Brauchwasser_an : bool = False
+# Schaltet die manuelle Brauchwasserbereitung ein. Wird nur in der GUI verändert.
 Hand_Dusche : bool = False
 
-# Innen ist die aktuelle Innentemperatur
+# Innen ist die aktuelle Innentemperatur, wird nur vom Sensor verändert, GUI zeigt an
 Innen : float = 0
-# Innen ist die aktuelle Aussentemperatur
+# Aussen ist die aktuelle Aussentemperatur, wird nur vom Sensor verändert, GUI zeigt an
 Aussen : float = 0
 
-# Signalisiert ob die Pumpen an /  aus sind
+# Signalisiert ob die Pumpen an / aus. Werden nur vom Regelkreis verändert, GUI zeigt an
 Pumpe_oben_an : bool = False
 Pumpe_unten_an : bool = False
 
 # Signalisiert ob der Brenner an ist und ob es eie Störung gibt
+# Brenner_an zeigt, dass Brenner läuft. Wird nur vom Regelkreis verändert, GUI zeigt an
 Brenner_an : bool = False
+# Brenner_Störung zeigt eine Brennerstörung wird nur vom Brenner verändert, GUI zeigt an
 Brenner_Stoerung : bool = False
 
 
@@ -112,6 +124,7 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Kessel real,         \
                                 KesselSoll real,   \
                                 Brauchwasser real,           \
+                                BrauchwasserSoll real,   \
                                 Innen real,           \
                                 Aussen real,           \
                                 Pumpe_oben_an text,           \
@@ -124,10 +137,10 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
-                        id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,\
+                        id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,\
                         Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an,\
                         Brenner_Stoerung, Hand_Dusche ) \
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
 
 # Loginfo -> noch unklar
@@ -169,63 +182,3 @@ sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 bis text             \
                         );"
 
-
-##### Start der Idee mit der Idee  der Dataclass
-@dataclass
-class data:
-    # Bei Winter == True haben wir Heizbetrieb
-    # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
-    Winter : bool = True
-    Wintertemp: float =17
-
-    # Kessel ist die aktuelle Kesseltemperatur
-    # KesselSoll ist die KesselSolltemperatur
-    # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
-    Kessel : float = 0
-    KesselSoll : float = 0
-    KesselMax : float = 90
-
-
-    # Brauchwasser ist die aktuelle Brauchwassertemperatur
-    # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
-    # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
-    Brauchwasser :float = 0
-    BrauchwasserSoll : float = 55
-    BrauchwasserError : float = 70
-    Pumpe_Brauchwasser_an : bool = False
-    Hand_Dusche : bool = False
-
-    # Innen ist die aktuelle Innentemperatur
-    Innen : float = 0
-    # Innen ist die aktuelle Aussentemperatur
-    Aussen : float = 0
-
-    # Signalisiert ob die Pumpen an /  aus sind
-    Pumpe_oben_an : bool = False
-    Pumpe_unten_an : bool = False
-
-    # Signalisiert ob der Brenner an ist und ob es eie Störung gibt
-    Brenner_an : bool = False
-    Brenner_Stoerung : bool = False
-
-    # hier müssen die aktuellen Werte aus der DB eingelesen werden.
-    # da die GUI immer nach dem DB Modul gestartet wird, müssen 
-    # hier Werte vorhanden sein. SInd sie es nicht ist das ein fatler
-    # Fehler
-    def __post_init__():
-        if checktable(WorkDataView)==False:
-            logging.error(f'Die Tabelle {WorkDataView} ist leer. Programm wird beendet')
-            exit(1) 
-        pass
-
-
-    # nun muss für jede Variable eine "Setter"-funktion geschrieben werden.
-    # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
-    @property
-    def Winter(self):
-        return self.Winter
-    
-    @Winter.setter
-    def Winter(self,value):
-        # so hier muss das in die DB geschrieben werden
-        pass

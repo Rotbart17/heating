@@ -6,7 +6,6 @@ import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
 
 
-
 # hier sind die Inits, die die Basis werte für die Anzeig setzen
 async def init_gui_data():
     # Wo ist die DB die Connected wird
@@ -37,13 +36,14 @@ async def get_view_data():
     settings.Kessel=results[0][3]
     settings.KesselSoll=results[0][4]
     settings.Brauchwasser=results[0][5]
-    settings.Innen=results[0][6]
-    settings.Aussen=results[0][7]
-    settings.Pumpe_oben_an=results[0][8]
-    settings.Pumpe_unten_an=results[0][9]
-    settings.Pumpe_Brauchwasser_an=results[0][10]
-    settings.Brenner_an=results[0][11]
-    settings.Brenner_Stoerung=results[0][12]
-    settings.Hand_Dusche=results[0][13]
+    settings.BrauchwasserSoll=results[0][6]
+    settings.Innen=results[0][7]
+    settings.Aussen=results[0][8]
+    settings.Pumpe_oben_an=results[0][9]
+    settings.Pumpe_unten_an=results[0][10]
+    settings.Pumpe_Brauchwasser_an=results[0][11]
+    settings.Brenner_an=results[0][12]
+    settings.Brenner_Stoerung=results[0][13]
+    settings.Hand_Dusche=results[0][14]
     print(results)
     return results

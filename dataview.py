@@ -38,7 +38,7 @@ class data:
     BrauchwasserSoll : float
     BrauchwasserError : float
     Pumpe_Brauchwasser_an : bool
-    Hand_Dusche : bool = False
+    Hand_Dusche : bool
 
     # Innen ist die aktuelle Innentemperatur
     Innen : float
@@ -65,19 +65,20 @@ class data:
                     self.Kessel=results[0][3]
                     self.KesselSoll=results[0][4]
                     self.Brauchwasser=results[0][5]
-                    self.Innen=results[0][6]
-                    self.Aussen=results[0][7]
-                    self.Pumpe_oben_an=results[0][8]
-                    self.Pumpe_unten_an=results[0][9]
-                    self.Pumpe_Brauchwasser_an=results[0][10]
-                    self.Brenner_an=results[0][11]
-                    self.Brenner_Stoerung=results[0][12]
-                    self.Hand_Dusche=results[0][13]
+                    self.BrauchwasserSoll=results[0][6]
+                    self.Innen=results[0][7]
+                    self.Aussen=results[0][8]
+                    self.Pumpe_oben_an=results[0][9]
+                    self.Pumpe_unten_an=results[0][10]
+                    self.Pumpe_Brauchwasser_an=results[0][11]
+                    self.Brenner_an=results[0][12]
+                    self.Brenner_Stoerung=results[0][13]
+                    self.Hand_Dusche=results[0][14]
         
     
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
     # da die GUI immer nach dem DB Modul gestartet wird, müssen 
-    # hier Werte vorhanden sein. SInd sie es nicht ist das ein fatler
+    # hier Werte vorhanden sein. Sind sie es nicht, ist das ein fatler
     # Fehler
     def __post_init__():
         if checktable(settings.WorkDataView)==False:
@@ -85,6 +86,14 @@ class data:
             exit(1) 
         # jetzt die Daten aus der DB laden
         data.viewloader()
+        # ZZ todo
+        # Laden der Kesselkennlinie
+        # Laden der historischen Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
+        # starten der Threads für das periodische Update der Werte oder Initialisierung
+        # der Funktionen, die beim Callback aus der DB die Werte hier in der Klasse setzen
+
+
+
 
     # die jeweiligen Werte müssen einzeln in die DB geschrieben werden
     # # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
@@ -94,6 +103,7 @@ class data:
     #                    Brenner_Stoerung, Hand_Dusche ) \
     #                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);"            
 
+    # scheibt jeden Wert einzeln
     async def writeitem(self,value,name):
         async with aiosqlite.connect(settings.DBPATH) as db:
             sql= f"INSERT OR REPLACE INTO {settings.WorkDataView} (id,{name}) VALUES (1,{value});"
@@ -102,16 +112,11 @@ class data:
 
     # für jede Variable eine "Setter"-funktion.
     # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
+    # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
     @property
     def Winter(self):
         return self.Winter
     
-    @Winter.setter
-    def Winter(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Winter")
-
-
     @property
     def Wintertemp(self):
         return self.Wintertemp
@@ -125,82 +130,44 @@ class data:
     def Kessel(self):
         return self.Kessel
     
-    @Kessel.setter
-    def Kessel(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Kessel")    
-
-
+    
     @property
     def KesselSoll(self):
         return self.KesselSoll
     
-    @KesselSoll.setter
-    def KesselSoll(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"KesselSoll")    
-
-
     @property
     def Brauchwasser(self):
         return self.Brauchwasser
-    
-    @Brauchwasser.setter
-    def Brauchwasser(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Brauchwasser")  
 
+    @property
+    def BrauchwasserSoll(self):
+        return self.BrauchwasserSoll
+    
+    @BrauchwasserSoll.setter
+    def BrauchwasserSoll(self,value):
+        # so hier muss das in die DB geschrieben werden
+        data.writeitem(value,"BrauchwasserSoll")  
 
     @property
     def Innen(self):
         return self.Innen
     
-    @Innen.setter
-    def Innen(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Innen")  
-
     @property
     def Aussen(self):
         return self.Aussen
-    
-    @Aussen.setter
-    def Aussen(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Aussen")  
-
-
-
+   
     @property
     def Pumpe_oben_an(self):
         return self.Pumpe_oben_an
-    
-    @Pumpe_oben_an.setter
-    def Pumpe_oben_an(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Pumpe_oben_an")
-
 
     @property
     def Pumpe_unten_an(self):
         return self.Pumpe_unten_an
-    
-    @Pumpe_unten_an.setter
-    def Pumpe_unten_an(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Pumpe_unten_an")
-
 
     @property
     def Pumpe_Brauchwasser_an(self):
         return self.Pumpe_Brauchwasser_an
     
-    @Pumpe_Brauchwasser_an.setter
-    def Pumpe_Brauchwasser_an(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Pumpe_Brauchwasser_an")
-
-
     @property
     def Brenner_an(self):
         return self.Brenner_an
@@ -209,7 +176,6 @@ class data:
     def Brenner_an(self,value):
         # so hier muss das in die DB geschrieben werden
         data.writeitem(value,"Brenner_an")
-
 
     @property
     def Hand_Dusche(self):
@@ -220,12 +186,8 @@ class data:
         # so hier muss das in die DB geschrieben werden
         data.writeitem(value,"Hand_Dusche")
 
-
     @property
     def Brenner_Stoerung(self):
         return self.Brenner_Stoerung
     
-    @Brenner_Stoerung.setter
-    def Brenner_Stoerung(self,value):
-        # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Brenner_Stoerung")
+    

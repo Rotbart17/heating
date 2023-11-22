@@ -143,14 +143,14 @@ def drop_db(conn):
 
 
 def init_Kesselvalues(name):
-    tempdict={}
+    # tempdict={}
     k=0
     # alles mal 10, damit man range() mit int verwenden kann.
     # die Kennlinie geht von -30 bis 30 Grad Schrit 0.5
     for i in range(-300,300,5):
         x= float(i/10)
         y=eval(settings.KesselKennlinie)
-        tempdict[x]= y
+        # tempdict[x]= y
 
         # die Daten müssen nun in die Datenbank
         data=(x,y)
@@ -198,13 +198,13 @@ def init_db_environment():
         # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
         # und einzige Zeile dieser Tabelle erzeugen
         #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
-        #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, Innen, Aussen,   \
+        #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,   \
         #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
         #                    Brenner_Stoerung, Hand_Dusche ) \
         #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
         data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
-            settings.Brauchwasser,   settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
+            settings.Brauchwasser, settings.BrauchwasserSoll,  settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
             str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
             str(settings.Brenner_Stoerung), str(settings.Hand_Dusche) )
 
@@ -221,6 +221,8 @@ def init_db_environment():
 
     # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis)
     tn= settings.ZeitSteuerung
+    # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
+    # wir nur wegen der Initialisierung bnötigt.
     create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
     # hier kein Init! Die ersten Daten kommen über die GUI. Oder sind schon drin.
 
@@ -228,7 +230,7 @@ def init_db_environment():
 
     
    
-# noch offene Punkte
+# noch offene Punkte ZZ
 # Loginfo
 # löscht Fehlerstatus
 tankdataset_x=[]
