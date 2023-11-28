@@ -168,7 +168,7 @@ class sensor:
     # Die Daten Wandeln und speichern
         def processvalue(name:str):
             conn = sqlite3.connect(settings.DBPATH)
-            while (sensor.threadstop != True):
+            while (sensor.threadstop == False):
                 rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature,conn)

@@ -9,12 +9,26 @@ import asyncio
 import aiosqlite
 import logging
 from dbinit import checktable
+import threading
+import datetime
+
 
 
 
 ##### Start der Idee mit der Idee  der Dataclass
 @dataclass
 class data:
+
+    # damit man den thread stoppen kann
+    threadstop : bool | False
+
+    #Wartezeit bevor die nächste Abfrage urchgeführt wird
+    sleeptime : int | 5
+
+    # wenn daten geschrieben werden mit dem lesen warten, damit die Variable nicht
+    # überschrieben wird
+    datawrite: bool | False
+
     # Defaults werden in settings.py festgelegt ind in dbinit.py als Tabelle angelegt 
     # und von den Werten gesetzt
     
@@ -53,6 +67,7 @@ class data:
     Brenner_an : bool
     Brenner_Stoerung : bool
 
+
     
     # lädt die Daten aus der Datenbank in die Variablen
     async def viewloader(self):
@@ -74,24 +89,45 @@ class data:
                     self.Brenner_an=results[0][12]
                     self.Brenner_Stoerung=results[0][13]
                     self.Hand_Dusche=results[0][14]
-        
+
+
+    # hier wird regelmäßig die DB abgefragt, damit immer frische Werte vorhanden sind
+    # aber wenn gerade geschrieben wird, dann wird eine 1/50 sec gewartet. Vielleicht noch ein wenig viel.
+    # schreiben hat Vorrang vor dem Lesen
+
+    async def dbpolling(self):
+        while (self.threadstop != True):
+            if self.datawrite==False:
+                self.viewloader()
+                asyncio.sleep(data.sleeptime)
+            else:
+                asyncio.sleep(0.05)
+
+
+
+
     
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
     # da die GUI immer nach dem DB Modul gestartet wird, müssen 
     # hier Werte vorhanden sein. Sind sie es nicht, ist das ein fatler
     # Fehler
-    def __post_init__():
+    def __post_init__(self):
         if checktable(settings.WorkDataView)==False:
             logging.error(f'Die Tabelle {settings.WorkDataView} ist leer. Programm wird beendet')
             exit(1) 
-        # jetzt die Daten aus der DB laden
-        data.viewloader()
+        # jetzt die Daten zum ersten Mal aus der DB laden
+        # Laden der historischen Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
+        self.viewloader()
         # ZZ todo
         # Laden der Kesselkennlinie
-        # Laden der historischen Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
+    
         # starten der Threads für das periodische Update der Werte oder Initialisierung
-        # der Funktionen, die beim Callback aus der DB die Werte hier in der Klasse setzen
-
+            
+        self.x = threading.Thread(target=self.dbpolling, name="Thread-GUI-DB-Abfrage", args=(self,))
+        logging.info('Starte DB-abfrage Thread!')
+        settings.ThreadList.append(self.x)
+        self.x.start()
+        logging.debug('DB-Abfrage Thread gestartet!')
 
 
 
@@ -107,7 +143,10 @@ class data:
     async def writeitem(self,value,name):
         async with aiosqlite.connect(settings.DBPATH) as db:
             sql= f"INSERT OR REPLACE INTO {settings.WorkDataView} (id,{name}) VALUES (1,{value});"
+            self.writeitem=True
             async with db.execute(sql):
+                pass
+            self.writeitem=False
 
 
     # für jede Variable eine "Setter"-funktion.
