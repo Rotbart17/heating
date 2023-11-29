@@ -143,21 +143,19 @@ def drop_db(conn):
 
 
 def init_Kesselvalues(name):
-    # tempdict={}
     k=0
     # alles mal 10, damit man range() mit int verwenden kann.
     # die Kennlinie geht von -30 bis 30 Grad Schrit 0.5
-    for i in range(-300,300,5):
+    for i in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
         x= float(i/10)
         y=eval(settings.KesselKennlinie)
-        # tempdict[x]= y
-
         # die Daten müssen nun in die Datenbank
         data=(x,y)
         sql = settings.sql_init_Kesselkennlinie
         init_table(sql,data)
 
-# Prüft ob daten in der Tabelle sind
+
+# Prüft ob Daten in der Tabelle sind
 # False= keine Daten drin
 # True =Daten in der Tabelle
 
@@ -200,13 +198,13 @@ def init_db_environment():
         #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
         #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,   \
         #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
-        #                    Brenner_Stoerung, Hand_Dusche ) \
-        #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        #                    Brenner_Stoerung, Hand_Dusche, threadstop ) \
+        #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
         data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
             settings.Brauchwasser, settings.BrauchwasserSoll,  settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
             str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
-            str(settings.Brenner_Stoerung), str(settings.Hand_Dusche) )
+            str(settings.Brenner_Stoerung), str(settings.Hand_Dusche), str(settings.threadstop) )
 
         init_table(settings.init_WorkDataView_sql,data)
         # so, die Tabelle existiert. Initdaten sind reingeschrieben.
@@ -219,10 +217,10 @@ def init_db_environment():
         create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
         init_Kesselvalues(tn)
 
-    # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis)
+    # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis) ggf. erzeugen
     tn= settings.ZeitSteuerung
     # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
-    # wir nur wegen der Initialisierung bnötigt.
+    # wird nur wegen der Initialisierung bnötigt.
     create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
     # hier kein Init! Die ersten Daten kommen über die GUI. Oder sind schon drin.
 

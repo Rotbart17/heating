@@ -6,9 +6,11 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-import guidb
-import api
-from databases import Database
+from dataview import data as dt
+
+# import guidb
+# import api
+# from databases import Database
 
 # globale Variablen un Funktionen für den 2 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
@@ -57,6 +59,8 @@ typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 # Beim Initialisieren der GUI müssen alle globalen Werte aus der DB geholt werden
 # Alle Werte für die Tabelle müssen geholt werden und in die Tabelle gebracht werden
 #
+viewdata=dt()
+
 # Funktionen für... was not notwenig ist. Timer gesteuerter Abruf aus der DB!
 # get Startwerte und dann updates für Aussentemperatur,Innentemperatur, 
 #     Kesseltemperatur, Brauchwasser, Brennerstörung, Pumpen: oben, unten, Brauchwasser

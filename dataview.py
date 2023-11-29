@@ -22,7 +22,7 @@ class data:
     # damit man den thread stoppen kann
     threadstop : bool | False
 
-    #Wartezeit bevor die nächste Abfrage urchgeführt wird
+    #Wartezeit bevor die nächste Abfrage des WorkdataView durchgeführt wird
     sleeptime : int | 5
 
     # wenn daten geschrieben werden mit dem lesen warten, damit die Variable nicht
@@ -43,6 +43,8 @@ class data:
     Kessel : float
     KesselSoll : float
     KesselMax : float
+    KesselDaten_x : float
+    KesselDaten_y : float
 
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
@@ -89,6 +91,7 @@ class data:
                     self.Brenner_an=results[0][12]
                     self.Brenner_Stoerung=results[0][13]
                     self.Hand_Dusche=results[0][14]
+                    self.threadstop=results[0][15]
 
 
     # hier wird regelmäßig die DB abgefragt, damit immer frische Werte vorhanden sind
@@ -96,15 +99,37 @@ class data:
     # schreiben hat Vorrang vor dem Lesen
 
     async def dbpolling(self):
-        while (self.threadstop != True):
+        while (self.threadstop ==False):
             if self.datawrite==False:
                 self.viewloader()
+                logging.debug('WorkdataView Pollen')
                 asyncio.sleep(data.sleeptime)
             else:
                 asyncio.sleep(0.05)
 
+    # Laden der Kesselkennlinie
+    async def kesseldataload(self):
+        async with aiosqlite.connect(settings.DBPATH) as db:
+            logging.debug('Kesselkennlinie lesen!')
+            sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
+            async with db.execute(sql) as cursor:
+                self.KesselDaten_x=await cursor.fetchall()
 
+            sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
+            async with db.execute(sql) as cursor:
+                self.KesselDaten_y=await cursor.fetchall()
 
+    # Speichern der Kesselkennlinie
+    # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
+    async def kesseldatasave(self):
+        async with aiosqlite.connect(settings.DBPATH) as db:
+            logging.debug('Kesselkennline in DB schreiben!')
+            sql= settings.sql_init_Kesselkennlinie
+            i=0
+            for _ in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
+                await db.execute(sql,self.KesselDaten_x[i], self.KesselDaten_y[i])
+                i+=1
+            
 
     
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
@@ -118,8 +143,8 @@ class data:
         # jetzt die Daten zum ersten Mal aus der DB laden
         # Laden der historischen Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
         self.viewloader()
-        # ZZ todo
         # Laden der Kesselkennlinie
+        self.kesseldataload()
     
         # starten der Threads für das periodische Update der Werte oder Initialisierung
             
@@ -163,12 +188,11 @@ class data:
     @Wintertemp.setter
     def Wintertemp(self,value):
         # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Wintertemp")   
+        self.writeitem(value,"Wintertemp")   
 
     @property
     def Kessel(self):
         return self.Kessel
-    
     
     @property
     def KesselSoll(self):
@@ -185,7 +209,7 @@ class data:
     @BrauchwasserSoll.setter
     def BrauchwasserSoll(self,value):
         # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"BrauchwasserSoll")  
+        self.writeitem(value,"BrauchwasserSoll")  
 
     @property
     def Innen(self):
@@ -214,7 +238,7 @@ class data:
     @Brenner_an.setter
     def Brenner_an(self,value):
         # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Brenner_an")
+        self.writeitem(value,"Brenner_an")
 
     @property
     def Hand_Dusche(self):
@@ -223,7 +247,7 @@ class data:
     @Hand_Dusche.setter
     def Hand_Dusche(self,value):
         # so hier muss das in die DB geschrieben werden
-        data.writeitem(value,"Hand_Dusche")
+        self.writeitem(value,"Hand_Dusche")
 
     @property
     def Brenner_Stoerung(self):

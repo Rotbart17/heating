@@ -61,7 +61,8 @@ V_Mode = False
 
 # Liste aller Threads, vielleicht kann man die ja noch brauchen
 ThreadList = [] 
-
+# TRUE bewirkt das stoppen aller Threads
+threadstop : bool = False
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden
 # Init der Anzeige Tabelle und der Steuerwerte
 
@@ -82,6 +83,12 @@ Wintertemp: float =17
 Kessel : float = 0
 KesselSoll : float = 0
 KesselMax : float = 90
+# Temperaturkonstanten für die Kesselkennlinie
+# um die Rangefunktion verwenden zu können ist jeder Wert mit 10 
+# multipliziert -30 bis 30Grad, Schrittweite 0,5 Grad
+KesselMinTemp : int = -300
+KesselMaxTemp : int = 300
+KesselTempStep : int = 5
 
 
 # Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
@@ -132,15 +139,16 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Pumpe_Brauchwasser_an text,           \
                                 Brenner_an text,           \
                                 Brenner_Stoerung text,           \
-                                Hand_Dusche text            \
+                                Hand_Dusche text,            \
+                                threadstop text  \
                             ); "
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                         id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,\
                         Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an,\
-                        Brenner_Stoerung, Hand_Dusche ) \
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                        Brenner_Stoerung, Hand_Dusche, threadstop ) \
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
 
 # Loginfo -> noch unklar
@@ -168,8 +176,8 @@ KesselKennlinie="((-1.2)*x)+56 + k"
 sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
 
 # Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
-tankdataset_x=[]
-tankdataset_y=[]
+KesselDaten_x=[]
+KesselDaten_y=[]
 
 # die Tabelle für die Zeitsteuerung heisst:----------
 ZeitSteuerung="ZeitSteuerung"

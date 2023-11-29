@@ -20,11 +20,10 @@ class sensor:
     waittime = 10
 
     # Thread zu Messung anhalten
-    threadstop = False
+    threadstop : bool = False
 
     # Sensortabelle die hier bearbeitet wird
-    tn : str
-    tn = ""
+    tn : str = ""
     
     # Thread Merk Variable, damit man den Thread später wieder anhalten kann
     # x 
