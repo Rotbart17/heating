@@ -43,8 +43,8 @@ class data:
     Kessel : float
     KesselSoll : float
     KesselMax : float
-    KesselDaten_x : float
-    KesselDaten_y : float
+    KesselDaten_x : list
+    KesselDaten_y : list
 
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur

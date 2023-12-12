@@ -202,7 +202,7 @@ def init_db_environment():
         #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
         data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
-            settings.Brauchwasser, settings.BrauchwasserSoll,  settings.Innen,  settings.Aussen,      str(settings.Pumpe_oben_an), \
+            settings.Brauchwasser, settings.BrauchwasserSoll,  settings.Innen,  settings.Aussen, str(settings.Pumpe_oben_an), \
             str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
             str(settings.Brenner_Stoerung), str(settings.Hand_Dusche), str(settings.threadstop) )
 
@@ -231,6 +231,5 @@ def init_db_environment():
 # noch offene Punkte ZZ
 # Loginfo
 # löscht Fehlerstatus
-tankdataset_x=[]
-tankdataset_y=[]
+
 

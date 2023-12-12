@@ -345,18 +345,24 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # ui.label('Kesselsteuerung')           
         # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
         # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-        api.get_tank_dataset_x()
-        api.get_tank_dataset_y()
-        fig = go.Figure(go.Scatter(y = settings.tankdataset_y, x=settings.tankdataset_x))
+
+        fig = go.Figure(go.Scatter(y = dv.KesselDaten_y, x=dv.KesselDaten_x))
         fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         ui.plotly(fig).classes('w-5/6')  
 
+# Initialisierung der Klasse und Laden der Daten 
+def init_gui_data():
+    global dv
+    dv=dt()
+    pass 
 
+def de_init_gui_data():
+    pass 
 
     
 
-app.on_connect(guidb.init_gui_data)
-app.on_disconnect(guidb.de_init_gui_data)
+app.on_connect(init_gui_data())
+app.on_disconnect(de_init_gui_data())
 
 
 # mal die ganzen Aktivitätskenzeichen zu Anfang löschen
