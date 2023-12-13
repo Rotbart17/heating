@@ -6,7 +6,7 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-from dataview import data as dt
+from dataview import data as data
 
 # import guidb
 # import api
@@ -353,10 +353,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 # Initialisierung der Klasse und Laden der Daten 
 def init_gui_data():
     global dv
-    dv=dt()
+    dv=data()
     pass 
 
+# ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
 def de_init_gui_data():
+
     pass 
 
     
