@@ -6,7 +6,7 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-from dataview import data as data
+from dataview import maindata
 
 # import guidb
 # import api
@@ -54,12 +54,6 @@ tage_r_dict={'Mo':1, 'Die':2, 'Mi':3, 'Do':4, 'Fr':5 , 'Sa':6, 'So':7, 'Mo-Fr':8
 typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
 typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 
-#
-# ZZ Hier ist noch Arbeit
-# Beim Initialisieren der GUI müssen alle globalen Werte aus der DB geholt werden
-# Alle Werte für die Tabelle müssen geholt werden und in die Tabelle gebracht werden
-#
-viewdata=dt()
 
 # Funktionen für... was not notwenig ist. Timer gesteuerter Abruf aus der DB!
 # get Startwerte und dann updates für Aussentemperatur,Innentemperatur, 
@@ -353,7 +347,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 # Initialisierung der Klasse und Laden der Daten 
 def init_gui_data():
     global dv
-    dv=data()
+    dv=maindata()
     pass 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.

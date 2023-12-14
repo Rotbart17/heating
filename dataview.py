@@ -17,17 +17,17 @@ import datetime
 
 ##### Start der Idee mit der Idee  der Dataclass
 @dataclass
-class data:
+class maindata:
 
     # damit man den thread stoppen kann
-    threadstop : bool | False
+    threadstop : bool = False
 
     #Wartezeit bevor die nächste Abfrage des WorkdataView durchgeführt wird
-    sleeptime : int | 5
+    sleeptime : int = 5
 
     # wenn daten geschrieben werden mit dem lesen warten, damit die Variable nicht
     # überschrieben wird
-    datawrite: bool | False
+    datawrite: bool = False
 
     # Defaults werden in settings.py festgelegt ind in dbinit.py als Tabelle angelegt 
     # und von den Werten gesetzt
@@ -41,8 +41,8 @@ class data:
     # KesselSoll ist die KesselSolltemperatur
     # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
     Kessel : float
-    KesselSoll : float
-    KesselMax : float
+    KesselSoll : float 
+    KesselMax : float =settings.KesselMax
     KesselDaten_x : list
     KesselDaten_y : list
 
@@ -103,7 +103,7 @@ class data:
             if self.datawrite==False:
                 self.viewloader()
                 logging.debug('WorkdataView Pollen')
-                asyncio.sleep(data.sleeptime)
+                asyncio.sleep(self.sleeptime)
             else:
                 asyncio.sleep(0.05)
 
