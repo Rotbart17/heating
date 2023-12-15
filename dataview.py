@@ -4,7 +4,7 @@
 # so zumindest die Idee!
 
 import settings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import asyncio
 import aiosqlite
 import logging
@@ -18,6 +18,14 @@ import datetime
 ##### Start der Idee mit der Idee  der Dataclass
 @dataclass
 class maindata:
+    # Erkenntnis zu dataclass: wenn man einen Defaultvalue für eine Variable vergibt muss man das für alle
+    # folgenden Variablen auch machen. Damit nehme ich nun die Werte, die ich in settings.py vergeben habe.
+    # Wenn ich die Variablen verwende, dann wird alles ungültig, wenn ich die anderen teile auch für die Datenklasse umbaue.
+    # Wenn ich nur die Werte verwende, habe ich sie an mehreren Orten :-( 
+    # Fast alle hier gesetzten Werte werden werden beim ersten Lesen aus der DB überschrieben. Damit ist es sowieso egal.
+    # Es bleibt aber nicht schön.
+    # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
+
 
     # damit man den thread stoppen kann
     threadstop : bool = False
@@ -34,40 +42,40 @@ class maindata:
     
     # Bei Winter == True haben wir Heizbetrieb
     # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
-    Winter : bool 
-    Wintertemp: float
+    _Winter : bool = True
+    _Wintertemp: float = 17
 
     # Kessel ist die aktuelle Kesseltemperatur
     # KesselSoll ist die KesselSolltemperatur
     # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
-    Kessel : float
-    KesselSoll : float 
-    KesselMax : float =settings.KesselMax
-    KesselDaten_x : list
-    KesselDaten_y : list
+    _Kessel : float = 0
+    _KesselSoll : float = 0
+    _KesselMax : float = 90
+    _KesselDaten_x : list = field(default_factory=list)
+    _KesselDaten_y : list = field(default_factory=list)
 
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
     # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
-    Brauchwasser : float
-    BrauchwasserSoll : float
-    BrauchwasserError : float
-    Pumpe_Brauchwasser_an : bool
-    Hand_Dusche : bool
+    _Brauchwasser : float = 0
+    _BrauchwasserSoll : float = 55
+    _BrauchwasserError : float = 70
+    _Pumpe_Brauchwasser_an : bool =False
+    _Hand_Dusche : bool = False
 
     # Innen ist die aktuelle Innentemperatur
-    Innen : float
+    _Innen : float = 0
     # Innen ist die aktuelle Aussentemperatur
-    Aussen : float
+    _Aussen : float = 0 
 
     # Signalisiert ob die Pumpen an /  aus sind
-    Pumpe_oben_an : bool 
-    Pumpe_unten_an : bool
+    _Pumpe_oben_an : bool = False
+    _Pumpe_unten_an : bool = False
 
     # Signalisiert ob der Brenner an ist und ob es eie Störung gibt
-    Brenner_an : bool
-    Brenner_Stoerung : bool
+    _Brenner_an : bool =False
+    _Brenner_Stoerung : bool = False
 
 
     
@@ -77,20 +85,20 @@ class maindata:
             sql= f"SELECT * from {settings.WorkDataView} WHERE id =1 ;"
             async with db.execute(sql) as cursor:
                 async for results in cursor:
-                    self.Winter=results[0][1]
-                    self.Wintertemp=results[0][2]
-                    self.Kessel=results[0][3]
-                    self.KesselSoll=results[0][4]
-                    self.Brauchwasser=results[0][5]
-                    self.BrauchwasserSoll=results[0][6]
-                    self.Innen=results[0][7]
-                    self.Aussen=results[0][8]
-                    self.Pumpe_oben_an=results[0][9]
-                    self.Pumpe_unten_an=results[0][10]
-                    self.Pumpe_Brauchwasser_an=results[0][11]
-                    self.Brenner_an=results[0][12]
-                    self.Brenner_Stoerung=results[0][13]
-                    self.Hand_Dusche=results[0][14]
+                    self._Winter=results[0][1]
+                    self._Wintertemp=results[0][2]
+                    self._Kessel=results[0][3]
+                    self._KesselSoll=results[0][4]
+                    self._Brauchwasser=results[0][5]
+                    self._BrauchwasserSoll=results[0][6]
+                    self._Innen=results[0][7]
+                    self._Aussen=results[0][8]
+                    self._Pumpe_oben_an=results[0][9]
+                    self._Pumpe_unten_an=results[0][10]
+                    self._Pumpe_Brauchwasser_an=results[0][11]
+                    self._Brenner_an=results[0][12]
+                    self._Brenner_Stoerung=results[0][13]
+                    self._Hand_Dusche=results[0][14]
                     self.threadstop=results[0][15]
 
 
@@ -113,11 +121,11 @@ class maindata:
             logging.debug('Kesselkennlinie lesen!')
             sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
             async with db.execute(sql) as cursor:
-                self.KesselDaten_x=await cursor.fetchall()
+                self._KesselDaten_x=await cursor.fetchall()
 
             sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
             async with db.execute(sql) as cursor:
-                self.KesselDaten_y=await cursor.fetchall()
+                self._KesselDaten_y=await cursor.fetchall()
 
     # Speichern der Kesselkennlinie
     # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
@@ -179,11 +187,11 @@ class maindata:
     # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
     @property
     def Winter(self):
-        return self.Winter
+        return self._Winter
     
     @property
     def Wintertemp(self):
-        return self.Wintertemp
+        return self._Wintertemp
     
     @Wintertemp.setter
     def Wintertemp(self,value):
@@ -192,19 +200,19 @@ class maindata:
 
     @property
     def Kessel(self):
-        return self.Kessel
+        return self._Kessel
     
     @property
     def KesselSoll(self):
-        return self.KesselSoll
+        return self._KesselSoll
     
     @property
     def Brauchwasser(self):
-        return self.Brauchwasser
+        return self._Brauchwasser
 
     @property
     def BrauchwasserSoll(self):
-        return self.BrauchwasserSoll
+        return self._BrauchwasserSoll
     
     @BrauchwasserSoll.setter
     def BrauchwasserSoll(self,value):
@@ -213,27 +221,27 @@ class maindata:
 
     @property
     def Innen(self):
-        return self.Innen
+        return self._Innen
     
     @property
     def Aussen(self):
-        return self.Aussen
+        return self._Aussen
    
     @property
     def Pumpe_oben_an(self):
-        return self.Pumpe_oben_an
+        return self._Pumpe_oben_an
 
     @property
     def Pumpe_unten_an(self):
-        return self.Pumpe_unten_an
+        return self._Pumpe_unten_an
 
     @property
     def Pumpe_Brauchwasser_an(self):
-        return self.Pumpe_Brauchwasser_an
+        return self._Pumpe_Brauchwasser_an
     
     @property
     def Brenner_an(self):
-        return self.Brenner_an
+        return self._Brenner_an
     
     @Brenner_an.setter
     def Brenner_an(self,value):
@@ -242,7 +250,7 @@ class maindata:
 
     @property
     def Hand_Dusche(self):
-        return self.Hand_Dusche
+        return self._Hand_Dusche
     
     @Hand_Dusche.setter
     def Hand_Dusche(self,value):
@@ -251,6 +259,6 @@ class maindata:
 
     @property
     def Brenner_Stoerung(self):
-        return self.Brenner_Stoerung
+        return self._Brenner_Stoerung
     
     

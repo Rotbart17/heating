@@ -6,7 +6,8 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-from dataview import maindata
+from dataview import maindata as maindata
+#import dataview
 
 # import guidb
 # import api
@@ -58,6 +59,19 @@ typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 # Funktionen für... was not notwenig ist. Timer gesteuerter Abruf aus der DB!
 # get Startwerte und dann updates für Aussentemperatur,Innentemperatur, 
 #     Kesseltemperatur, Brauchwasser, Brennerstörung, Pumpen: oben, unten, Brauchwasser
+
+# Initialisierung der Klasse und Laden der Daten 
+datav=maindata()
+
+def init_gui_data():
+    global datav
+    datav=maindata()
+
+
+# ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
+def de_init_gui_data():
+    pass 
+
 
 
 
@@ -139,7 +153,7 @@ def set_pumpe_unten_spin():
 
 # hier werden 2 TABs definiert (Information / Einstellungen)
 with ui.tab_panels(tabs, value=information).classes('w-full'):
-
+    
     # Erster Reiter ------------------
     with ui.tab_panel(information):
         with ui.grid(columns=2, rows=2):
@@ -339,21 +353,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # ui.label('Kesselsteuerung')           
         # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
         # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-
-        fig = go.Figure(go.Scatter(y = dv.KesselDaten_y, x=dv.KesselDaten_x))
+        
+        fig = go.Figure(go.Scatter(y = datav.KesselDaten_y, x=datav.KesselDaten_x))
         fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         ui.plotly(fig).classes('w-5/6')  
 
-# Initialisierung der Klasse und Laden der Daten 
-def init_gui_data():
-    global dv
-    dv=maindata()
-    pass 
 
-# ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
-def de_init_gui_data():
-
-    pass 
 
     
 

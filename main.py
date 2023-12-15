@@ -21,7 +21,7 @@ def main():
     time.sleep(30)
     sensors.sensor.threadstop=True
     print("ich bin echt neugierig!")
-    time.sleep(200)
+    time.sleep(10)
 
     # Ende Funktionen
     # Threads wieder einsammeln

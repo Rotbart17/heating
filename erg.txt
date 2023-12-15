@@ -1,0 +1,5 @@
+anyio
+setuptools
+SQLAlchemy
+starlette
+uvicorn

@@ -56,8 +56,6 @@ def close_connection(conn):
 #                                        ); "
 #   create_table(tablename, sql_create_sensor_table_p1,sql_create_sensor_table_p2)
 
-
-
 # Tabelle anlegen wenn sie noch nicht existiert
 def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
 
@@ -181,9 +179,6 @@ def checktable(tablename):
             
     return (erg)    
     
-
-
-
 
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():

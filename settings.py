@@ -73,11 +73,11 @@ threadstop : bool = False
 # Wintertemp wird nur von der GUI verändert
 
 Winter : bool = True
-Wintertemp: float =17
+Wintertemp: float = 17
 
 # Kessel ist die aktuelle Kesseltemperatur, kommt vom Sensor, wird nur gelesen
 # KesselSoll ist die KesselSolltemperatur, wird mit der Kurve ermittelt. Kurve wird in der Gui angepasst
-# die ktuelle KesselSoll wird nur angezeigt und im Regelkreis gesetzt
+# die aktuelle KesselSoll wird nur angezeigt und im Regelkreis gesetzt
 # und nur von dort verändert.
 # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird. Fixwert hier im Programm, wird nur gelesen
 Kessel : float = 0

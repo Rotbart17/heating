@@ -76,8 +76,8 @@ class sensor:
         logging.debug('fSensor {self.tn} stoppen')
         self.threadstop = True
         # wait for Thread to end
+        self.conn.close()
         self.x.join()
-        sensor.conn.close()
         logging.info("Sensorobjekt " + self.tn + " gelöscht.")
         
 
