@@ -6,7 +6,9 @@
 import settings
 from dataclasses import dataclass, field
 import asyncio
+# from sqlite3 import Error
 import aiosqlite
+from aiosqlite import Error
 import logging
 from dbinit import checktable
 import threading
@@ -42,7 +44,7 @@ class maindata:
     
     # Bei Winter == True haben wir Heizbetrieb
     # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
-    _Winter : bool = True
+    _Winter : bool = False
     _Wintertemp: float = 17
 
     # Kessel ist die aktuelle Kesseltemperatur
@@ -53,7 +55,7 @@ class maindata:
     _KesselMax : float = 90
     _KesselDaten_x : list = field(default_factory=list)
     _KesselDaten_y : list = field(default_factory=list)
-
+  
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
@@ -78,29 +80,44 @@ class maindata:
     _Brenner_Stoerung : bool = False
 
 
+# db = await aiosqlite.connect(...)
+# cursor = await db.execute('SELECT * FROM some_table')
+#row = await cursor.fetchone()
+#rows = await cursor.fetchall()
+#await cursor.close()
+# await db.close()
+
     
     # lädt die Daten aus der Datenbank in die Variablen
-    async def viewloader(self):
-        async with aiosqlite.connect(settings.DBPATH) as db:
-            sql= f"SELECT * from {settings.WorkDataView} WHERE id =1 ;"
-            async with db.execute(sql) as cursor:
-                async for results in cursor:
-                    self._Winter=results[0][1]
-                    self._Wintertemp=results[0][2]
-                    self._Kessel=results[0][3]
-                    self._KesselSoll=results[0][4]
-                    self._Brauchwasser=results[0][5]
-                    self._BrauchwasserSoll=results[0][6]
-                    self._Innen=results[0][7]
-                    self._Aussen=results[0][8]
-                    self._Pumpe_oben_an=results[0][9]
-                    self._Pumpe_unten_an=results[0][10]
-                    self._Pumpe_Brauchwasser_an=results[0][11]
-                    self._Brenner_an=results[0][12]
-                    self._Brenner_Stoerung=results[0][13]
-                    self._Hand_Dusche=results[0][14]
-                    self.threadstop=results[0][15]
-
+    def viewloader(self):
+        try:    
+            db = aiosqlite.connect(settings.DBPATH)
+        except Error as e:
+            logging.error('Die Datenbank konnte nicht geöffnet werden. Programm wird beendet. {e}')
+            exit(1)
+        try:    
+            sql= f"SELECT * from {settings.WorkDataView} WHERE id=1;"
+            cursor = db.execute(sql)
+            results = cursor.fetchone()
+            self._Winter=results[0][1]
+            self._Wintertemp=results[0][2]
+            self._Kessel=results[0][3]
+            self._KesselSoll=results[0][4]
+            self._Brauchwasser=results[0][5]
+            self._BrauchwasserSoll=results[0][6]
+            self._Innen=results[0][7]
+            self._Aussen=results[0][8]
+            self._Pumpe_oben_an=results[0][9]
+            self._Pumpe_unten_an=results[0][10]
+            self._Pumpe_Brauchwasser_an=results[0][11]
+            self._Brenner_an=results[0][12]
+            self._Brenner_Stoerung=results[0][13]
+            self._Hand_Dusche=results[0][14]
+            self.threadstop=results[0][15]
+            cursor.close()
+        except KeyError:
+            logging.error('Die Datenbank konnte nicht abgefragt werden. Programm wird beendet')
+            exit(1)
 
     # hier wird regelmäßig die DB abgefragt, damit immer frische Werte vorhanden sind
     # aber wenn gerade geschrieben wird, dann wird eine 1/50 sec gewartet. Vielleicht noch ein wenig viel.
@@ -182,9 +199,10 @@ class maindata:
             self.writeitem=False
 
 
-    # für jede Variable eine "Setter"-funktion.
+    # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
     # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
     # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
+
     @property
     def Winter(self):
         return self._Winter
@@ -255,10 +273,29 @@ class maindata:
     @Hand_Dusche.setter
     def Hand_Dusche(self,value):
         # so hier muss das in die DB geschrieben werden
+        self._Hand_Dusche=value
         self.writeitem(value,"Hand_Dusche")
 
     @property
     def Brenner_Stoerung(self):
         return self._Brenner_Stoerung
     
+    @property
+    def KesselDaten_x(self):
+        return self._KesselDaten_x
     
+    @KesselDaten_x.setter
+    def KesselDaten_x(self,value):
+        self._KesselDaten_x=value
+        # so hier muss das in die DB geschrieben werden
+        self.writeitem(value,"KesselDaten_x)")
+    
+    @property
+    def KesselDaten_y(self):
+        return self._KesselDaten_y
+    
+    @KesselDaten_y.setter
+    def KesselDaten_y(self,value):
+        self._KesselDaten_y=value
+        # so hier muss das in die DB geschrieben werden
+        self.writeitem(value,"KesselDaten_y)")        

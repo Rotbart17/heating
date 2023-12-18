@@ -350,17 +350,16 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 
     # Dritter Reiter ------------------            
     with ui.tab_panel(kesselsteuerung):
-        # ui.label('Kesselsteuerung')           
+        ui.label('Kesselsteuerung')           
         # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
         # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
         
         fig = go.Figure(go.Scatter(y = datav.KesselDaten_y, x=datav.KesselDaten_x))
         fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
         ui.plotly(fig).classes('w-5/6')  
+        
 
 
-
-    
 
 app.on_connect(init_gui_data())
 app.on_disconnect(de_init_gui_data())
