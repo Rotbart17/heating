@@ -143,10 +143,10 @@ def drop_db(conn):
 def init_Kesselvalues(name):
     k=0
     # alles mal 10, damit man range() mit int verwenden kann.
-    # die Kennlinie geht von -30 bis 30 Grad Schrit 0.5
+    # die Kennlinie geht von -30 bis 30 Grad Schritt 0.5
     for i in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
         x= float(i/10)
-        y=eval(settings.KesselKennlinie)
+        y=round(eval(settings.KesselKennlinie),1)
         # die Daten müssen nun in die Datenbank
         data=(x,y)
         sql = settings.sql_init_Kesselkennlinie

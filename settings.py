@@ -85,7 +85,8 @@ KesselSoll : float = 0
 KesselMax : float = 90
 # Temperaturkonstanten für die Kesselkennlinie
 # um die Rangefunktion verwenden zu können ist jeder Wert mit 10 
-# multipliziert -30 bis 30Grad, Schrittweite 0,5 Grad
+# multipliziert -30 bis 30Grad, Schrittweite 0,5 Grad (Faktor 10 um normale Schleifen 
+# zu verwenden)
 KesselMinTemp : int = -300
 KesselMaxTemp : int = 300
 KesselTempStep : int = 5
@@ -174,6 +175,8 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 # GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
 KesselKennlinie="((-1.2)*x)+56 + k"
 sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
+sql_write_KesselKennlinie_x = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x) VALUES(?);"
+sql_write_KesselKennlinie_y = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_y) VALUES(?);"
 
 # Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
 KesselDaten_x=[]

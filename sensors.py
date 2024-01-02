@@ -73,7 +73,7 @@ class sensor:
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
-        logging.debug('fSensor {self.tn} stoppen')
+        logging.debug(f'Sensor {self.tn} stoppen')
         self.threadstop = True
         # wait for Thread to end
         self.conn.close()

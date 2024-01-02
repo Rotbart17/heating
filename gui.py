@@ -61,11 +61,13 @@ typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 #     Kesseltemperatur, Brauchwasser, Brennerstörung, Pumpen: oben, unten, Brauchwasser
 
 # Initialisierung der Klasse und Laden der Daten 
-datav=maindata()
+datav = maindata()
+
 
 def init_gui_data():
-    global datav
-    datav=maindata()
+   pass
+   # global datav
+   # datav=maindata()
 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
@@ -350,13 +352,24 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 
     # Dritter Reiter ------------------            
     with ui.tab_panel(kesselsteuerung):
-        # ui.label('Kesselsteuerung')           
-        # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-        # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-        
-        fig = go.Figure(go.Scatter(y = datav.KesselDaten_y, x=datav.KesselDaten_x))
-        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-        ui.plotly(fig).classes('w-5/6')  
+        ui.label('Kesselsteuerung')           
+        fig = {
+            'data': [
+                {
+                    'type': 'scatter',
+                    'name': 'Kessel',
+                    'x': datav.KesselDaten_x,
+                    'y': datav.KesselDaten_y,
+                },          
+            ],
+            'layout': {
+                'margin': {'l': 20, 'r': 20, 't': 20, 'b': 20},
+                'plot_bgcolor': '#E5ECF6',
+                'xaxis': {'gridcolor': 'white'},
+                'yaxis': {'gridcolor': 'white'},
+            },
+        }
+        ui.plotly(fig).classes('w-full h-40')  
 
 
 
