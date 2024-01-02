@@ -6,7 +6,6 @@
 import settings
 from dataclasses import dataclass, field
 import asyncio
-# from sqlite3 import Error
 import aiosqlite
 from aiosqlite import Error
 import logging
