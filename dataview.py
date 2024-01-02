@@ -6,7 +6,9 @@
 import settings
 from dataclasses import dataclass, field
 import asyncio
+# from sqlite3 import Error
 import aiosqlite
+from aiosqlite import Error
 import logging
 from dbinit import checktable
 import threading
@@ -54,7 +56,7 @@ class maindata:
     
     # Bei Winter == True haben wir Heizbetrieb
     # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
-    _Winter : bool = True
+    _Winter : bool = False
     _Wintertemp: float = 17
 
     # Kessel ist die aktuelle Kesseltemperatur
@@ -65,7 +67,7 @@ class maindata:
     _KesselMax : float = 90
     _KesselDaten_x : list = field(default_factory=list)
     _KesselDaten_y : list = field(default_factory=list)
-
+  
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
@@ -89,6 +91,13 @@ class maindata:
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
+
+# db = await aiosqlite.connect(...)
+# cursor = await db.execute('SELECT * FROM some_table')
+#row = await cursor.fetchone()
+#rows = await cursor.fetchall()
+#await cursor.close()
+# await db.close()
 
     
     # lädt die Daten aus der Datenbank in die klasseninternen Variablen
@@ -223,9 +232,10 @@ class maindata:
             self.writeitem=False
 
 
-    # für jede Variable eine "Setter"-funktion.
+    # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
     # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
     # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
+
     @property
     def Winter(self):
         return self._Winter
