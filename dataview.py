@@ -164,6 +164,7 @@ class maindata:
 
     # Speichern der Kesselkennlinie
     # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
+    # aber eigentlich muss man die x-Anteile nie schreiben die sind ja fix.
     async def writeKesselDaten_x(self,value):
         self._KesselDaten_x=value.copy()
         try:
@@ -172,7 +173,7 @@ class maindata:
                 sql= settings.sql_write_KesselKennlinie_x
                 i=0
                 for _ in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
-                    await db.execute(sql,self.KesselDaten_x[i])
+                    await db.execute(sql,self._KesselDaten_x[i])
                     i+=1
         except aiosqlite.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_x aufgetreten")
@@ -183,12 +184,12 @@ class maindata:
     async def writeKesselDaten_y(self,value):
         self._KesselDaten_y=value.copy()
         try:
-            async with aiosqlite.connect(settings.DBPATH) as db:
+            with aiosqlite.connect(settings.DBPATH) as db:
                 logging.debug('Kesselkennline in DB schreiben!')
                 sql= settings.sql_write_KesselKennlinie_y
                 i=0
                 for _ in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
-                    await db.execute(sql,self.KesselDaten_y[i])
+                    await db.execute(sql,self._KesselDaten_y[i])
                     i+=1
         except aiosqlite.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
@@ -213,7 +214,7 @@ class maindata:
     
         # starten der Threads für das periodische Update der Werte oder Initialisierung
         dummy=0    
-        self.x = threading.Thread(target=self.dbpolling, name="Thread-GUI-DB-Abfrage", args=(dummy,))
+        self.x = threading.Thread(target=self.dbpolling, name="Th-GUIDB-Abfr", args=(dummy,))
         logging.info('Starte DB-Abfrage Thread!')
         settings.ThreadList.append(self.x)
         self.x.start()
@@ -296,7 +297,7 @@ class maindata:
     @Brenner_an.setter
     def Brenner_an(self,value):
         # so hier muss das in die DB geschrieben werden
-        asyncio.run(self.writeitem(value,"Brenner_an"))
+        self.writeitem(value,"Brenner_an")
 
     @property
     def Hand_Dusche(self):
@@ -305,7 +306,7 @@ class maindata:
     @Hand_Dusche.setter
     def Hand_Dusche(self,value):
         # so hier muss das in die DB geschrieben werden
-        asyncio.run(self.writeitem(value,"Hand_Dusche"))
+        self.writeitem(value,"Hand_Dusche")
 
     @property
     def Brenner_Stoerung(self):
@@ -315,9 +316,9 @@ class maindata:
     def KesselDaten_x(self):
         return self._KesselDaten_x
     
-    @KesselDaten_x.setter
-    def KesselDaten_x(self,value):
-        asyncio.run(self.writeKesselDaten_x(value))
+    # @KesselDaten_x.setter
+    # def KesselDaten_x(self,value):
+    #    self.writeKesselDaten_x(value)
 
     @property
     def KesselDaten_y(self):
@@ -325,4 +326,4 @@ class maindata:
     
     @KesselDaten_y.setter
     def KesselDaten_y(self,value):
-        asyncio.run(self.writeKesselDaten_y(value))
+        self.writeKesselDaten_y(value)

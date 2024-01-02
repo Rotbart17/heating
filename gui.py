@@ -7,13 +7,21 @@ import time
 from datetime import datetime
 import settings
 from dataview import maindata as maindata
-#import dataview
+import logging
 
 # import guidb
 # import api
 # from databases import Database
 
-# globale Variablen un Funktionen für den 2 Reiter "Einstellungen
+# Muster für logging
+# logging.debug('debug')
+# logging.info('info')
+# logging.warning('warning')
+# logging.error('error')
+# logging.critical('critical')
+
+
+# globale Variablen und Funktionen für die 3 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
 
 rows = []  # leeres Feld für die Zeilen der Tabelle
@@ -63,11 +71,22 @@ typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 # Initialisierung der Klasse und Laden der Daten 
 datav = maindata()
 
+# Kesseldatenanpassungsvariablen
+# Grad von, Grad bis, Gradanpassung
+gradv : float= 0
+gradb : float= 0
+gradanpass : float= 0
 
 def init_gui_data():
    pass
    # global datav
    # datav=maindata()
+   logging.basicConfig(
+       filename='gui.log',
+       filemode='w',
+       format='%(asctime)s %(levelname)s: %(message)s',
+       level=logging.INFO
+       )
 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
@@ -152,8 +171,8 @@ def set_pumpe_unten_spin():
     else: 
         pumpe_unten.set_visibility(False)
 
-
-# hier werden 2 TABs definiert (Information / Einstellungen)
+#---------------------------------------------------------------------------------------------------------
+# hier werden 3 TABs definiert (Information / Einstellungen / Kesselsteuerung )
 with ui.tab_panels(tabs, value=information).classes('w-full'):
     
     # Erster Reiter ------------------
@@ -187,7 +206,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 pumpe_oben=ui.spinner(size='sm')
                 ui.label('H-Pumpe unten').classes('text-base ml-2')
                 pumpe_unten=ui.spinner(size='sm')
-           
+
+    #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
     with ui.tab_panel(einstellungen):
         with ui.splitter(value=70)  as splitter:
@@ -267,6 +287,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                         bis=value
                         # ui.notify(bis)   
                     return(erg)
+                
 
                 # Definition des Dialog für das Hinzufügen von Werten
                 with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
@@ -349,8 +370,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2')
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
                           on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')
-                
-    # Dritter Reiter ------------------            
+    #---------------------------------------------------------------------------------------------------------            
+    # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
         ui.label('Kesselsteuerung')           
         fig = {
@@ -369,7 +390,83 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 'yaxis': {'gridcolor': 'white'},
             },
         }
-        ui.plotly(fig).classes('w-full h-40')  
+        plot= ui.plotly(fig).classes('w-full h-40')  
+        # jetzt braucht es noch Knöpfe und Funktionen um die Kurve zu verändern
+        # "von Grad", "bis Grad", "Yeränderung" -> 3Knöpfe
+        # alle in einer Zeile
+        def gradvon(value):
+            global gradv
+            gradv=value
+            # ui.notify(gradv) 
+          
+            
+        # Die eingegebene Temperatur liegt im Bereich von -30 und 30 Grad
+        # Die Temperatur muss größer sein als die "von Temperatur"
+        def gradbis(value):
+            global gradb
+            gradb=value
+            # ui.notify(gradb) 
+            
+
+        def gradanpassen(value):
+            global gradanpass
+            gradanpass=value
+            # ui.notify(gradanpass) 
+            
+            
+        # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an  
+        def anpassen():
+            # es muss ja was zu tun sein
+            if gradanpass != 0:
+                # Startindex suchen
+                startidx =0
+                stopidx =0
+                i=0
+                ii=settings.KesselMinTemp
+                while  ii <= settings.KesselMaxTemp:
+                    if datav.KesselDaten_x[i]<gradv: 
+                        i+=1
+                    else:
+                        # Startindex gefunden
+                        startidx=i
+                        break
+                    ii+= settings.KesselTempStep
+
+                # Stopindex suchen
+                while ii <= settings.KesselMaxTemp:
+                    if datav.KesselDaten_x[i]<gradb: 
+                        i+=1
+                    else:
+                        # Stopindex gefunden
+                        stopidx = i
+                        break
+                    ii+= settings.KesselTempStep
+
+                # So jetzt sollten Anfang und Ende festliegen
+                # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
+                ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}") 
+                if startidx<=stopidx:
+                    # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
+                    # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
+                    templist=datav.KesselDaten_y.copy()
+                    i=startidx
+                    while i<=stopidx:
+                        templist[i]+=gradanpass
+                        i+=1
+                    datav.KesselDaten_y=templist.copy()
+                else:
+                    logging.error(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
+                    exit(1)
+        # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
+        with ui.row():
+            ui.number(label='Grad von',  value='0', step='0.2', min='-30.0',max='30.0',
+                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-20 mr-4')
+            ui.number(label='Grad bis',  value='0', step='0.2',  min='-30.0',max='30.0',
+                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-20 mr-4')
+            ui.number(label='Anpassen um',value='0', step='0.2', min='-90.0',max='90.0',
+                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-20 mr-4')
+            ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
+            plot.update()
 
 
 
