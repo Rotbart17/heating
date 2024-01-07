@@ -325,5 +325,10 @@ class maindata:
         return self._KesselDaten_y
     
     @KesselDaten_y.setter
-    def KesselDaten_y(self,value):
-        self.writeKesselDaten_y(value)
+    async def KesselDaten_y(self,value):
+        kesseltmp=asyncio.create_task(self.writeKesselDaten_y(value))
+        await kesseltmp
+
+
+   
+datav=maindata()

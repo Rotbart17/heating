@@ -6,12 +6,9 @@ from nicegui import ui, app
 import time
 from datetime import datetime
 import settings
-from dataview import maindata as maindata
+from dataview import datav as datav
 import logging
 
-# import guidb
-# import api
-# from databases import Database
 
 # Muster für logging
 # logging.debug('debug')
@@ -69,7 +66,7 @@ typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 #     Kesseltemperatur, Brauchwasser, Brennerstörung, Pumpen: oben, unten, Brauchwasser
 
 # Initialisierung der Klasse und Laden der Daten 
-datav = maindata()
+# datav =None
 
 # Kesseldatenanpassungsvariablen
 # Grad von, Grad bis, Gradanpassung
@@ -78,7 +75,6 @@ gradb : float= 0
 gradanpass : float= 0
 
 def init_gui_data():
-   pass
    # global datav
    # datav=maindata()
    logging.basicConfig(
@@ -93,7 +89,12 @@ def init_gui_data():
 def de_init_gui_data():
     pass 
 
-
+    
+# Das hier soll beim Start die DataClass initialisieren
+# Irgendwie durchlaüft nicegui das Programm mehrfach und dann werden zu viele Threads gestartet.
+            
+app.on_startup(lambda: init_gui_data())
+app.on_shutdown(lambda: de_init_gui_data())
 
 
 # ------------------
@@ -470,10 +471,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
 
 
-    
 
-app.on_connect(init_gui_data())
-app.on_disconnect(de_init_gui_data())
 
 
 # mal die ganzen Aktivitätskenzeichen zu Anfang löschen
