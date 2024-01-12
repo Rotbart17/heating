@@ -18,10 +18,10 @@ def main():
     iss= sensors.sensor("Innensensor")
     print("Nix war los")
     print("schauen wir Mal ob das mit dem Thread nun funktioniert")
-    time.sleep(30)
+    time.sleep(5)
     sensors.sensor.threadstop=True
     print("ich bin echt neugierig!")
-    time.sleep(10)
+    time.sleep(5)
 
     # Ende Funktionen
     # Threads wieder einsammeln

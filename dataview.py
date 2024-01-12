@@ -5,13 +5,14 @@
 
 import settings
 from dataclasses import dataclass, field
-import asyncio
-import aiosqlite
+# import asyncio
+# import aiosqlite
 from aiosqlite import Error
 import logging
 from dbinit import checktable
 import threading
-import datetime
+import time
+import sqlite3
 
 # Muster für logging
 # logging.debug('debug')
@@ -24,9 +25,11 @@ logging.basicConfig(
     filename='gui.log',
     filemode='w',
     format='%(asctime)s %(levelname)s: %(message)s',
-    level=logging.INFO
+    level=logging.ERROR
 )
 
+def str2bool(value):
+    return {"True": True, "true": True}.get(value, False)
 
 ##### Start der Idee mit der Idee  der Dataclass
 @dataclass
@@ -90,38 +93,32 @@ class maindata:
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
-
-# db = await aiosqlite.connect(...)
-# cursor = await db.execute('SELECT * FROM some_table')
-#row = await cursor.fetchone()
-#rows = await cursor.fetchall()
-#await cursor.close()
-# await db.close()
-
-    
-    # lädt die Daten aus der Datenbank in die klasseninternen Variablen
-    async def viewloader(self):
+     # lädt die Daten aus der Datenbank in die klasseninternen Variablen
+    def viewloader(self):
         try:
-            async with aiosqlite.connect(settings.DBPATH) as db:
+            with sqlite3.connect(settings.DBPATH) as db:
+                cursor=db.cursor()
                 sql= f"SELECT * from {settings.WorkDataView} WHERE id =1 ;"
-                async with db.execute(sql) as cursor:
-                    async for results in cursor:
-                        self._Winter=results[1]
-                        self._Wintertemp=results[2]
-                        self._Kessel=results[3]
-                        self._KesselSoll=results[4]
-                        self._Brauchwasser=results[5]
-                        self._BrauchwasserSoll=results[6]
-                        self._Innen=results[7]
-                        self._Aussen=results[8]
-                        self._Pumpe_oben_an=results[9]
-                        self._Pumpe_unten_an=results[10]
-                        self._Pumpe_Brauchwasser_an=results[11]
-                        self._Brenner_an=results[12]
-                        self._Brenner_Stoerung=results[13]
-                        self._Hand_Dusche=results[14]
-                        self.threadstop=results[15]
-        except aiosqlite.Error as e:
+                cursor.execute(sql)
+                results=cursor.fetchone()
+                self._Winter=str2bool(results[1])
+                self._Wintertemp=results[2]
+                self._Kessel=results[3]
+                self._KesselSoll=results[4]
+                self._Brauchwasser=results[5]
+                self._BrauchwasserSoll=results[6]
+                self._Innen=results[7]
+                self._Aussen=results[8]
+                self._Pumpe_oben_an=str2bool(results[9])
+                self._Pumpe_unten_an=str2bool(results[10])
+                self._Pumpe_Brauchwasser_an=str2bool(results[11])
+                self._Brenner_an=str2bool(results[12])
+                self._Brenner_Stoerung=str2bool(results[13])
+                self._Hand_Dusche=str2bool(results[14])
+                self.threadstop=str2bool(results[15])
+            cursor.close()
+            db.close()
+        except sqlite3.Error as e:
             logging.error(f"Error {e} ist aufgetreten")
             exit(1)
 
@@ -137,27 +134,27 @@ class maindata:
             if self.datawrite==False:
                 self.viewloader()
                 logging.debug('WorkdataView Pollen')
-                asyncio.sleep(self.sleeptime)
+                time.sleep(self.sleeptime)
             else:
-                asyncio.sleep(0.05)
+                time.sleep(0.05)
 
     # Laden der Kesselkennlinie
-    async def kesseldataload(self):
+    def kesseldataload(self):
         try:
-            async with aiosqlite.connect(settings.DBPATH) as db:
+            with sqlite3.connect(settings.DBPATH) as db:
                 logging.debug('Kesselkennlinie lesen!')
+                cursor=db.cursor()
                 sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
-                async with db.execute(sql) as cursor:
-                    # self._KesselDaten_x=await cursor.fetchall()
-                    t=await cursor.fetchall()
-                    self._KesselDaten_x=[item[0] for item in t]
+                cursor.execute(sql)
+                t=cursor.fetchall()
+                self._KesselDaten_x=[item[0] for item in t]
                 sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
-                async with db.execute(sql) as cursor:
-                    # self._KesselDaten_y=await cursor.fetchall()
-                    t=await cursor.fetchall()
-                    self._KesselDaten_y=[item[0] for item in t]
-
-        except aiosqlite.Error as e:
+                cursor.execute(sql)
+                t=cursor.fetchall()
+                cursor.close()
+                self._KesselDaten_y=[item[0] for item in t]
+            db.close()
+        except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Kesselkennlinie aufgetreten")
             exit(1)
     
@@ -165,37 +162,45 @@ class maindata:
     # Speichern der Kesselkennlinie
     # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
     # aber eigentlich muss man die x-Anteile nie schreiben die sind ja fix.
-    async def writeKesselDaten_x(self,value):
+    def writeKesselDaten_x(self,value):
         self._KesselDaten_x=value.copy()
         try:
-            async with aiosqlite.connect(settings.DBPATH) as db:
+            with sqlite3.connect(settings.DBPATH) as db:
                 logging.debug('Kesselkennline in DB schreiben!')
+                cursor=db.cursor()
                 sql= settings.sql_write_KesselKennlinie_x
                 i=0
                 for _ in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
-                    await db.execute(sql,self._KesselDaten_x[i])
+                    t=(i,self._KesselDaten_x[i])
+                    cursor.execute(sql,t)
                     i+=1
-        except aiosqlite.Error as e:
+                cursor.close()
+            db.close()
+        except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_x aufgetreten")
             exit(1)
+          
 
-    # Speichern der Kesselkennlinie
-    # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
-    async def writeKesselDaten_y(self,value):
+    def writeKesselDaten_y(self,value):
         self._KesselDaten_y=value.copy()
         try:
-            with aiosqlite.connect(settings.DBPATH) as db:
-                logging.debug('Kesselkennline in DB schreiben!')
-                sql= settings.sql_write_KesselKennlinie_y
-                i=0
-                for _ in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
-                    await db.execute(sql,self._KesselDaten_y[i])
-                    i+=1
-        except aiosqlite.Error as e:
+            db=sqlite3.connect(settings.DBPATH)
+            logging.debug('Kesselkennline in DB schreiben!')
+            cursor=db.cursor()
+            sql= settings.sql_write_KesselKennlinie_y
+            i=1
+            for _ in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
+                t=(self._KesselDaten_y[i-1],i)
+                cursor.execute(sql,t)
+                
+                i+=1
+            db.commit()
+            cursor.close()
+            db.close()
+
+        except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
             exit(1)
-            
-
     
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
     # da die GUI immer nach dem DB Modul gestartet wird, müssen 
@@ -208,13 +213,18 @@ class maindata:
         # jetzt die Daten zum ersten Mal aus der DB laden
         # Laden der historischen=letzten Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
         # die Defaults werden dabei überschrieben.
-        asyncio.run(self.viewloader())
+        self.viewloader()
+        
         # Laden der Kesselkennlinie
-        asyncio.run(self.kesseldataload())
+        self.kesseldataload()
     
         # starten der Threads für das periodische Update der Werte oder Initialisierung
+        # ZZ brauche noch einen Ort an dem ich den Thread wieder einfange!
+        # vielleicht beim löschen der Klasse?
         dummy=0    
-        self.x = threading.Thread(target=self.dbpolling, name="Th-GUIDB-Abfr", args=(dummy,))
+        global x
+        self.x = threading.Thread(target=self.dbpolling, name="Thread-GUIDB-Abfrage", args=(dummy,))
+        
         logging.info('Starte DB-Abfrage Thread!')
         settings.ThreadList.append(self.x)
         self.x.start()
@@ -223,14 +233,30 @@ class maindata:
      
 
     # scheibt jeden Wert einzeln in die DB
-    async def writeitem(self,value,name):
-        async with aiosqlite.connect(settings.DBPATH) as db:
-            sql= f"INSERT OR REPLACE INTO {settings.WorkDataView} (id,{name}) VALUES (1,{value});"
+    def writeitem(self,value,name):
+        try:
+            db=sqlite3.connect(settings.DBPATH)
+            cursor=db.cursor()
+            t=(name,value)
+            sql= settings.write_Workdataview_value
             self.writeitem=True
-            async with db.execute(sql):
-                pass
+            cursor.execute(sql,t)
             self.writeitem=False
+            cursor.commit()
+            cursor.close()
+            db.close()
+        except sqlite3.Error as e:
+            logging.error(f"Der Fehler {e} ist beim Schreiben von {name}:{value} aufgetreten")
+            db.close()
+            exit(1)
 
+    # Thread schliessen wenn Objekt gelöscht wird
+    def __del__(self):
+        logging.debug('datav Klasse löschen,  Polling DB stop')
+        self.threadstop = True
+        # wait for Thread to end
+        self.x.join()
+        logging.info("datav Klasse gelöscht, Polling gestoppt.")
 
     # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
     # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
@@ -247,7 +273,7 @@ class maindata:
     @Wintertemp.setter
     def Wintertemp(self,value):
         # so hier muss das in die DB geschrieben werden
-        self.writeitem(value,"Wintertemp")   
+        type(maindata).writeitem(value,"Wintertemp")   
 
     @property
     def Kessel(self):
@@ -297,7 +323,7 @@ class maindata:
     @Brenner_an.setter
     def Brenner_an(self,value):
         # so hier muss das in die DB geschrieben werden
-        self.writeitem(value,"Brenner_an")
+        self.writeitem(str(value),"Brenner_an")
 
     @property
     def Hand_Dusche(self):
@@ -306,7 +332,7 @@ class maindata:
     @Hand_Dusche.setter
     def Hand_Dusche(self,value):
         # so hier muss das in die DB geschrieben werden
-        self.writeitem(value,"Hand_Dusche")
+        self.writeitem(str(value),"Hand_Dusche")
 
     @property
     def Brenner_Stoerung(self):
@@ -325,10 +351,11 @@ class maindata:
         return self._KesselDaten_y
     
     @KesselDaten_y.setter
-    async def KesselDaten_y(self,value):
-        kesseltmp=asyncio.create_task(self.writeKesselDaten_y(value))
-        await kesseltmp
+    def KesselDaten_y(self,value):
+        self.writeKesselDaten_y(value)
 
 
-   
+
+# es ist schon Mist die Klasse durch den Import in gui.py global zu definieren!
+# da hätte ich gerne einen besseren Ort   
 datav=maindata()

@@ -16,13 +16,11 @@ def create_db(db_file):
     try:
         conn = sqlite3.connect(db_file)
         logging.info('fDB Version '+sqlite3.version+' erstellt')
+        conn.close()
     except Error as e:
         logging.error('fDie Datenbank konnte nicht erstellt werden')
         exit(1)
-    finally:
-        if conn:
-            return (conn)
-
+    
 
 # open a database connection to a SQLite database
 def open_connection(db_file):
@@ -141,10 +139,11 @@ def drop_db(conn):
 
 
 def init_Kesselvalues(name):
+    # k wird als Variable in der Formel settings.KesselKennlinie verwendet
     k=0
     # alles mal 10, damit man range() mit int verwenden kann.
     # die Kennlinie geht von -30 bis 30 Grad Schritt 0.5
-    for i in range(settings.KesselMinTemp,settings.KesselMaxTemp,settings.KesselTempStep):
+    for i in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
         x= float(i/10)
         y=round(eval(settings.KesselKennlinie),1)
         # die Daten müssen nun in die Datenbank
@@ -182,7 +181,7 @@ def checktable(tablename):
 
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():
-    
+    create_db(settings.DBPATH)
     # jetzt die Anzeigeworktabelle definieren und initialisieren
     tn = settings.WorkDataView
     if checktable(tn)==False:

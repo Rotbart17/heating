@@ -87,7 +87,7 @@ def init_gui_data():
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
 def de_init_gui_data():
-    pass 
+    del datav
 
     
 # Das hier soll beim Start die DataClass initialisieren
@@ -128,46 +128,46 @@ with ui.footer(value=True) as footer:
 
 # Hand Dusche toggeln
 def set_hand_dusche():
-    if (settings.Hand_Dusche)==False:
-        settings.Hand_Dusche=True
+    
+    if datav.Hand_Dusche==False:
+        datav.Hand_Dusche=True
         ui.notify('Brauchwasser eingeschaltet!')
-        # Wert in DB setzen
+        
     else:
-        settings.Hand_Dusche=False
+        datav.Hand_Dusche=False
         ui.notify('Brauchwasser ausgeschaltet!')
-        # Wert in DB setzen
-
+       
 # schaltet das "ist aktive" Element ein und aus
 def set_brenner_spin():
-    if settings.Brenner_an==True:
+    if datav.Brenner_an==True:
         brenner_spin.set_visibility(True)
     else: 
         brenner_spin.set_visibility(False)
 
 # schaltet das "ist aktive" Element ein und aus
 def set_brennerstoerung_spin():
-    if settings.Brenner_Stoerung==True:
+    if datav.Brenner_Stoerung==True:
         brennerstoerung_spin.set_visibility(True)
     else: 
         brennerstoerung_spin.set_visibility(False)
 
 # schaltet das "ist aktive" Element ein und aus
 def set_brauchwasser_spin():
-    if settings.Pumpe_Brauchwasser_an==True:
+    if datav.Pumpe_Brauchwasser_an==True:
         brauchwasser_spin.set_visibility(True)
     else: 
         brauchwasser_spin.set_visibility(False)
 
 # schaltet das "ist aktiv" Element ein und aus
 def set_pumpe_oben_spin():
-    if settings.Pumpe_oben_an==True:
+    if datav.Pumpe_oben_an==True:
         pumpe_oben.set_visibility(True)
     else: 
         pumpe_oben.set_visibility(False)
 
 # schaltet das "ist aktive" Element ein und aus
 def set_pumpe_unten_spin():
-    if settings.Pumpe_unten_an==True:
+    if datav.Pumpe_unten_an==True:
         pumpe_unten.set_visibility(True)
     else: 
         pumpe_unten.set_visibility(False)
@@ -180,26 +180,26 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     with ui.tab_panel(information):
         with ui.grid(columns=2, rows=2):
             with ui.row():
-                ui.label(f'Aussen-Temp = {settings.Aussen}').classes('text-base mb-4')
-                if settings.Winter==True:
+                ui.label(f'Aussen-Temp = {datav.Aussen}').classes('text-base mb-4')
+                if datav.Winter==True:
                     ui.label('Winterbetrieb').classes('text-base ml-4')
                 else:
                     ui.label('Sommerbetrieb').classes('text-base ml-4')
                 malen()
             with ui.row():    
-                ui.label(f'Innen-Temp = {settings.Innen}').classes('text-base mb-4')
+                ui.label(f'Innen-Temp = {datav.Innen}').classes('text-base mb-4')
                 ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('w-30 ml-8')
                 malen()
             with ui.row():                         
-                ui.label(f'Kessel-Soll-Temp = {settings.KesselSoll}').classes('text-base')
-                ui.label(f'Kessel-Temp = {settings.Kessel}').classes('text-base')
+                ui.label(f'Kessel-Soll-Temp = {datav.KesselSoll}').classes('text-base')
+                ui.label(f'Kessel-Temp = {datav.Kessel}').classes('text-base')
                 malen()
                 ui.label(f'Brenner läuft').classes('text-base')
                 brenner_spin=ui.spinner(type='ball', color='red' ,size='sm')
                 ui.label('Brennerstörung').classes('text-base').classes('ml-2')
                 brennerstoerung_spin=ui.spinner(size='sm',color='red')
             with ui.row(): 
-                ui.label(f'Brauchw = {settings.Brauchwasser}').classes('text-base')
+                ui.label(f'Brauchw = {datav.Brauchwasser}').classes('text-base')
                 ui.label('Brauchw-P').classes('ml-16').classes('text-base')
                 brauchwasser_spin=ui.spinner(size='sm')
                 malen()
@@ -211,7 +211,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
     with ui.tab_panel(einstellungen):
-        with ui.splitter(value=70)  as splitter:
+        with ui.splitter(value=75)  as splitter:
 
             # Linke Seite vor den Trennstrich            
             with splitter.before:
@@ -351,10 +351,10 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 # hier beginnt die Anzeige der  linken Seite des Reiters -----------
                 # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
                 with ui.row():
-                    ui.label('Steuerdaten:').classes('text-base')
-                    ui.button('Neu', on_click=tabledialogadd.open)
-                    ui.button('Ändern', on_click=updateeditdialog)
-                    ui.button('Löschen', on_click=remove).classes('mr-4')
+                    ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
+                    ui.button('Neu', on_click=tabledialogadd.open).classes('ml-8')
+                    ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
+                    ui.button('Löschen', on_click=remove).classes('mr-4 ml-8')
 
                 update_table()
 
@@ -368,15 +368,16 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     settings.Wintertemp=value
                     ui.notify('Winter ab: '+str(settings.Wintertemp))
 
-                ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2')
+                ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2 mt-4')
                 ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
-                          on_change=lambda e: setwinter(e.value)).classes('ml-8 mb-2')
+                          on_change=lambda e: setwinter(e.value)).classes('ml-8')
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
-        ui.label('Kesselsteuerung')           
-        fig = {
-            'data': [
+        # ui.label('Kesselsteuerung')           
+        figkessel = {
+            'data': 
+            [
                 {
                     'type': 'scatter',
                     'name': 'Kessel',
@@ -384,14 +385,15 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     'y': datav.KesselDaten_y,
                 },          
             ],
-            'layout': {
-                'margin': {'l': 20, 'r': 20, 't': 20, 'b': 20},
+            'layout': 
+            {
+                'margin': {'l': 35, 'r': 20, 't': 20, 'b': 35},
                 'plot_bgcolor': '#E5ECF6',
-                'xaxis': {'gridcolor': 'white'},
-                'yaxis': {'gridcolor': 'white'},
+                'xaxis': {'title': 'Aussentemp','gridcolor': 'white'},
+                'yaxis': {'title': 'Kesseltemp','gridcolor': 'white'},
             },
         }
-        plot= ui.plotly(fig).classes('w-full h-40')  
+        plotkessel= ui.plotly(figkessel).classes('w-full h-64')  
         # jetzt braucht es noch Knöpfe und Funktionen um die Kurve zu verändern
         # "von Grad", "bis Grad", "Yeränderung" -> 3Knöpfe
         # alle in einer Zeile
@@ -399,80 +401,71 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             global gradv
             gradv=value
             # ui.notify(gradv) 
-          
             
         # Die eingegebene Temperatur liegt im Bereich von -30 und 30 Grad
-        # Die Temperatur muss größer sein als die "von Temperatur"
+        # Die "Bis Temperatur" muss größer sein als die "von Temperatur"
         def gradbis(value):
             global gradb
             gradb=value
             # ui.notify(gradb) 
             
-
         def gradanpassen(value):
             global gradanpass
             gradanpass=value
             # ui.notify(gradanpass) 
             
-            
-        # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an  
+        # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an 
         def anpassen():
-            # es muss ja was zu tun sein
-            if gradanpass != 0:
-                # Startindex suchen
-                startidx =0
-                stopidx =0
-                i=0
-                ii=settings.KesselMinTemp
-                while  ii <= settings.KesselMaxTemp:
-                    if datav.KesselDaten_x[i]<gradv: 
+            with plotkessel:
+                if gradanpass!=0:
+                    startidx = 0
+                    stopidx=0
+                    foundstart= False
+                    foundstop=False
+                    i=0
+                    for _ in datav.KesselDaten_x:
+                        if (datav.KesselDaten_x[i]>= gradv) and foundstart==False:
+                            # Anfang des zu veränderden Intervalls
+                            startidx=i
+                            foundstart=True
+                        if (datav.KesselDaten_x[i]> gradb) and foundstop==False:
+                            # gerade übder das ENde des Intervalls hinaus
+                            stopidx=i-1
+                            foundstop=True
+                            break
                         i+=1
-                    else:
-                        # Startindex gefunden
-                        startidx=i
-                        break
-                    ii+= settings.KesselTempStep
 
-                # Stopindex suchen
-                while ii <= settings.KesselMaxTemp:
-                    if datav.KesselDaten_x[i]<gradb: 
-                        i+=1
+                    # So jetzt sollten Anfang und Ende festliegen
+                    # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
+                    ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
+                    if startidx<=stopidx and startidx>=0 and stopidx>=0:
+                        # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
+                        # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
+                        templist=datav.KesselDaten_y.copy()
+                        i=startidx
+                        while i<=stopidx:
+                            templist[i]+=gradanpass
+                            i+=1
+                        datav.KesselDaten_y=templist.copy()
+                        plotkessel.update()
+                        # fig['data'][0]['y']=datav.KesselDaten_y
                     else:
-                        # Stopindex gefunden
-                        stopidx = i
-                        break
-                    ii+= settings.KesselTempStep
+                        ui.notify(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
+            ui.update(plotkessel)
+        
 
-                # So jetzt sollten Anfang und Ende festliegen
-                # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
-                ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}") 
-                if startidx<=stopidx:
-                    # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
-                    # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
-                    templist=datav.KesselDaten_y.copy()
-                    i=startidx
-                    while i<=stopidx:
-                        templist[i]+=gradanpass
-                        i+=1
-                    datav.KesselDaten_y=templist.copy()
-                else:
-                    logging.error(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
-                    exit(1)
         # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
         with ui.row():
-            ui.number(label='Grad von',  value='0', step='0.2', min='-30.0',max='30.0',
-                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-20 mr-4')
-            ui.number(label='Grad bis',  value='0', step='0.2',  min='-30.0',max='30.0',
-                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-20 mr-4')
-            ui.number(label='Anpassen um',value='0', step='0.2', min='-90.0',max='90.0',
-                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-20 mr-4')
+            ui.number(label='Grad von',   value='0', step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
+            ui.number(label='Grad bis',   value='0', step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
+            ui.number(label='Anpassen um',value='0', step=(settings.AussenTempStep/10), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
             ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
-            plot.update()
 
-
-
-
-
+        
+            
 
 # mal die ganzen Aktivitätskenzeichen zu Anfang löschen
 #set_brenner_spin()           
@@ -485,5 +478,5 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
 
 # ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True )
-ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), fullscreen=True,uvicorn_logging_level="warning", dark=True, show=False)
+ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), fullscreen=False,uvicorn_logging_level="warning", dark=True, show=False)
 # ui.run()

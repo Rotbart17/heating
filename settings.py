@@ -87,9 +87,9 @@ KesselMax : float = 90
 # um die Rangefunktion verwenden zu können ist jeder Wert mit 10 
 # multipliziert -30 bis 30Grad, Schrittweite 0,5 Grad (Faktor 10 um normale Schleifen 
 # zu verwenden)
-KesselMinTemp : int = -300
-KesselMaxTemp : int = 300
-KesselTempStep : int = 5
+AussenMinTemp : int = -30
+AussenMaxTemp : int = 30
+AussenTempStep : int = 0.5
 
 
 # Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
@@ -151,6 +151,7 @@ init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                         Brenner_Stoerung, Hand_Dusche, threadstop ) \
                         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
+write_Workdataview_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
 
 # Loginfo -> noch unklar
 # löscht Fehlerstatus -> noch unklar
@@ -175,8 +176,8 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 # GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
 KesselKennlinie="((-1.2)*x)+56 + k"
 sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
-sql_write_KesselKennlinie_x = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x) VALUES(?);"
-sql_write_KesselKennlinie_y = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_y) VALUES(?);"
+sql_write_KesselKennlinie_x = f"UPDATE  {KesselSollTemperatur}  SET value_x= ? WHERE id = ? ;;"
+sql_write_KesselKennlinie_y = f"UPDATE  {KesselSollTemperatur}  SET value_y= ? WHERE id = ? ;"
 
 # Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
 KesselDaten_x=[]
