@@ -27,15 +27,15 @@ rows = []  # leeres Feld für die Zeilen der Tabelle
 def update_table() ->None:
     global table, columns, rows
     columns = [
-        {'name': 'id',       'label' :'ID' ,      'field' : 'id', 'required': True, 'sortable': True,'align': 'left'},
-        {'name': 'typ',      'label': 'Typ',      'field': 'typ', 'required': True},
+        {'name': 'id',       'label': 'ID' ,      'field': 'id'  , 'required': True, 'sortable': True,'align': 'left'},
+        {'name': 'typ',      'label': 'Typ',      'field': 'typ' , 'required': True},
         {'name': 'tage',     'label': 'Tage',     'field': 'tage', 'required': True},
-        {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von', 'required': True},
-        {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis', 'required': True},
+        {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von' , 'required': True},
+        {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis' , 'required': True},
     ]
     rows
     #title='Steuerdaten'
-    table=ui.table(selection='single',columns=columns, rows=rows, row_key='id',on_select=handle_click).classes('w-50 mr-4').props('hide-no-data')
+    table=ui.table(selection='single',columns=columns, rows=rows, row_key='id',on_select=handle_click).classes('w-11/12 mr-4').props('hide-no-data')
 
 # Zeilennummer in der Tabelle
 id : int=0
@@ -61,22 +61,15 @@ typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
 typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 
 
-# Funktionen für... was not notwenig ist. Timer gesteuerter Abruf aus der DB!
-# get Startwerte und dann updates für Aussentemperatur,Innentemperatur, 
-#     Kesseltemperatur, Brauchwasser, Brennerstörung, Pumpen: oben, unten, Brauchwasser
-
-# Initialisierung der Klasse und Laden der Daten 
-# datav =None
-
 # Kesseldatenanpassungsvariablen
 # Grad von, Grad bis, Gradanpassung
 gradv : float= 0
 gradb : float= 0
 gradanpass : float= 0
 
+# Initialisieren von Daten für die GUI. ggf. noch nicht der Weisheit letzter Schluss
 def init_gui_data():
-   # global datav
-   # datav=maindata()
+   
    logging.basicConfig(
        filename='gui.log',
        filemode='w',
@@ -90,8 +83,7 @@ def de_init_gui_data():
     del datav
 
     
-# Das hier soll beim Start die DataClass initialisieren
-# Irgendwie durchlaüft nicegui das Programm mehrfach und dann werden zu viele Threads gestartet.
+# Irgendwie durchlaüft nicegui das Programm mehrfach daher geht das hier nicht.
             
 app.on_startup(lambda: init_gui_data())
 app.on_shutdown(lambda: de_init_gui_data())
@@ -105,15 +97,14 @@ def malen() -> None:
     
     fig = go.Figure(go.Scatter(y = [10, 12, 20, 22, 20, 17, 16, 14], x=[8, 10, 12, 14, 16, 18, 20, 22]))
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-    ui.plotly(fig).classes('w-5/6 h-20')  
+    ui.plotly(fig).classes('w-full h-24').classes('col-span-8 row-span-2')  
 
 
-# Kopfzeile
+# Kopfzeile ----------------------------------
 with ui.header().classes(replace='row items-center') as header:
     # ui.button(on_click=lambda: left_drawer.toggle()).props('flat color=white icon=menu')
     
-    with ui.tabs() as tabs:
-        
+    with ui.tabs() as tabs:     
         information=ui.tab('Information')
         einstellungen=ui.tab('Heizbetrieb')
         kesselsteuerung=ui.tab('Kesselsteuerung')
@@ -121,97 +112,73 @@ with ui.header().classes(replace='row items-center') as header:
     ui.timer(1.0, lambda: label.set_text(f'{datetime.now():%H:%M}'))  
 
 
-# Fusszeile
-with ui.footer(value=True) as footer:
+# Fusszeile ----------------------------------
+with ui.footer(value=True).classes('height-hint=30') as footer:
     ui.label('Buderus Ecomatic')
 
 
 # Hand Dusche toggeln
 def set_hand_dusche():
-    
-    if datav.Hand_Dusche==False:
-        datav.Hand_Dusche=True
+    if datav.vHand_Dusche==False:
+        datav.vHand_Dusche=True
         ui.notify('Brauchwasser eingeschaltet!')
-        
     else:
-        datav.Hand_Dusche=False
+        datav.vHand_Dusche=False
         ui.notify('Brauchwasser ausgeschaltet!')
        
-# schaltet das "ist aktive" Element ein und aus
-def set_brenner_spin():
-    if datav.Brenner_an==True:
-        brenner_spin.set_visibility(True)
-    else: 
-        brenner_spin.set_visibility(False)
 
-# schaltet das "ist aktive" Element ein und aus
-def set_brennerstoerung_spin():
-    if datav.Brenner_Stoerung==True:
-        brennerstoerung_spin.set_visibility(True)
-    else: 
-        brennerstoerung_spin.set_visibility(False)
-
-# schaltet das "ist aktive" Element ein und aus
-def set_brauchwasser_spin():
-    if datav.Pumpe_Brauchwasser_an==True:
-        brauchwasser_spin.set_visibility(True)
-    else: 
-        brauchwasser_spin.set_visibility(False)
-
-# schaltet das "ist aktiv" Element ein und aus
-def set_pumpe_oben_spin():
-    if datav.Pumpe_oben_an==True:
-        pumpe_oben.set_visibility(True)
-    else: 
-        pumpe_oben.set_visibility(False)
-
-# schaltet das "ist aktive" Element ein und aus
-def set_pumpe_unten_spin():
-    if datav.Pumpe_unten_an==True:
-        pumpe_unten.set_visibility(True)
-    else: 
-        pumpe_unten.set_visibility(False)
-
+        
 #---------------------------------------------------------------------------------------------------------
 # hier werden 3 TABs definiert (Information / Einstellungen / Kesselsteuerung )
 with ui.tab_panels(tabs, value=information).classes('w-full'):
+   
+
     
     # Erster Reiter ------------------
     with ui.tab_panel(information):
-        with ui.grid(columns=2, rows=2):
-            with ui.row():
-                ui.label(f'Aussen-Temp = {datav.Aussen}').classes('text-base mb-4')
-                if datav.Winter==True:
-                    ui.label('Winterbetrieb').classes('text-base ml-4')
-                else:
-                    ui.label('Sommerbetrieb').classes('text-base ml-4')
-                malen()
-            with ui.row():    
-                ui.label(f'Innen-Temp = {datav.Innen}').classes('text-base mb-4')
-                ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('w-30 ml-8')
-                malen()
-            with ui.row():                         
-                ui.label(f'Kessel-Soll-Temp = {datav.KesselSoll}').classes('text-base')
-                ui.label(f'Kessel-Temp = {datav.Kessel}').classes('text-base')
-                malen()
-                ui.label(f'Brenner läuft').classes('text-base')
-                brenner_spin=ui.spinner(type='ball', color='red' ,size='sm')
-                ui.label('Brennerstörung').classes('text-base').classes('ml-2')
-                brennerstoerung_spin=ui.spinner(size='sm',color='red')
-            with ui.row(): 
-                ui.label(f'Brauchw = {datav.Brauchwasser}').classes('text-base')
-                ui.label('Brauchw-P').classes('ml-16').classes('text-base')
-                brauchwasser_spin=ui.spinner(size='sm')
-                malen()
-                ui.label('H-Pumpe oben').classes('text-base')
-                pumpe_oben=ui.spinner(size='sm')
-                ui.label('H-Pumpe unten').classes('text-base ml-2')
-                pumpe_unten=ui.spinner(size='sm')
+        with ui.grid(columns=17, rows=6).classes('w-full gap-2'):
+            # Zeile 1      
+            ui.label(f'Aussen-T = {datav.vAussen}').classes('text-base col-span-4 flex items-end')
+            if datav.vWinter==True:
+                ui.label('Winterbetrieb').classes('text-base col-start-5 col-span-3 flex items-end')
+            else:
+                ui.label('Sommerbetrieb').classes('text-base col-start-5 col-span-3 flex items-end')         
+            ui.label(f'Innen-T = {datav.vInnen}').classes('text-base col-start-9 col-span-4 flex items-end')   
+            ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-15 col-span-4 w-25')
+
+            # Zeile 2
+            malen()
+            malen()
+
+            # Zeile 3
+            
+            ui.label(f'Kessel-Soll-T = {datav.vKesselSoll}').classes('text-base col-start-1 col-span-4 flex items-center')  
+            ui.label(f'Kessel-T = {datav.vKessel}').classes('text-base col-start-5 col-span-4 flex items-center')
+            ui.label(f'Brauchw-T = {datav.vBrauchwasser}').classes('text-base col-start-9 col-span-3  flex items-center') 
+            ui.label('Brauchw-Pumpe').classes('text-base col-start-13 col-span-3 flex items-center')
+            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_Brauchwasser_an',value='True').classes('mt-3')
+
+            
+            # Zeile 4
+            malen()
+            malen()
+
+            # Zeile 5
+            ui.label(f'Brenner läuft').classes('text-base col-start-1 col-span-3 h-9')
+            ui.spinner(type='ball', color='red' ,size='sm').bind_visibility_from(target_object=datav,target_name='vBrenner_an', value='False').classes('h-9')
+            ui.label('Brennerstörung').classes('text-base col-start-5 col-span-3 h-9')
+            ui.spinner(size='sm',color='red').bind_visibility_from(target_object=datav,target_name='vBrenner_Stoerung', value='False').classes('h-9')
+            ui.label('H-Pumpe oben').classes('text-base col-start-9 col-span-3 h-9')
+            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_oben_an', value='False').classes('h-9')
+            ui.label('H-Pumpe unten').classes('text-base col-start-13 col-span-3 h-9')
+            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_unten_an', value='False').classes('h-9')
+
+
 
     #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
     with ui.tab_panel(einstellungen):
-        with ui.splitter(value=75)  as splitter:
+        with ui.splitter(horizontal=False, value=80.0) as splitter:
 
             # Linke Seite vor den Trennstrich            
             with splitter.before:
@@ -336,6 +303,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                                     remove()
                                     #neue Zeile Hinzufügen
                                     table.add_rows({'id': handle_id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                                    # table.sorted
                                     print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
                                     update_table.refresh()
                             # handle_id=0
@@ -350,12 +318,14 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
                 # hier beginnt die Anzeige der  linken Seite des Reiters -----------
                 # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
-                with ui.row():
-                    ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
-                    ui.button('Neu', on_click=tabledialogadd.open).classes('ml-8')
+                with ui.row(wrap=False):
+                    # ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
+                    ui.button('Neu', on_click=tabledialogadd.open).classes('ml-4')
                     ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
-                    ui.button('Löschen', on_click=remove).classes('mr-4 ml-8')
+                    ui.button('Löschen', on_click=remove).classes('mr-8 ml-8')
 
+                # Das malt dann die Tabelle unter die Knöpfe 
+                    
                 update_table()
 
             
@@ -365,12 +335,11 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             with splitter.after:
                 # hier brauchen wir nun Sommer Winterumschaltung Temp
                 def setwinter(value):
-                    settings.Wintertemp=value
-                    ui.notify('Winter ab: '+str(settings.Wintertemp))
+                    datav.vWintertemp=value
+                    ui.notify('Winter ab: '+str(datav.vWintertemp))
 
-                ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2 mt-4')
-                ui.number(label='Winter ab: [Grad]', min=10.0, max=25.0, value=17.0, format='%.1f',
-                          on_change=lambda e: setwinter(e.value)).classes('ml-8')
+                # ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2 mt-4')
+                ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0, value=datav.vWintertemp, placeholder= "Wert", on_change=lambda e: setwinter(e.value)).classes('ml-8')
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
@@ -381,8 +350,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 {
                     'type': 'scatter',
                     'name': 'Kessel',
-                    'x': datav.KesselDaten_x,
-                    'y': datav.KesselDaten_y,
+                    'x': datav.vKesselDaten_x,
+                    'y': datav.vKesselDaten_y,
                 },          
             ],
             'layout': 
@@ -423,12 +392,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     foundstart= False
                     foundstop=False
                     i=0
-                    for _ in datav.KesselDaten_x:
-                        if (datav.KesselDaten_x[i]>= gradv) and foundstart==False:
+                    for _ in datav.vKesselDaten_x:
+                        if (datav.vKesselDaten_x[i]>= gradv) and foundstart==False:
                             # Anfang des zu veränderden Intervalls
                             startidx=i
                             foundstart=True
-                        if (datav.KesselDaten_x[i]> gradb) and foundstop==False:
+                        if (datav.vKesselDaten_x[i]> gradb) and foundstop==False:
                             # gerade übder das ENde des Intervalls hinaus
                             stopidx=i-1
                             foundstop=True
@@ -441,12 +410,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     if startidx<=stopidx and startidx>=0 and stopidx>=0:
                         # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
                         # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
-                        templist=datav.KesselDaten_y.copy()
+                        templist=datav.vKesselDaten_y.copy()
                         i=startidx
                         while i<=stopidx:
                             templist[i]+=gradanpass
                             i+=1
-                        datav.KesselDaten_y=templist.copy()
+                        datav.vKesselDaten_y=templist.copy()
                         plotkessel.update()
                         # fig['data'][0]['y']=datav.KesselDaten_y
                     else:
@@ -478,5 +447,5 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
 
 # ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True )
-ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), fullscreen=False,uvicorn_logging_level="warning", dark=True, show=False)
+ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # ui.run()

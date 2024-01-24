@@ -6,7 +6,7 @@ import logging
 import threading
 import datetime
 import settings
-from settings import SensorList, DBPATH
+from settings import SensorList
 
 # Definitionen der Sensorklasse
 # schaun wir mal was ich schon gelernt habe
@@ -58,6 +58,7 @@ class sensor:
             c = self.conn.cursor()
             create_table_sql = sql_create_sensor_table_p1 + self.tn + sql_create_sensor_table_p2
             c.execute(create_table_sql)
+            self.conn.commit()
             logging.info('Tabelle' + self.tn +' erstellt')
         except Error as e:
             logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')

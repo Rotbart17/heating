@@ -5,6 +5,8 @@ import logging
 import settings
 from settings import SensorList, DBPATH
 import os
+import time
+
 
 # hier sind alle DB Prozeduren gebündelt, die nicht in Classen definert sind.
 
@@ -157,7 +159,7 @@ def init_Kesselvalues(name):
 # True =Daten in der Tabelle
 
 def checktable(tablename):
-    erg=False
+    
     t=0
     try:
         conn = sqlite3.connect(settings.DBPATH)
@@ -168,11 +170,14 @@ def checktable(tablename):
         exit(1)
     try:
         c = conn.cursor()
-        t=c.execute(f"SELECT COUNT(*) FROM {tablename}").fetchone()[0]
+        # t=c.execute(f"SELECT COUNT(*) FROM {tablename}").fetchone()[0]
+        t= c.execute(f"SELECT EXISTS(SELECT name FROM sqlite_master WHERE type='table' AND name = '{tablename}');").fetchone()[0]
         conn.close()
         logging.info('Tabelle '+tablename+' enthält :'+str(t)+' Datensätze')
         if t>0 :
             erg=True
+        else:
+            erg=False
     except Error as e:
         logging.info('Es konnte die Tabelle '+ tablename +' nicht abgefragt werden!')
             
@@ -189,16 +194,26 @@ def init_db_environment():
         
         # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
         # und einzige Zeile dieser Tabelle erzeugen
-        #  init_WorkDataView_sql = "INSERT or REPLACE INTO ? (\
-        #                    id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,   \
-        #                    Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an, \
-        #                    Brenner_Stoerung, Hand_Dusche, threadstop ) \
-        #                    values( 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        # init_WorkDataView_sql = "INSERT or REPLACE INTO .... 
+        # und zusätzlich noch zu jedem Wert die Zeit.
 
-        data=(1, str(settings.Winter), settings.Wintertemp, settings.Kessel, settings.KesselSoll,\
-            settings.Brauchwasser, settings.BrauchwasserSoll,  settings.Innen,  settings.Aussen, str(settings.Pumpe_oben_an), \
-            str(settings.Pumpe_unten_an), str(settings.Pumpe_Brauchwasser_an), str(settings.Brenner_an), \
-            str(settings.Brenner_Stoerung), str(settings.Hand_Dusche), str(settings.threadstop) )
+        t=time.time_ns()
+        data=(1, t, \
+            settings.Winter, t, \
+            settings.Wintertemp, t,\
+            settings.Kessel, t, \
+            settings.KesselSoll, t,\
+            settings.Brauchwasser, t,\
+            settings.BrauchwasserSoll,t,\
+            settings.Innen,  t,\
+            settings.Aussen, t,\
+            settings.Pumpe_oben_an, t,\
+            settings.Pumpe_unten_an, t,\
+            settings.Pumpe_Brauchwasser_an, t,\
+            settings.Brenner_an, t,\
+            settings.Brenner_Stoerung, t,\
+            settings.Hand_Dusche, t,\
+            settings.threadstop )
 
         init_table(settings.init_WorkDataView_sql,data)
         # so, die Tabelle existiert. Initdaten sind reingeschrieben.

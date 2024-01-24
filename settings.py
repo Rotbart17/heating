@@ -125,34 +125,65 @@ Brenner_Stoerung : bool = False
 WorkDataView = "WorkDataView"
 
 # SQL Statement für die Tabelle der Anxzeigeschicht
+# changetime ist der Zeitpunkt der letzten Änderung in ns
+# ViewChange ist der Zeitpunkt an dem die letzte Änderung an irgendeiner Stelle im View
+# vorgenommen wurde
 sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
 sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                Winter text,              \
+                                ViewChanged int, \
+                                Winter int,              \
+                                Winter_changetime int,              \
                                 Wintertemp real,           \
+                                Wintertemp_changetime int,           \
                                 Kessel real,         \
+                                Kessel_changetime int,         \
                                 KesselSoll real,   \
+                                KesselSoll_changetime int,   \
                                 Brauchwasser real,           \
+                                Brauchwasser_changetime int,           \
                                 BrauchwasserSoll real,   \
+                                BrauchwasserSoll_changetime int,   \
                                 Innen real,           \
+                                Innen_changetime int,           \
                                 Aussen real,           \
-                                Pumpe_oben_an text,           \
-                                Pumpe_unten_an text,           \
-                                Pumpe_Brauchwasser_an text,           \
-                                Brenner_an text,           \
-                                Brenner_Stoerung text,           \
-                                Hand_Dusche text,            \
-                                threadstop text  \
+                                Aussen_changetime int,           \
+                                Pumpe_oben_an int,           \
+                                Pumpe_oben_an_changetime int,           \
+                                Pumpe_unten_an int,           \
+                                Pumpe_unten_an_changetime int,           \
+                                Pumpe_Brauchwasser_an int,           \
+                                Pumpe_Brauchwasser_an_changetime int,           \
+                                Brenner_an int,           \
+                                Brenner_an_changetime int,           \
+                                Brenner_Stoerung int,           \
+                                Brenner_Stoerung_changetime int,           \
+                                Hand_Dusche int,            \
+                                Hand_Dusche_changetime int,            \
+                                threadstop int  \
                             ); "
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
-                        id, Winter, Wintertemp, Kessel, KesselSoll, Brauchwasser, BrauchwasserSoll, Innen, Aussen,\
-                        Pumpe_oben_an, Pumpe_unten_an, Pumpe_Brauchwasser_an, Brenner_an,\
-                        Brenner_Stoerung, Hand_Dusche, threadstop ) \
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                        id, Viewchanged, \
+                        Winter, Winter_changetime,\
+                        Wintertemp, Wintertemp_changetime,\
+                        Kessel, Kessel_changetime, \
+                        KesselSoll, KesselSoll_changetime,\
+                        Brauchwasser, Brauchwasser_changetime, \
+                        BrauchwasserSoll, BrauchwasserSoll_changetime,\
+                        Innen, Innen_changetime,\
+                        Aussen,Aussen_changetime,\
+                        Pumpe_oben_an, Pumpe_oben_an_changetime,\
+                        Pumpe_unten_an, Pumpe_unten_an_changetime,\
+                        Pumpe_Brauchwasser_an, Pumpe_Brauchwasser_an_changetime,\
+                        Brenner_an, Brenner_an_changetime,\
+                        Brenner_Stoerung, Brenner_Stoerung_changetime,\
+                        Hand_Dusche, Hand_Dusche_changetime,\
+                        threadstop ) \
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
-write_Workdataview_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
-
+write_WorkDataView_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
+read_WorkDataView_complete= f"SELECT * from {WorkDataView} WHERE id =1 ;"
 # Loginfo -> noch unklar
 # löscht Fehlerstatus -> noch unklar
 
@@ -176,7 +207,7 @@ sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 # GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
 KesselKennlinie="((-1.2)*x)+56 + k"
 sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
-sql_write_KesselKennlinie_x = f"UPDATE  {KesselSollTemperatur}  SET value_x= ? WHERE id = ? ;;"
+sql_write_KesselKennlinie_x = f"UPDATE  {KesselSollTemperatur}  SET value_x= ? WHERE id = ? ;"
 sql_write_KesselKennlinie_y = f"UPDATE  {KesselSollTemperatur}  SET value_y= ? WHERE id = ? ;"
 
 # Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
