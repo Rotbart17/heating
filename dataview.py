@@ -83,18 +83,21 @@ class maindata:
     # damit man den thread stoppen kann
     threadstop : bool = False
 
+    # Wartezeit in Sec bevor die nächste Abfrage der Sensordaten durchgeführt werden
+    _sensorsleeptime : int = 60
+
     #Wartezeit in Sec bevor die nächste Abfrage des WorkdataView durchgeführt wird
     _sleeptime : int = 5
 
-    # wenn daten geschrieben werden mit dem lesen warten, damit die Variable nicht
-    # überschrieben wird
+    # wenn Daten geschrieben werden mit dem Lesen warten, damit die Variable nicht
+    # überschrieben wird, primitiv, aber hoffentlich ausreichend
     _datawrite: bool = False
 
     # Defaults werden in settings.py festgelegt ind in dbinit.py als Tabelle angelegt 
     # und von den Werten gesetzt
 
     # diser Wert wird beim Füllen der Variablen aus der Datenbank zuerst gesetzt
-    # er dient als indikator ob sich in der DB etwas geändert hat und ob des wegen alle Variablen neu geladen werden müssen
+    # er dient als indikator ob sich in der DB etwas geändert hat und ob deswegen alle Variablen neu geladen werden müssen
     # falls er neu gesetzt wird bekommt er den Zeitwert von ViewChanged.
     # Wenn ein Prozess einen Wert in der Tabelle Wordataview ändert, wird der Wert auf den Zeit wert des 
     # veränderten Felds gesetzt
@@ -113,12 +116,16 @@ class maindata:
     _KesselMax : float = 90
     _KesselDaten_x : list = field(default_factory=list)
     _KesselDaten_y : list = field(default_factory=list)
-  
+    _KesselIstDaten_x : list = field(default_factory=list)
+    _KesselIstDaten_y : list = field(default_factory=list)
+
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
     # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
     _Brauchwasser : float = 0
+    _BrauchwasserDaten_x : list = field(default_factory=list)
+    _BrauchwasserDaten_y : list = field(default_factory=list)
     _BrauchwasserSoll : float = 55
     _BrauchwasserError : float = 70
     _Pumpe_Brauchwasser_an : bool =False
@@ -126,8 +133,12 @@ class maindata:
 
     # Innen ist die aktuelle Innentemperatur
     _Innen : float = 0
+    _InnenDaten_x : list = field(default_factory=list)
+    _InnenDaten_y : list = field(default_factory=list)
     # Innen ist die aktuelle Aussentemperatur
     _Aussen : float = 0 
+    _AussenDaten_x : list = field(default_factory=list)
+    _AussenDaten_y : list = field(default_factory=list)
 
     # Signalisiert ob die Pumpen an /  aus sind
     _Pumpe_oben_an : bool = False
@@ -148,7 +159,7 @@ class maindata:
                 self._lastruntime=(results[dv.ViewChanged.value])
 
                 if initialrun==True:
-                    # das lä#uft nur beim ersten Aufruf um die Variablen mit
+                    # das läuft nur beim ersten Aufruf um die Variablen mit
                     # DB Inhalt zu zu füllen
                    
                     
@@ -183,7 +194,7 @@ class maindata:
                     self.threadstop=results[dv.threadstop.value]
                 else:
                     # hier ist die regelmäßige Abfrage der Werte aus der DB weil ViewChanged
-                    # sagt, dass es was Neues gibt, jetztist nur noch die Frage welche Werte sich
+                    # sagt, dass es was Neues gibt, jetzt ist nur noch die Frage welche Werte sich
                     # geändert haben
                         
                    
@@ -250,9 +261,28 @@ class maindata:
             logging.error(f"Error {e} ist aufgetreten")
             exit(1)
 
+    # lädt die letzten Werte der Sensoren für die Anzeige
+    def _sensordataload():
+        try:
+            with sqlite3.connect(settings.DBPATH) as db:
+                cursor=db.cursor()
+                # Hier kommt nun eine Schleife über alle Sensoren
+                # die in jeder Sensortabelle, die Daten der letzten 24h abfragt
+                # diese Datenmenge muss ggf. reduziert werden, da sonst zu viele Messwerte
+                # für die Anzeige vorhanden sind. Die Ergebnisse müssen wieder der jeweiligen Liste 
+                # zugeordnet werden. Dann kann die Anzeige sie hoffentlich verarbeiten.
+
+                # sql= settings.read_WorkDataView_complete
+                # cursor.execute(sql)
+                # results=cursor.fetchone()
+            cursor.close()
+            db.close()
+        except sqlite3.Error as e:
+            logging.error(f"Error {e} ist aufgetreten")
+            exit(1)
 
 
-    # prüft ob mins´destens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
+    # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
     # True= "neu lesen"
     def _checkview(self):
         db=sqlite3.connect(settings.DBPATH)
@@ -274,20 +304,27 @@ class maindata:
     # aber wenn gerade geschrieben wird, dann wird eine 1/50 sec gewartet. Vielleicht noch ein wenig viel.
     # schreiben hat Vorrang vor dem Lesen,
     # ein Argument muss man mitgeben...-> dummy
-    def _dbpolling(self,dummy):
+    def _dataviewpolling(self,dummy):
         while (self.threadstop ==False):
             if self._datawrite==False:
-                if self._checkview():
-                    self._viewloader(False)
                 
-                logging.debug('WorkdataView Pollen')
+                self._sensordataload()
+                logging.debug('Sensordata Pollen')
                 time.sleep(self._sleeptime)
             else:
                 time.sleep((self._sleeptime)/100)
 
+    # pollt regelmäßig neue Sensordaten für die Anzeige
+    def _sensorpolling(self,dummy):
+        while (self.threadstop ==False):
+            if self._checkview():
+                self._sensordataload()
+                logging.debug('WorkdataView Pollen')
+                time.sleep(self._sensorsleeptime)
+            
 
     # Laden der Kesselkennlinie
-    def kesseldataload(self):
+    def _kesseldataload(self):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
                 logging.debug('Kesselkennlinie lesen!')
@@ -305,6 +342,8 @@ class maindata:
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Kesselkennlinie aufgetreten")
             exit(1)
+
+
     
 
     # Speichern der Kesselkennlinie
@@ -363,27 +402,32 @@ class maindata:
         # die Defaults werden dabei überschrieben.
         self._viewloader(True)
         
-        # Laden der Kesselkennlinie
-        self.kesseldataload()
+        # Laden der initialen Kesselkennlinie
+        self._kesseldataload()
+
+        # Laden der Initialen SensorWerte
+        self._sensordataload()
     
-        # starten des Threads für das periodische Update der Werte oder Initialisierung
+        # starten des Threads für das periodische Update der Dataview-Werte oder Initialisierung
         # ZZ brauche noch einen Ort an dem ich den Thread wieder einfange!
         # vielleicht beim löschen der Klasse?
         dummy=0    
-        global x
-        self.x = threading.Thread(target=self._dbpolling, name="Thread-GUIDB-Abfrage", args=(dummy,))
+        global dv_poll
+        self.dv_poll = threading.Thread(target=self._dataviewpolling, name="Thread-GUI-DataView", args=(dummy,))
         
         logging.info('Starte DB-Abfrage Thread!')
-        settings.ThreadList.append(self.x)
-        self.x.start()
+        settings.ThreadList.append(self.dv_poll)
+        self.dv_poll.start()
         logging.debug('DB-Abfrage Thread gestartet!')
+
+
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
     def _readitem(self,name,namect,value,timestamp):
         try: 
             db=sqlite3.connect(settings.DBPATH)
             cursor=db.cursor()
-            # t=(name,value)
+            # t=(name,namect,settings.WorkDataView)
             sql= f"SELECT {name}, {namect} FROM {settings.WorkDataView} WHERE id=1;"
             cursor.execute(sql)
             results=cursor.fetchone()
@@ -430,7 +474,7 @@ class maindata:
         logging.debug('datav Klasse löschen,  Polling DB stop')
         self.threadstop = True
         # wait for Thread to end
-        self.x.join()
+        self.dv_poll.join()
         logging.info("datav Klasse gelöscht, Polling gestoppt.")
 
     # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
@@ -505,8 +549,6 @@ class maindata:
 
     @property
     def vHand_Dusche(self):
-        # self._Hand_Dusche, self._Hand_Dusche_changetime = \
-            # self._readitem("Hand_Dusche", "Hand_Dusche_changetime",self._Hand_Dusche, self._Hand_Dusche_changetime)
         return self._Hand_Dusche
     
     @vHand_Dusche.setter
@@ -532,8 +574,38 @@ class maindata:
     def vKesselDaten_y(self,value):
         self._writeKesselDaten_y(value)
 
+    @property
+    def vKesselIstDaten_x(self):
+        return self._KesselIstDaten_x
 
+    @property
+    def vKesselIstDaten_y(self):
+        return self._KesselIstDaten_y
 
+    @property
+    def vAussenDaten_x(self):
+        return self._AussenDaten_x
+
+    @property
+    def vAussenDaten_y(self):
+        return self._AussenDaten_y
+
+    @property
+    def vInnenDaten_x(self):
+        return self._InnenDaten_x
+
+    @property
+    def vInnenDaten_y(self):
+        return self._InnenDaten_y
+    
+    @property
+    def vBrauchwasserDaten_x(self):
+        return self._BrauchwasserDaten_x
+
+    @property
+    def vBrauchwasserDaten_y(self):
+        return self._BrauchwasserDaten_y
+    
 # es ist schon Mist die Klasse durch den Import in gui.py global zu definieren!
 # da hätte ich gerne einen besseren Ort   
 datav=maindata()

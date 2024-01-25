@@ -18,7 +18,7 @@ def main():
     iss= sensors.sensor("Innensensor")
     print("Nix war los")
     print("schauen wir Mal ob das mit dem Thread nun funktioniert")
-    time.sleep(5)
+    time.sleep(100)
     sensors.sensor.threadstop=True
     print("ich bin echt neugierig!")
     time.sleep(5)

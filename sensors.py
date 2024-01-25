@@ -85,7 +85,7 @@ class sensor:
     # DB Tabelle leeren
     def cleanup(self,tablename):
         c = sensor.conn.cursor()
-        c.execute('DELETE FROM '+ tablename +';')
+        c.execute('DELETE FROM ?;',(tablename,) )
         sensor.conn.commit()
         print('We have deleted', c.rowcount, 'records from '+ tablename + '!')
         sensor.conn.close()
@@ -95,7 +95,7 @@ class sensor:
     # DB Tabelle löschen
     def delete(self,conn,tablename):     
         c = conn.cursor()
-        c.execute('DROP TABLE '+ tablename)
+        c.execute('DROP TABLE ?;', (tablename,))
         conn.commit()
         conn.close()
         logging.warning('Sensortabelle '+tablename+' gelöscht')
@@ -114,6 +114,7 @@ class sensor:
       
         tn = tablename
         # einstweilen Mal Dummywerte zurückgeben bis ich die echten Funktionen habe
+        # die die Sensoren abfragen
         def kessel(tn) -> float:
             pass
             return (settings.rawvaluedict[tn])

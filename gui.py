@@ -89,17 +89,8 @@ app.on_startup(lambda: init_gui_data())
 app.on_shutdown(lambda: de_init_gui_data())
 
 
-# ------------------
-# Grafiken anzeigen
-def malen() -> None:
-    # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-    # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-    
-    fig = go.Figure(go.Scatter(y = [10, 12, 20, 22, 20, 17, 16, 14], x=[8, 10, 12, 14, 16, 18, 20, 22]))
-    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-    ui.plotly(fig).classes('w-full h-24').classes('col-span-8 row-span-2')  
 
-
+#---------------------------------------------------------------------------------------------------------
 # Kopfzeile ----------------------------------
 with ui.header().classes(replace='row items-center') as header:
     # ui.button(on_click=lambda: left_drawer.toggle()).props('flat color=white icon=menu')
@@ -111,10 +102,60 @@ with ui.header().classes(replace='row items-center') as header:
     label = ui.label().classes('row col-5 justify-end')
     ui.timer(1.0, lambda: label.set_text(f'{datetime.now():%H:%M}'))  
 
-
+#---------------------------------------------------------------------------------------------------------
 # Fusszeile ----------------------------------
 with ui.footer(value=True).classes('height-hint=30') as footer:
     ui.label('Buderus Ecomatic')
+
+
+# ------------------
+# Grafiken anzeigen
+def malen() -> None:
+    # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
+    # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
+    
+    # fig = go.Figure(go.Scatter(y = [10, 12, 20, 22, 20, 17, 16, 14], x=[8, 10, 12, 14, 16, 18, 20, 22]))
+    # fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+    # ui.plotly(fig).classes('w-full h-24').classes('col-span-8 row-span-2')  
+
+    figtemp = {
+        'data': 
+        [
+            {
+                'type': 'scatter',
+                'name': 'Au-T',
+                'x': datav.vAussenDaten_x,
+                'y': datav.vAussenDaten_y,
+            },
+            {
+                'type': 'scatter',
+                'name': 'In-T',
+                'x': datav.vInnenDaten_x,
+                'y': datav.vInnenDaten_y,
+            },
+            {
+                'type': 'scatter',
+                'name': 'Ke-T',
+                'x': datav.vKesselIstDaten_x,
+                'y': datav.vKesselIstDaten_y,
+            },
+            {
+                'type': 'scatter',
+                'name': 'Br-T',
+                'x': datav.vBrauchwasserDaten_x,
+                'y': datav.vBrauchwasserDaten_y,
+            },          
+        ],
+        'layout': 
+        {
+            'margin': {'l': 35, 'r': 20, 't': 20, 'b': 35},
+            'plot_bgcolor': '#E5ECF6',
+            'xaxis': {'title': 'Datum Uhrzeit','gridcolor': 'white'},
+            'yaxis': {'title': 'Temperatur','gridcolor': 'white'},
+        },
+    }
+    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-span-13') 
+    ui.update(plottemp)
 
 
 # Hand Dusche toggeln
@@ -133,21 +174,22 @@ def set_hand_dusche():
 with ui.tab_panels(tabs, value=information).classes('w-full'):
    
 
-    
+    #---------------------------------------------------------------------------------------------------------   
     # Erster Reiter ------------------
     with ui.tab_panel(information):
         with ui.grid(columns=17, rows=6).classes('w-full gap-2'):
             # Zeile 1      
             ui.label(f'Aussen-T = {datav.vAussen}').classes('text-base col-span-4 flex items-end')
             if datav.vWinter==True:
-                ui.label('Winterbetrieb').classes('text-base col-start-5 col-span-3 flex items-end')
+                t='Winterbetrieb'
             else:
-                ui.label('Sommerbetrieb').classes('text-base col-start-5 col-span-3 flex items-end')         
+                t='Sommerbetrieb'
+            ui.label(f'{t}').classes('text-base col-start-5 col-span-3 flex items-end')
             ui.label(f'Innen-T = {datav.vInnen}').classes('text-base col-start-9 col-span-4 flex items-end')   
             ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-15 col-span-4 w-25')
 
             # Zeile 2
-            malen()
+            
             malen()
 
             # Zeile 3
@@ -160,8 +202,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
             
             # Zeile 4
-            malen()
-            malen()
+            
+            
 
             # Zeile 5
             ui.label(f'Brenner läuft').classes('text-base col-start-1 col-span-3 h-9')
@@ -172,8 +214,6 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_oben_an', value='False').classes('h-9')
             ui.label('H-Pumpe unten').classes('text-base col-start-13 col-span-3 h-9')
             ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_unten_an', value='False').classes('h-9')
-
-
 
     #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
@@ -340,6 +380,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
                 # ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2 mt-4')
                 ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0, value=datav.vWintertemp, placeholder= "Wert", on_change=lambda e: setwinter(e.value)).classes('ml-8')
+    
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):

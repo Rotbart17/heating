@@ -45,7 +45,8 @@ sensordict = {
     "Innensensor" : "(-0.05*rt+235.5)",
     "Brauchwassersensor" : "(-7.796707692*pow(rt,3)) + (39.9983315*pow(rt,2)) - (109.2998905*rt) +163.7167048"
 }
-# Dictinary für die Sensor Dummy Werte wenn V_Mode=True. Es sind Werte die entsprechend umgerechnet werden 
+
+# Dictionary für die Sensor Dummy Werte wenn V_Mode=True. Es sind Werte die entsprechend umgerechnet werden 
 # müssen, damit die Formeln auch ausgetestet werden, Wenn auch mom. nur mit einem Wert. 
 rawvaluedict = {
     "Kesselsensor" : 2.38,
