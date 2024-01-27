@@ -28,11 +28,14 @@ FastApiAPPName = "Heizung"
 
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
 # Liste damit man alle Sensoren in einer Schleife bearbeiten kann.
-# wird in den Sensorklassen befüllt
+# wird in den Sensorklassen befüllt mit den einzelnen Sensor Threads
 SensorList = []
 
-# Liste aller Sensortabellen
-SENSORTABLELIST = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
+
+# Liste aller Temperatursensorentabellen
+# außer , "Brennersensor"
+# 
+TemperaturSensorList = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor"]
 
 
 # Sensor Dictionary um jede Sensorklasse mit der richtigen Formel zu versorgen, sonst muss der 
@@ -96,7 +99,7 @@ AussenTempStep : int = 0.5
 # Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
 # BrauchwasserSoll ist die Solltemperatur des Brauchwassers, Wird in der GUI eingestellt und nur dort geschrieben
 # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird, Fixwert hier im Programm
-Brauchwasser :float = 0
+Brauchwasser : float = 0
 BrauchwasserSoll : float = 55
 BrauchwasserError : float = 70
 

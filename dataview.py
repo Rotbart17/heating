@@ -148,6 +148,12 @@ class maindata:
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
+    # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
+    # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
+    # aber so müsste es ja auchgehen.
+    _SensorXListe=[_KesselDaten_x,_AussenDaten_x,_InnenDaten_x,_BrauchwasserDaten_x]
+    _SensorYListe=[_KesselDaten_y,_AussenDaten_y,_InnenDaten_y,_BrauchwasserDaten_y]
+
      # lädt die Daten aus der Datenbank in die klasseninternen Variablen
     def _viewloader(self,initialrun):
         try:
@@ -262,7 +268,7 @@ class maindata:
             exit(1)
 
     # lädt die letzten Werte der Sensoren für die Anzeige
-    def _sensordataload():
+    def _sensordataload(self):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
                 cursor=db.cursor()
@@ -271,10 +277,20 @@ class maindata:
                 # diese Datenmenge muss ggf. reduziert werden, da sonst zu viele Messwerte
                 # für die Anzeige vorhanden sind. Die Ergebnisse müssen wieder der jeweiligen Liste 
                 # zugeordnet werden. Dann kann die Anzeige sie hoffentlich verarbeiten.
+                for i in settings.TemperaturSensorList:
+                    tn= settings.TemperaturSensorList[i]
+                    sql = f"SELECT begin_date FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
+                    cursor.execute(sql)
+                    results=cursor.fetchall()
+                    # Der x-Wert ist die Zeit
+                    self._SensorXListe[i] = [item[0] for item in results]
 
-                # sql= settings.read_WorkDataView_complete
-                # cursor.execute(sql)
-                # results=cursor.fetchone()
+                    # Der y-Wert ist die Temperatur
+                    sql = f"SELECT value FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
+                    cursor.execute(sql)
+                    results=cursor.fetchall()
+                    self._SensorYListe[i] = [item[0] for item in results]
+
             cursor.close()
             db.close()
         except sqlite3.Error as e:
@@ -412,14 +428,20 @@ class maindata:
         # ZZ brauche noch einen Ort an dem ich den Thread wieder einfange!
         # vielleicht beim löschen der Klasse?
         dummy=0    
+
         global dv_poll
         self.dv_poll = threading.Thread(target=self._dataviewpolling, name="Thread-GUI-DataView", args=(dummy,))
-        
-        logging.info('Starte DB-Abfrage Thread!')
+        logging.info('Starte DB-Abfrage dataview Thread!')
         settings.ThreadList.append(self.dv_poll)
         self.dv_poll.start()
-        logging.debug('DB-Abfrage Thread gestartet!')
+        logging.debug('DB-Abfrage Thread dataview gestartet!')
 
+        global sensor_poll
+        self.sensor_poll = threading.Thread(target=self._sensorpolling, name="Thread-GUI-Sensorpolling", args=(dummy,))
+        logging.info('Starte DB-Abfrage Sensor Thread!')
+        settings.ThreadList.append(self.sensor_poll)
+        self.sensor_poll.start()
+        logging.debug('DB-Abfrage Thread Sensor gestartet!')
 
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView

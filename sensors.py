@@ -26,24 +26,17 @@ class sensor:
     tn : str = ""
     
     # Thread Merk Variable, damit man den Thread später wieder anhalten kann
-    # x 
-
-    
-    
 
     # DB Tabelle anlegen wenn notwendig
     def __init__(self,tablename): 
         
         self.tn = tablename
-        # create a table from the create_table_sql statement
-        # :param conn: Connection object
-        # :param create_table_sql: a CREATE TABLE statement
-        # :return:
+
         sql_create_sensor_table_p1 = "CREATE TABLE IF NOT EXISTS " 
         sql_create_sensor_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                         value real,              \
-                                        begin_date text,         \
-                                        end_date text,           \
+                                        begin_date int,         \
+                                        end_date int,           \
                                         error integer            \
                                     ); "
                 
@@ -159,8 +152,7 @@ class sensor:
         
         # Wert in DB speichern 
         def storevalue(temperature,conn):
-            dt = datetime.datetime.now()
-            sql = "INSERT INTO " + tn + " (value, begin_date) VALUES(" + str(temperature) + " , \"" + str(dt) + "\"); " 
+            sql = f"INSERT INTO {tn} (value, begin_date) VALUES ( {temperature}, datetime('now') );"
             conn.execute(sql)
             conn.commit()
             logging.debug('Sensorwert in '+tn+' gespeichert!')
