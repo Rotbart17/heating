@@ -16,9 +16,17 @@ def main():
     ass= sensors.sensor("Aussensensor")
     bws= sensors.sensor("Brauchwassersensor")
     iss= sensors.sensor("Innensensor")
-    print("Nix war los")
-    print("schauen wir Mal ob das mit dem Thread nun funktioniert")
-    time.sleep(100)
+    
+
+    print("Das sorgt dafür, dass in der DB auch ne handvoll Daten drin sind.")
+    time.sleep(200)
+
+    # hier muss die GUI gestartet werden
+    # hier muss der Regelkreisgestartet werden
+    # der Überwachungsprozess sollte aus syste-D gestartet werden.
+
+
+    # hier ziehen wir dann wieder die Bremse
     sensors.sensor.threadstop=True
     print("ich bin echt neugierig!")
     time.sleep(5)
