@@ -37,7 +37,7 @@ class sensor:
                                         value real,              \
                                         begin_date int,         \
                                         end_date int,           \
-                                        error integer            \
+                                        error int            \
                                     ); "
                 
         try:

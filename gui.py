@@ -154,7 +154,7 @@ def malen() -> None:
             'yaxis': {'title': 'Temperatur','gridcolor': 'white'},
         },
     }
-    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-span-13') 
+    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-start-1 col-span-12') 
     ui.update(plottemp)
 
 

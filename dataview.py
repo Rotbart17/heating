@@ -277,20 +277,23 @@ class maindata:
                 # diese Datenmenge muss ggf. reduziert werden, da sonst zu viele Messwerte
                 # für die Anzeige vorhanden sind. Die Ergebnisse müssen wieder der jeweiligen Liste 
                 # zugeordnet werden. Dann kann die Anzeige sie hoffentlich verarbeiten.
-                for i in settings.TemperaturSensorList:
-                    tn= settings.TemperaturSensorList[i]
+                i=0
+                for tn in settings.TemperaturSensorList:
+                    xl=[]
+                    yl=[]
                     sql = f"SELECT begin_date FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
                     cursor.execute(sql)
                     results=cursor.fetchall()
                     # Der x-Wert ist die Zeit
-                    self._SensorXListe[i] = [item[0] for item in results]
+                    xl = [item[0] for item in results]
+                    self._SensorXListe[i] = xl.copy
 
                     # Der y-Wert ist die Temperatur
                     sql = f"SELECT value FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
                     cursor.execute(sql)
                     results=cursor.fetchall()
-                    self._SensorYListe[i] = [item[0] for item in results]
-
+                    self._SensorYListe[i].append = [item[0] for item in results]
+                    i+=1
             cursor.close()
             db.close()
         except sqlite3.Error as e:
