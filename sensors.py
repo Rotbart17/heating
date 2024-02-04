@@ -152,7 +152,7 @@ class sensor:
         
         # Wert in DB speichern 
         def storevalue(temperature,conn):
-            sql = f"INSERT INTO {tn} (value, begin_date) VALUES ( {temperature}, datetime('now') );"
+            sql = f"INSERT INTO {tn} (value, begin_date) VALUES ( {temperature}, datetime('now','localtime') );"
             conn.execute(sql)
             conn.commit()
             logging.debug('Sensorwert in '+tn+' gespeichert!')

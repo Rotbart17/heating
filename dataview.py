@@ -65,6 +65,11 @@ class dv(Enum):
     Hand_Dusche_changetime=29
     threadstop=30
 
+class sens(Enum):
+    Kesselsensor=0
+    Aussensensor=1
+    Innensensor=2
+    Brauchwassersensor=3
 
 
 
@@ -111,6 +116,8 @@ class maindata:
     # Kessel ist die aktuelle Kesseltemperatur
     # KesselSoll ist die KesselSolltemperatur
     # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
+    # die x und y Listen sind die Sensordaten nach x und y gesplittet. 
+    # Die Grafikfunktion braucht diese Trennung
     _Kessel : float = 0
     _KesselSoll : float = 0
     _KesselMax : float = 90
@@ -148,11 +155,9 @@ class maindata:
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
-    # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
-    # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
-    # aber so müsste es ja auchgehen.
-    _SensorXListe=[_KesselDaten_x,_AussenDaten_x,_InnenDaten_x,_BrauchwasserDaten_x]
-    _SensorYListe=[_KesselDaten_y,_AussenDaten_y,_InnenDaten_y,_BrauchwasserDaten_y]
+    # Liste für die Sensoren
+    _SensorXListe=[]
+    _SensorYListe=[]
 
      # lädt die Daten aus der Datenbank in die klasseninternen Variablen
     def _viewloader(self,initialrun):
@@ -286,13 +291,14 @@ class maindata:
                     results=cursor.fetchall()
                     # Der x-Wert ist die Zeit
                     xl = [item[0] for item in results]
-                    self._SensorXListe[i] = xl.copy
+                    self._SensorXListe[i] = xl
 
                     # Der y-Wert ist die Temperatur
                     sql = f"SELECT value FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
                     cursor.execute(sql)
                     results=cursor.fetchall()
-                    self._SensorYListe[i].append = [item[0] for item in results]
+                    yl = [item[0] for item in results]
+                    self._SensorYListe[i] = yl
                     i+=1
             cursor.close()
             db.close()
@@ -407,12 +413,41 @@ class maindata:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
             exit(1)
 
+    # Daten der Zeitsteuerung laden
+    def _zeitsteuerungload(self):
+        try:
+            with sqlite3.connect(settings.DBPATH) as db:
+                logging.debug('Zeitsteuerung lesen!')
+                cursor=db.cursor()
+                sql= settings.sql_readzeitsteuerung
+                cursor.execute(sql)
+                t=cursor.fetchall()
+                # self._zeitsteuerung=[item[0] for item in t]
+                cursor.close()
+            db.close()
+        except sqlite3.Error as e:
+            logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
+            exit(1)
+
+
 
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
     # da die GUI immer nach dem DB Modul gestartet wird, müssen 
     # hier Werte vorhanden sein. Sind sie es nicht, ist das ein fatler
     # Fehler
     def __post_init__(self):
+        # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
+        # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
+        # aber so müsste es ja auchgehen.
+        self._SensorXListe.append(self._KesselDaten_x)
+        self._SensorXListe.append(self._AussenDaten_x)
+        self._SensorXListe.append(self._InnenDaten_x)
+        self._SensorXListe.append(self._BrauchwasserDaten_x)
+        self._SensorYListe.append(self._KesselDaten_y)
+        self._SensorYListe.append(self._AussenDaten_y)
+        self._SensorYListe.append(self._InnenDaten_y)
+        self._SensorYListe.append(self._BrauchwasserDaten_y)
+
         if checktable(settings.WorkDataView)==False:
             logging.error(f'Die Tabelle {settings.WorkDataView} existiert nicht. Programm wird beendet')
             exit(1) 
@@ -426,6 +461,9 @@ class maindata:
 
         # Laden der Initialen SensorWerte
         self._sensordataload()
+
+        # Zeitsteuerung laden
+        self._zeitsteuerungload()
     
         # starten des Threads für das periodische Update der Dataview-Werte oder Initialisierung
         # ZZ brauche noch einen Ort an dem ich den Thread wieder einfange!
@@ -601,35 +639,35 @@ class maindata:
 
     @property
     def vKesselIstDaten_x(self):
-        return self._KesselIstDaten_x
+        return self._SensorXListe[sens.Kesselsensor.value]
 
     @property
     def vKesselIstDaten_y(self):
-        return self._KesselIstDaten_y
+        return self._SensorYListe[sens.Kesselsensor.value]
 
     @property
     def vAussenDaten_x(self):
-        return self._AussenDaten_x
+        return self._SensorXListe[sens.Aussensensor.value]
 
     @property
     def vAussenDaten_y(self):
-        return self._AussenDaten_y
+        return self._SensorYListe[sens.Aussensensor.value]
 
     @property
     def vInnenDaten_x(self):
-        return self._InnenDaten_x
+        return self._SensorXListe[sens.Innensensor.value]
 
     @property
     def vInnenDaten_y(self):
-        return self._InnenDaten_y
+        return self._SensorYListe[sens.Innensensor.value]
     
     @property
     def vBrauchwasserDaten_x(self):
-        return self._BrauchwasserDaten_x
+        return self._SensorXListe[sens.Brauchwassersensor.value]
 
     @property
     def vBrauchwasserDaten_y(self):
-        return self._BrauchwasserDaten_y
+        return self._SensorYListe[sens.Brauchwassersensor.value]
     
 # es ist schon Mist die Klasse durch den Import in gui.py global zu definieren!
 # da hätte ich gerne einen besseren Ort   

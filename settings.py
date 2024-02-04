@@ -52,7 +52,7 @@ sensordict = {
 # Dictionary für die Sensor Dummy Werte wenn V_Mode=True. Es sind Werte die entsprechend umgerechnet werden 
 # müssen, damit die Formeln auch ausgetestet werden, Wenn auch mom. nur mit einem Wert. 
 rawvaluedict = {
-    "Kesselsensor" : 2.38,
+    "Kesselsensor" : 2.44,
     "Aussensensor" : 3.57,
     "Innensensor" : 4350,
     "Brauchwassersensor" : 2.38
@@ -228,4 +228,4 @@ sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 von text,            \
                                 bis text             \
                         );"
-
+sql_readzeitsteuerung=f'SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};'

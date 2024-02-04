@@ -90,71 +90,82 @@ app.on_shutdown(lambda: de_init_gui_data())
 
 
 
+
 #---------------------------------------------------------------------------------------------------------
 # Kopfzeile ----------------------------------
 with ui.header().classes(replace='row items-center') as header:
-    # ui.button(on_click=lambda: left_drawer.toggle()).props('flat color=white icon=menu')
     
     with ui.tabs() as tabs:     
         information=ui.tab('Information')
-        einstellungen=ui.tab('Heizbetrieb')
+        heizbetrieb=ui.tab('Heizbetrieb')
         kesselsteuerung=ui.tab('Kesselsteuerung')
-    label = ui.label().classes('row col-5 justify-end')
-    ui.timer(1.0, lambda: label.set_text(f'{datetime.now():%H:%M}'))  
+        einstellungen=ui.tab('Einstellungen')
+    label = ui.label().classes('ml-44')
+    ui.timer(60.0, lambda: label.set_text(f'{datetime.now():%H:%M}'))  
 
 #---------------------------------------------------------------------------------------------------------
 # Fusszeile ----------------------------------
 with ui.footer(value=True).classes('height-hint=30') as footer:
-    ui.label('Buderus Ecomatic')
+    ui.label('Buderus Ecomatic Digital V1.0.0')
+
+
+# Alle Sensordaten für die Grafik auf im ersten Reiter updaten
+# Messwertreihen zuweisen
+def updatesensordata():
+    figtemp['data'][0]['x']=datav.vAussenDaten_x
+    figtemp['data'][0]['y']=datav.vAussenDaten_y
+    figtemp['data'][1]['x']=datav.vInnenDaten_x
+    figtemp['data'][1]['y']=datav.vInnenDaten_y
+    figtemp['data'][2]['x']=datav.vKesselIstDaten_x
+    figtemp['data'][2]['y']=datav.vKesselIstDaten_y
+    figtemp['data'][3]['x']=datav.vBrauchwasserDaten_x
+    figtemp['data'][3]['y']=datav.vBrauchwasserDaten_y
+    ui.update(plottemp)
 
 
 # ------------------
 # Grafiken anzeigen
 def malen() -> None:
-    # df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-    # fig = go.Figure([go.Scatter(x=df['Date'], y=df['AAPL.High'])])
-    
-    # fig = go.Figure(go.Scatter(y = [10, 12, 20, 22, 20, 17, 16, 14], x=[8, 10, 12, 14, 16, 18, 20, 22]))
-    # fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-    # ui.plotly(fig).classes('w-full h-24').classes('col-span-8 row-span-2')  
 
+    global figtemp
     figtemp = {
         'data': 
         [
             {
                 'type': 'scatter',
-                'name': 'Au-T',
+                'name': 'Aussen-T',
                 'x': datav.vAussenDaten_x,
                 'y': datav.vAussenDaten_y,
             },
             {
                 'type': 'scatter',
-                'name': 'In-T',
+                'name': 'Innen-T',
                 'x': datav.vInnenDaten_x,
                 'y': datav.vInnenDaten_y,
             },
             {
                 'type': 'scatter',
-                'name': 'Ke-T',
+                'name': 'Kessel-T',
                 'x': datav.vKesselIstDaten_x,
                 'y': datav.vKesselIstDaten_y,
             },
             {
                 'type': 'scatter',
-                'name': 'Br-T',
+                'name': 'Brauchw-T',
                 'x': datav.vBrauchwasserDaten_x,
                 'y': datav.vBrauchwasserDaten_y,
             },          
         ],
         'layout': 
         {
-            'margin': {'l': 35, 'r': 20, 't': 20, 'b': 35},
+            'margin': {'l': 35, 'r': 20, 't': 20, 'b': 40},
             'plot_bgcolor': '#E5ECF6',
             'xaxis': {'title': 'Datum Uhrzeit','gridcolor': 'white'},
             'yaxis': {'title': 'Temperatur','gridcolor': 'white'},
         },
     }
-    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-start-1 col-span-12') 
+    global plottemp
+    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-start-1 col-span-4') 
     ui.update(plottemp)
 
 
@@ -167,220 +178,202 @@ def set_hand_dusche():
         datav.vHand_Dusche=False
         ui.notify('Brauchwasser ausgeschaltet!')
        
+# Alle 2 Minuten das Upate der Daten für die Grafik aufrufen
+ui.timer(120.0, lambda: updatesensordata()) 
 
-        
 #---------------------------------------------------------------------------------------------------------
-# hier werden 3 TABs definiert (Information / Einstellungen / Kesselsteuerung )
+# hier werden 4 TABs definiert (Information  / Heizbetrieb / Kesselsteuerung / Einstellungen)
 with ui.tab_panels(tabs, value=information).classes('w-full'):
    
 
     #---------------------------------------------------------------------------------------------------------   
     # Erster Reiter ------------------
     with ui.tab_panel(information):
-        with ui.grid(columns=17, rows=6).classes('w-full gap-2'):
-            # Zeile 1      
-            ui.label(f'Aussen-T = {datav.vAussen}').classes('text-base col-span-4 flex items-end')
+        with ui.grid(columns=4, rows=1).classes('w-full'):
+        # Zeile 1      
+            ui.label(f'Aussen-Temp = {datav.vAussen}').classes('text-base col-start-1')
             if datav.vWinter==True:
                 t='Winterbetrieb'
             else:
                 t='Sommerbetrieb'
-            ui.label(f'{t}').classes('text-base col-start-5 col-span-3 flex items-end')
-            ui.label(f'Innen-T = {datav.vInnen}').classes('text-base col-start-9 col-span-4 flex items-end')   
-            ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-15 col-span-4 w-25')
+            ui.label(f'{t}').classes('text-base col-start-2 ')
+            ui.label(f'Innen-Temp = {datav.vInnen}').classes('text-base col-start-3')   
+            ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-25 h-25')
 
-            # Zeile 2
-            
+        # Zeile 2
+        with ui.grid(columns=4, rows=1).classes('w-full'):    
             malen()
 
-            # Zeile 3
-            
-            ui.label(f'Kessel-Soll-T = {datav.vKesselSoll}').classes('text-base col-start-1 col-span-4 flex items-center')  
-            ui.label(f'Kessel-T = {datav.vKessel}').classes('text-base col-start-5 col-span-4 flex items-center')
-            ui.label(f'Brauchw-T = {datav.vBrauchwasser}').classes('text-base col-start-9 col-span-3  flex items-center') 
-            ui.label('Brauchw-Pumpe').classes('text-base col-start-13 col-span-3 flex items-center')
+        # Zeile 3
+        with ui.grid(columns=4, rows=2).classes('w-full'):      
+            ui.label(f'Kessel-Soll-Temp = {datav.vKesselSoll}').classes('text-base col-start-1  flex items-center')  
+            ui.label(f'Kessel-Temp = {datav.vKessel}').classes('text-base flex items-center')
+            ui.label(f'Brauchw-Temp = {datav.vBrauchwasser}').classes('text-base col-start-3 flex items-center') 
+            ui.label('Brauchw-Pumpe').classes('text-base col-start-4 flex items-center')
             ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_Brauchwasser_an',value='True').classes('mt-3')
 
-            
-            # Zeile 4
-            
-            
-
-            # Zeile 5
-            ui.label(f'Brenner läuft').classes('text-base col-start-1 col-span-3 h-9')
+        # Zeile 4
+            ui.label(f'Brenner läuft').classes('text-base col-start-1 h-9')
             ui.spinner(type='ball', color='red' ,size='sm').bind_visibility_from(target_object=datav,target_name='vBrenner_an', value='False').classes('h-9')
-            ui.label('Brennerstörung').classes('text-base col-start-5 col-span-3 h-9')
+            ui.label('Brennerstörung').classes('text-base col-start-2 h-9')
             ui.spinner(size='sm',color='red').bind_visibility_from(target_object=datav,target_name='vBrenner_Stoerung', value='False').classes('h-9')
-            ui.label('H-Pumpe oben').classes('text-base col-start-9 col-span-3 h-9')
+            ui.label('H-Pumpe oben').classes('text-base col-start-3 h-9')
             ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_oben_an', value='False').classes('h-9')
-            ui.label('H-Pumpe unten').classes('text-base col-start-13 col-span-3 h-9')
+            ui.label('H-Pumpe unten').classes('text-base col-start-4  h-9')
             ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_unten_an', value='False').classes('h-9')
 
     #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
-    with ui.tab_panel(einstellungen):
-        with ui.splitter(horizontal=False, value=80.0) as splitter:
+    with ui.tab_panel(heizbetrieb):
+        '''
+        - Zeit(en) für Brauchwasser festlegen / Anzeigen für Wochentag und Zeit
+        - Zeit(en) für Heizbetrieb festlegen  / anzeigen für Wochentag und Zeit
+        - Zeit(en) für Nachtabsenkung festlegen / anzeigen für Wochentag und Zeit
+            Einstellen mit:
+                Dropdown: Mo-Fr, Mo, Die, Mi, Do, Fr, Sa, So, Sa+So, 
+                Feld: Uhrzeit von
+                Feld: Uhrzeit bis
+                Eigenschaft: Heizen Start, Heizen Stop, Nachtabsenkung Start, Nachtabsenkung Stop, Warmwasser Start, Warmwasser Stop
 
-            # Linke Seite vor den Trennstrich            
-            with splitter.before:
-                '''
-                - Zeit(en) für Brauchwasser festlegen / Anzeigen für Wochentag und Zeit
-                - Zeit(en) für Heizbetrieb festlegen  / anzeigen für Wochentag und Zeit
-                - Zeit(en) für Nachtabsenkung festlegen / anzeigen für Wochentag und Zeit
-                    Einstellen mit:
-                        Dropdown: Mo-Fr, Mo, Die, Mi, Do, Fr, Sa, So, Sa+So, 
-                        Feld: Uhrzeit von
-                        Feld: Uhrzeit bis
-                        Eigenschaft: Heizen Start, Heizen Stop, Nachtabsenkung Start, Nachtabsenkung Stop, Warmwasser Start, Warmwasser Stop
+            - max. Kesseltemperatur einstellen = Vorlauf Temperatur
+            - Sommer / Winterumschaltung per Temperatur und Anzeige Jahreszeit, ggf. noch eine Berücksichtigung der Jahreszeit für Sommer.-Winterumschaltung?
+        '''
+        # Wird aufgerufen wenn man bei einer Tabellenzeile die Checkbox markiert
+        # dann werden mal alle Werte der Tabelle in die globalen Variablen befördert.
+        def handle_click():
+            # ui.notify(table.selected)
+            if table.selected != []:
+                global id, typ,tage,von,bis,handle_id
+                # print("Handle Click:",table.selected)
+                handle_id =table.selected[0]['id']
+                typval=table.selected[0]['typ']
+                typ=typ_r_dict[typval]
+                tageval=table.selected[0]['tage']
+                tage=tage_r_dict[tageval]
+                von=table.selected[0]['von']
+                bis=table.selected[0]['bis']
+                # print("global gesetzt handle_id:",handle_id,"typ:",typ,"tage:",tage,von, bis)
+            
+                                
+        # löscht eine markierte Tabellenzeile
+        def remove():
+            # ui.notify(table.selected)
+            if table.selected!=None:
+                table.remove_rows(table.selected[0])
 
-                    - max. Kesseltemperatur einstellen = Vorlauf Temperatur
-                    - Sommer / Winterumschaltung per Temperatur und Anzeige Jahreszeit, ggf. noch eine Berücksichtigung der Jahreszeit für Sommer.-Winterumschaltung?
-                '''
-                # Wird aufgerufen wenn man bei einer Tabellenzeile die Checkbox markiert
-                # dann werden mal alle Werte der Tabelle in die globalen Variablen befördert.
-                def handle_click():
-                    # ui.notify(table.selected)
-                    if table.selected != []:
-                        global id, typ,tage,von,bis,handle_id
-                        # print("Handle Click:",table.selected)
-                        handle_id =table.selected[0]['id']
-                        typval=table.selected[0]['typ']
-                        typ=typ_r_dict[typval]
-                        tageval=table.selected[0]['tage']
-                        tage=tage_r_dict[tageval]
-                        von=table.selected[0]['von']
-                        bis=table.selected[0]['bis']
-                        print("global gesetzt handle_id:",handle_id,"typ:",typ,"tage:",tage,von, bis)
-                    
-                                      
-                # löscht eine markierte Tabellenzeile
-                def remove():
-                    # ui.notify(table.selected)
-                    if table.selected!=None:
-                        table.remove_rows(table.selected[0])
+        # Prüft ob es eine gültige Zeit ist
+        def isTimeFormat(input):
+            try:
+                time.strptime(input, '%H:%M')
+                return True
+            except ValueError:
+                return False
 
-                # Prüft ob es eine gültige Zeit ist
-                def isTimeFormat(input):
-                    try:
-                        time.strptime(input, '%H:%M')
-                        return True
-                    except ValueError:
-                        return False
+        # setzt den Typ    
+        def settyp(value):
+            global typ
+            typ=value
+            # ui.notify(typ)
 
-                # setzt den Typ    
-                def settyp(value):
-                    global typ
-                    typ=value
-                    # ui.notify(typ)
+        # Setzt die Tage
+        def settage(value):
+            global tage
+            tage=value
+            # ui.notify(tage)
 
-                # Setzt die Tage
-                def settage(value):
-                    global tage
-                    tage=value
-                    # ui.notify(tage)
+        # Setzt den Beginn einer Aufgabe
+        def setvon(value):
+            erg=isTimeFormat(value)
+            if erg == True:
+                global von
+                von=value
+                # ui.notify(von)
+            return(erg)
 
-                # Setzt den Beginn einer Aufgabe
-                def setvon(value):
-                    erg=isTimeFormat(value)
-                    if erg == True:
-                        global von
-                        von=value
-                        # ui.notify(von)
-                    return(erg)
-
-                # setzt  das Ende einer Aufgabe
-                def setbis(value):
-                    erg=isTimeFormat(value)
-                    if erg == True:
-                        global bis
-                        bis=value
-                        # ui.notify(bis)   
-                    return(erg)
-                
-
-                # Definition des Dialog für das Hinzufügen von Werten
-                with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
-                    with ui.grid(columns=2, rows=3):
-                        # schliesst den Dialog
-                        def close_add():
-                            global id, typ, tage, von, bis
-                            id +=1
-                            print('Anzulegen:',id,typ,tage,von,bis)
-                            if typ != 0 and tage !=0:
-                                table.add_rows({'id': id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
-                                print('Neu Angelegt:',id,typ,tage,von,bis)
-                                # ZZ hier muss es in die DB gespeichert werden
-                                tabledialogadd.close()
-                        
-                        ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
-                        ui.select(options=tagedict, label='Tage', with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
-                        ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
-                        ui.input(label='Zeit bis', value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
-                        ui.button('OK', on_click=close_add).classes('w-20')
-
-                # Daten für den Anzeigedialog updaten
-                def updateeditdialog():
-                    # print("vor dem Edit Dialog:",handle_id,typ,tage,von,bis)
-                    if handle_id !=0:
-                        s1.value=typ
-                        s2.value=tage
-                        s3.value=von
-                        s4.value=bis
-                        tabledialogedit.open()
+        # setzt  das Ende einer Aufgabe
+        def setbis(value):
+            erg=isTimeFormat(value)
+            if erg == True:
+                global bis
+                bis=value
+                # ui.notify(bis)   
+            return(erg)
         
 
-                # macht eine Tabellenzeile editierbar
-                with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
-                    with ui.grid(columns=2, rows=3):
-                        # schliesst den Dialog
-                        def close_edit():
-                            # print("Nach Edit",handle_id, typ,tage,von,bis)
-                            # print(typdict[typ])
-                            # ZZ hier muss es in die DB gespeichert werden
-                        
-                            if table.selected!= []:
-                                if typ != 0 and tage !=0:
-                                    # aktuelle zeile entfernen
-                                    remove()
-                                    #neue Zeile Hinzufügen
-                                    table.add_rows({'id': handle_id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
-                                    # table.sorted
-                                    print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
-                                    update_table.refresh()
-                            # handle_id=0
-                            tabledialogedit.close()
-                        
-                        s1=ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
-                        s2=ui.select(options=tagedict,label='Tage',  with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
-                        s3=ui.input(label='Zeit von',  value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
-                        s4=ui.input(label='Zeit bis',  value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
-                        ui.button('OK', on_click=close_edit).classes('w-20')
+        # Definition des Dialog für das Hinzufügen von Werten
+        with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
+            with ui.grid(columns=2, rows=3):
+                # schliesst den Dialog
+                def close_add():
+                    global id, typ, tage, von, bis
+                    id +=1
+                    # print('Anzulegen:',id,typ,tage,von,bis)
+                    if typ != 0 and tage !=0:
+                        table.add_rows({'id': id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                        # print('Neu Angelegt:',id,typ,tage,von,bis)
+                        # ZZ hier muss es in die DB gespeichert werden
+                        tabledialogadd.close()
                 
+                ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
+                ui.select(options=tagedict, label='Tage', with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
+                ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
+                ui.input(label='Zeit bis', value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
+                ui.button('OK', on_click=close_add).classes('w-20')
 
-                # hier beginnt die Anzeige der  linken Seite des Reiters -----------
-                # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
-                with ui.row(wrap=False):
-                    # ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
-                    ui.button('Neu', on_click=tabledialogadd.open).classes('ml-4')
-                    ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
-                    ui.button('Löschen', on_click=remove).classes('mr-8 ml-8')
+        # Daten für den Anzeigedialog updaten
+        def updateeditdialog():
+            # print("vor dem Edit Dialog:",handle_id,typ,tage,von,bis)
+            if handle_id !=0:
+                s1.value=typ
+                s2.value=tage
+                s3.value=von
+                s4.value=bis
+                tabledialogedit.open()
 
-                # Das malt dann die Tabelle unter die Knöpfe 
-                    
-                update_table()
 
+        # macht eine Tabellenzeile editierbar
+        with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
+            with ui.grid(columns=2, rows=3):
+                # schliesst den Dialog
+                def close_edit():
+                    # print("Nach Edit",handle_id, typ,tage,von,bis)
+                    # print(typdict[typ])
+                    # ZZ hier muss es in die DB gespeichert werden
+                
+                    if table.selected != []:
+                        if typ != 0 and tage !=0:
+                            # aktuelle zeile entfernen
+                            remove()
+                            #neue Zeile Hinzufügen
+                            table.add_rows({'id': handle_id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                            # hier muss die Zeile in die DB
+                            # table.sorted
+                            print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
+                            update_table.refresh()
+                    # handle_id=0
+                    tabledialogedit.close()
+                
+                s1=ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
+                s2=ui.select(options=tagedict,label='Tage',  with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
+                s3=ui.input(label='Zeit von',  value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
+                s4=ui.input(label='Zeit bis',  value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
+                ui.button('OK', on_click=close_edit).classes('w-20')
+        
+
+        # hier beginnt die Anzeige der  linken Seite des Reiters -----------
+        # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
+        with ui.row(wrap=False):
+            # ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
+            ui.button('Neu', on_click=tabledialogadd.open).classes('ml-4')
+            ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
+            ui.button('Löschen', on_click=remove).classes('ml-8')
+
+        # Das malt dann die Tabelle unter die Knöpfe 
             
+        update_table()
+
+        
             
-            # Rechte Seite nach dem Trennstrich -----------------------------------
-
-            with splitter.after:
-                # hier brauchen wir nun Sommer Winterumschaltung Temp
-                def setwinter(value):
-                    datav.vWintertemp=value
-                    ui.notify('Winter ab: '+str(datav.vWintertemp))
-
-                # ui.label('Steuerwerte').classes('text-base').classes('ml-8 mb-2 mt-4')
-                ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0, value=datav.vWintertemp, placeholder= "Wert", on_change=lambda e: setwinter(e.value)).classes('ml-8')
-    
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
@@ -447,7 +440,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
                     # So jetzt sollten Anfang und Ende festliegen
                     # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
-                    ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
+                    # ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
                     if startidx<=stopidx and startidx>=0 and stopidx>=0:
                         # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
                         # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
@@ -457,15 +450,16 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                             templist[i]+=gradanpass
                             i+=1
                         datav.vKesselDaten_y=templist.copy()
-                        plotkessel.update()
-                        # fig['data'][0]['y']=datav.KesselDaten_y
+                        plotkessel.figure['data'][0]['y']=templist.copy()
+                        ui.update(plotkessel)
+                        
                     else:
                         ui.notify(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
             ui.update(plotkessel)
         
 
         # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
-        with ui.row():
+        with ui.grid(columns=4, rows=1).classes('w-full'):
             ui.number(label='Grad von',   value='0', step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
                       placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
             ui.number(label='Grad bis',   value='0', step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
@@ -474,15 +468,22 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                       placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
             ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
 
-        
-            
 
-# mal die ganzen Aktivitätskenzeichen zu Anfang löschen
-#set_brenner_spin()           
-#set_brennerstoerung_spin()
-#set_brauchwasser_spin()
-#set_pumpe_oben_spin()
-#set_pumpe_unten_spin()
+    #---------------------------------------------------------------------------------------------------------   
+    # Vierter  Reiter ------------------
+    with ui.tab_panel(einstellungen):
+        with ui.grid(rows=4,columns=4):    
+            # hier brauchen wir nun Sommer Winterumschaltung Temp
+            def setwinter(value):
+                datav.vWintertemp=value
+                ui.notify('Winter ab: '+str(datav.vWintertemp))
+
+
+            ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
+                on_change=lambda e: setwinter(e.value)).classes('flex-1 w-32')
+            # offene Themen:
+            # Schalter Brauchwasser vollstandig ausschalten!
+            # ggf die Gleichung füe die Kesselkurve eingeben
 
 
 
