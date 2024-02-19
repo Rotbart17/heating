@@ -311,7 +311,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     if typ != 0 and tage !=0:
                         table.add_rows({'id': id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
                         # print('Neu Angelegt:',id,typ,tage,von,bis)
-                        # ZZ hier muss es in die DB gespeichert werden
+                        datav.vZeitsteuerung=tuple((id, typdict[typ], tagedict[tage],von,bis))
                         tabledialogadd.close()
                 
                 ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
@@ -337,8 +337,6 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 # schliesst den Dialog
                 def close_edit():
                     # print("Nach Edit",handle_id, typ,tage,von,bis)
-                    # print(typdict[typ])
-                    # ZZ hier muss es in die DB gespeichert werden
                 
                     if table.selected != []:
                         if typ != 0 and tage !=0:
@@ -348,7 +346,8 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                             table.add_rows({'id': handle_id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
                             # hier muss die Zeile in die DB
                             # table.sorted
-                            print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
+                            # print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
+                            datav.vZeitsteuerung=(handle_id, typdict[typ], tagedict[tage],von,bis)
                             update_table.refresh()
                     # handle_id=0
                     tabledialogedit.close()

@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 import logging
 import settings
-from settings import SensorList, DBPATH
+from settings import DBPATH
 import os
 import time
 
@@ -205,6 +205,7 @@ def init_db_environment():
             settings.KesselSoll, t,\
             settings.Brauchwasser, t,\
             settings.BrauchwasserSoll,t,\
+            settings.BrauchwasserAus,t, \
             settings.Innen,  t,\
             settings.Aussen, t,\
             settings.Pumpe_oben_an, t,\

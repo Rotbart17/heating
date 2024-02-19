@@ -47,23 +47,25 @@ class dv(Enum):
     Brauchwasser_changetime=11
     BrauchwasserSoll=12
     BrauchwasserSoll_changetime=13
-    Innen=14
-    Innen_changetime=15
-    Aussen=16
-    Aussen_changetime=17
-    Pumpe_oben_an=18
-    Pumpe_oben_an_changetime=19
-    Pumpe_unten_an=20
-    Pumpe_unten_an_changetime=21
-    Pumpe_Brauchwasser_an=22
-    Pumpe_Brauchwasser_an_changetime=23
-    Brenner_an=24
-    Brenner_an_changetime=25
-    Brenner_Stoerung=26
-    Brenner_Stoerung_changetime=27
-    Hand_Dusche=28
-    Hand_Dusche_changetime=29
-    threadstop=30
+    BrauchwasserAus=14
+    BrauchwasserAus_changetime=15
+    Innen=16
+    Innen_changetime=17
+    Aussen=18
+    Aussen_changetime=19
+    Pumpe_oben_an=20
+    Pumpe_oben_an_changetime=21
+    Pumpe_unten_an=22
+    Pumpe_unten_an_changetime=23
+    Pumpe_Brauchwasser_an=24
+    Pumpe_Brauchwasser_an_changetime=25
+    Brenner_an=26
+    Brenner_an_changetime=27
+    Brenner_Stoerung=28
+    Brenner_Stoerung_changetime=29
+    Hand_Dusche=30
+    Hand_Dusche_changetime=31
+    threadstop=32
 
 class sens(Enum):
     Kesselsensor=0
@@ -130,11 +132,13 @@ class maindata:
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
     # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
+    # BrauchwasserAus ist Wahr wenn kein Brauchwasser erzeugt werdensoll.
     _Brauchwasser : float = 0
     _BrauchwasserDaten_x : list = field(default_factory=list)
     _BrauchwasserDaten_y : list = field(default_factory=list)
     _BrauchwasserSoll : float = 55
     _BrauchwasserError : float = 70
+    _BrauchwasserAus : bool = False
     _Pumpe_Brauchwasser_an : bool =False
     _Hand_Dusche : bool = False
 
@@ -159,6 +163,9 @@ class maindata:
     _SensorXListe=[]
     _SensorYListe=[]
 
+    # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
+    _Zeitsteuerung=[]
+
      # lädt die Daten aus der Datenbank in die klasseninternen Variablen
     def _viewloader(self,initialrun):
         try:
@@ -181,11 +188,13 @@ class maindata:
                     self._Kessel=results[dv.Kessel.value]
                     self._Kessel_changetime=results[dv.Kessel_changetime.value]
                     self._KesselSoll=results[dv.KesselSoll.value]
-                    self._KesselSoll_changetime=results[dv.Kessel_changetime.value]
+                    self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
                     self._Brauchwasser=results[dv.Brauchwasser.value]
                     self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
                     self._BrauchwasserSoll=results[dv.BrauchwasserSoll.value]
-                    self._BrauchwasserSoll_changetime=results[dv.Brauchwasser_changetime.value]
+                    self._BrauchwasserSoll_changetime=results[dv.BrauchwasserSoll_changetime.value]
+                    self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
+                    self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
                     self._Innen=results[dv.Innen.value]
                     self._Innen_changetime=results[dv.Innen_changetime.value]
                     self._Aussen=results[dv.Aussen.value]
@@ -197,7 +206,7 @@ class maindata:
                     self._Pumpe_Brauchwasser_an=results[dv.Pumpe_Brauchwasser_an.value]
                     self._Pumpe_Brauchwasser_an_changetime=results[dv.Pumpe_Brauchwasser_an_changetime.value]
                     self._Brenner_an=results[dv.Brenner_an.value]
-                    self._Brenner_an_changetime=results[dv.Brenner_Stoerung_changetime.value]
+                    self._Brenner_an_changetime=results[dv.Brenner_an_changetime.value]
                     self._Brenner_Stoerung=results[dv.Brenner_Stoerung.value]
                     self._Brenner_Stoerung_changetime=results[dv.Brenner_Stoerung_changetime.value]
                     self._Hand_Dusche=results[dv.Hand_Dusche.value]
@@ -221,17 +230,21 @@ class maindata:
                         self._Kessel=results[dv.Kessel.value]
                         self._Kessel_changetime=results[dv.Kessel_changetime.value]
                     
-                    if self._KesselSoll_changetime<results[dv.Kessel_changetime.value]:
+                    if self._KesselSoll_changetime<results[dv.KesselSoll_changetime.value]:
                         self._KesselSoll=results[dv.KesselSoll.value]
-                        self._KesselSoll_changetime=results[dv.Kessel_changetime.value]
+                        self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
                     
                     if self._Brauchwasser_changetime<results[dv.Brauchwasser_changetime.value]:
                         self._Brauchwasser=results[dv.Brauchwasser.value]
                         self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
                     
-                    if self._BrauchwasserSoll_changetime<results[dv.Brauchwasser_changetime.value]:
+                    if self._BrauchwasserSoll_changetime<results[dv.BrauchwasserSoll_changetime.value]:
                         self._BrauchwasserSoll=results[dv.BrauchwasserSoll.value]
-                        self._BrauchwasserSoll_changetime=results[dv.Brauchwasser_changetime.value]
+                        self._BrauchwasserSoll_changetime=results[dv.BrauchwasserSoll_changetime.value]
+                    
+                    if self._BrauchwasserAus_changetime<results[dv.BrauchwasserAus_changetime.value]:
+                        self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
+                        self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
                     
                     if self._Innen_changetime<results[dv.Innen_changetime.value]:
                         self._Innen=results[dv.Innen.value]
@@ -253,9 +266,9 @@ class maindata:
                         self._Pumpe_Brauchwasser_an=results[dv.Pumpe_Brauchwasser_an.value]
                         self._Pumpe_Brauchwasser_an_changetime=results[dv.Pumpe_Brauchwasser_an_changetime.value]
                     
-                    if self._Brenner_an_changetime<results[dv.Brenner_Stoerung_changetime.value]:
+                    if self._Brenner_an_changetime<results[dv.Brenner_an_changetime.value]:
                         self._Brenner_an=results[dv.Brenner_an.value]
-                        self._Brenner_an_changetime=results[dv.Brenner_Stoerung_changetime.value]
+                        self._Brenner_an_changetime=results[dv.Brenner_an_changetime.value]
                     
                     if self._Brenner_Stoerung_changetime<results[dv.Brenner_Stoerung_changetime.value]:
                         self._Brenner_Stoerung=results[dv.Brenner_Stoerung.value]
@@ -348,7 +361,7 @@ class maindata:
                 time.sleep(self._sensorsleeptime)
             
 
-    # Laden der Kesselkennlinie
+    # Laden der Kesselkennlinie mit x und y Werten
     def _kesseldataload(self):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
@@ -381,9 +394,9 @@ class maindata:
                 logging.debug('Kesselkennline in DB schreiben!')
                 cursor=db.cursor()
                 sql= settings.sql_write_KesselKennlinie_x
-                i=0
+                i=1
                 for _ in range(int(settings.AussenMinTemp),int(settings.AussenMaxTemp),int(settings.AussenTempStep)):
-                    t=(i,self._KesselDaten_x[i])
+                    t=(self._KesselDaten_x[i-1],i)
                     cursor.execute(sql,t)
                     i+=1
                 cursor.close()
@@ -422,13 +435,27 @@ class maindata:
                 sql= settings.sql_readzeitsteuerung
                 cursor.execute(sql)
                 t=cursor.fetchall()
-                # self._zeitsteuerung=[item[0] for item in t]
+                # self._Zeitsteuerung=[item[0] for item in t]
                 cursor.close()
             db.close()
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
             exit(1)
 
+    def _zeitsteuerungwrite(self,value):
+        try:
+            db=sqlite3.connect(settings.DBPATH)
+            logging.debug('Zeitsteuerungs Datensatz in DB schreiben!')
+            cursor=db.cursor()
+            sql= settings.sql_writezeitsteuerung
+            cursor.execute(sql,value)
+            db.commit()
+            cursor.close()
+            db.close()
+
+        except sqlite3.Error as e:
+            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
+            exit(1)
 
 
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
@@ -580,6 +607,17 @@ class maindata:
         self._writeitem(value,"BrauchwasserSoll","BrauchwasserSoll_changetime")  
 
     @property
+    def vBrauchwasserAus(self):
+        return self._BrauchwasserAus
+    
+    @vBrauchwasserAus.setter
+    def vBrauchwasserAus(self,value):
+        self._BrauchwasserAus=value
+        self._writeitem(value,"BrauchwasserAus","BrauchwasserAus_changetime")
+    
+
+
+    @property
     def vInnen(self):
         return self._Innen
     
@@ -660,7 +698,7 @@ class maindata:
     @property
     def vInnenDaten_y(self):
         return self._SensorYListe[sens.Innensensor.value]
-    
+       
     @property
     def vBrauchwasserDaten_x(self):
         return self._SensorXListe[sens.Brauchwassersensor.value]
@@ -669,6 +707,16 @@ class maindata:
     def vBrauchwasserDaten_y(self):
         return self._SensorYListe[sens.Brauchwassersensor.value]
     
+    @property
+    def vZeitsteuerung(self):
+        return (self._Zeitsteuerung)
+
+    @vZeitsteuerung.setter
+    def vZeitsteuerung(self,value):
+        self._zeitsteuerungwrite(value)
+    
+
+
 # es ist schon Mist die Klasse durch den Import in gui.py global zu definieren!
 # da hätte ich gerne einen besseren Ort   
 datav=maindata()

@@ -99,9 +99,11 @@ AussenTempStep : int = 0.5
 # Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
 # BrauchwasserSoll ist die Solltemperatur des Brauchwassers, Wird in der GUI eingestellt und nur dort geschrieben
 # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird, Fixwert hier im Programm
+# BrauchwasserAus ist für das generelle ausschalten des Brauchwasser
 Brauchwasser : float = 0
 BrauchwasserSoll : float = 55
 BrauchwasserError : float = 70
+BrauchwasserAus : bool = False
 
 # Pumpe_Brauchwasser_an wird von dem Prozess der Brauchwasser überwachung verändert. GUI zeigt nur an.
 Pumpe_Brauchwasser_an : bool = False
@@ -147,6 +149,8 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Brauchwasser_changetime int,           \
                                 BrauchwasserSoll real,   \
                                 BrauchwasserSoll_changetime int,   \
+                                BrauchwasserAus int,   \
+                                BrauchwasserAus_changetime int,  \
                                 Innen real,           \
                                 Innen_changetime int,           \
                                 Aussen real,           \
@@ -175,8 +179,9 @@ init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                         KesselSoll, KesselSoll_changetime,\
                         Brauchwasser, Brauchwasser_changetime, \
                         BrauchwasserSoll, BrauchwasserSoll_changetime,\
-                        Innen, Innen_changetime,\
-                        Aussen,Aussen_changetime,\
+                        BrauchwasserAus, BrauchwasserAus_changetime,  \
+                        Innen, Innen_changetime, \
+                        Aussen, Aussen_changetime, \
                         Pumpe_oben_an, Pumpe_oben_an_changetime,\
                         Pumpe_unten_an, Pumpe_unten_an_changetime,\
                         Pumpe_Brauchwasser_an, Pumpe_Brauchwasser_an_changetime,\
@@ -184,10 +189,13 @@ init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                         Brenner_Stoerung, Brenner_Stoerung_changetime,\
                         Hand_Dusche, Hand_Dusche_changetime,\
                         threadstop ) \
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
 
 write_WorkDataView_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
 read_WorkDataView_complete= f"SELECT * from {WorkDataView} WHERE id =1 ;"
+
+
+
 # Loginfo -> noch unklar
 # löscht Fehlerstatus -> noch unklar
 
@@ -228,4 +236,5 @@ sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 von text,            \
                                 bis text             \
                         );"
-sql_readzeitsteuerung=f'SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};'
+sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};"
+sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis) VALUES (?,?,?,?,?);"
