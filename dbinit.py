@@ -8,7 +8,7 @@ import os
 import time
 
 
-# hier sind alle DB Prozeduren gebündelt, die nicht in Classen definert sind.
+# hier sind alle DB Prozeduren gebündelt, die nicht in Klassen definert sind.
 
 
 
@@ -43,18 +43,6 @@ def close_connection(conn):
         conn.close()
         return(True)
 
-
-# hier werden nur Sensortabellen angelegt
-# def create_sensor_table(conn,tablename):
-#     sql_create_sensor_table_p1 = " CREATE TABLE IF NOT EXISTS" 
-#     sql_create_sensor_table_p2 = " (         id integer PRIMARY KEY, \
-#                                            value real,              \
-#                                            begin_date text,         \
-#                                             end_date text,           \
-#                                            error integer,           \
-#                                            burner_on integer        \
-#                                        ); "
-#   create_table(tablename, sql_create_sensor_table_p1,sql_create_sensor_table_p2)
 
 # Tabelle anlegen wenn sie noch nicht existiert
 def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
@@ -98,60 +86,60 @@ def init_table(init_sql, data):
     return    
 
     
-# Tabelle mit inhalt löschen
-def drop_table(conn,tablename):
-    cursor= conn.cursor()
-    t = "DROP TABLE "+ tablename
-    try:
-        cursor.execute(t)
-    except Error as e:
-        logging.error('Tabelle '+tablename+' konte nicht gelöscht werden.')
-        exit(1)
-    finally:
-        logging.info('Tabelle '+tablename+' gelöscht.')
-        return(True)
+# # Tabelle mit inhalt löschen
+# def drop_table(conn,tablename):
+#     cursor= conn.cursor()
+#     t = "DROP TABLE "+ tablename
+#     try:
+#         cursor.execute(t)
+#     except Error as e:
+#         logging.error('Tabelle '+tablename+' konte nicht gelöscht werden.')
+#         exit(1)
+#     finally:
+#         logging.info('Tabelle '+tablename+' gelöscht.')
+#         return(True)
 
 
-# Tabelleninhalt löschen
-def empty_table(conn, tablename):
-    cursor= conn.cursor()
-    t = "DELETE FROM "+ tablename
-    try:
-        cursor.execute(t)
-    except Error as e:
-        logging.error('Daten in '+tablename+' konten nicht gelöscht werden.')
-        exit(1)
-    finally:
-        logging.info('Daten in '+tablename+' gelöscht.')
-        return(True)
+# # Tabelleninhalt löschen
+# def empty_table(conn, tablename):
+#     cursor= conn.cursor()
+#     t = "DELETE FROM "+ tablename
+#     try:
+#         cursor.execute(t)
+#     except Error as e:
+#         logging.error('Daten in '+tablename+' konten nicht gelöscht werden.')
+#         exit(1)
+#     finally:
+#         logging.info('Daten in '+tablename+' gelöscht.')
+#         return(True)
 
-# Tabelle mit inhalt löschen
-def drop_db(conn):
-    close_connection(conn)
-    try:
-        os.remove(settings.DBPATH)
-    except OSError:
-        logging.info('Datenbank konnte nicht gelöscht werden.')
-        return (False)
-    finally:
-        logging.info('Datenbank gelöscht.')
-        return(True)
-
-
+# # Tabelle mit inhalt löschen
+# def drop_db(conn):
+#     close_connection(conn)
+#     try:
+#         os.remove(settings.DBPATH)
+#     except OSError:
+#         logging.info('Datenbank konnte nicht gelöscht werden.')
+#         return (False)
+#     finally:
+#         logging.info('Datenbank gelöscht.')
+#         return(True)
 
 
-def init_Kesselvalues(name):
-    # k wird als Variable in der Formel settings.KesselKennlinie verwendet
-    k=0
-    # alles mal 10, damit man range() mit int verwenden kann.
-    # die Kennlinie geht von -30 bis 30 Grad Schritt 0.5
-    for i in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
-        x= float(i/10)
-        y=round(eval(settings.KesselKennlinie),1)
-        # die Daten müssen nun in die Datenbank
-        data=(x,y)
-        sql = settings.sql_init_Kesselkennlinie
-        init_table(sql,data)
+
+
+# def init_Kesselvalues(name):
+#     # k wird als Variable in der Formel settings.KesselKennlinie verwendet
+#     k=0
+#     # alles mal 10, damit man range() mit int verwenden kann.
+#     # die Kennlinie geht von -30 bis 30 Grad Schritt 0.5
+#     for i in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
+#         x= float(i/10)
+#         y=round(eval(settings.KesselKennlinie),1)
+#         # die Daten müssen nun in die Datenbank
+#         data=(x,y)
+#         sql = settings.sql_init_Kesselkennlinie
+#         init_table(sql,data)
 
 
 # Prüft ob Daten in der Tabelle sind
@@ -220,19 +208,25 @@ def init_db_environment():
         # so, die Tabelle existiert. Initdaten sind reingeschrieben.
         
 
-    # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
-    # Werten füllen aber nur, wenn nicht schon welche da sind.
-    tn= settings.KesselSollTemperatur
-    if checktable(tn)==False:
-        create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
-        init_Kesselvalues(tn)
+    # # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 
+    # # Werten füllen aber nur, wenn nicht schon welche da sind.
+    # tn= settings.KesselSollTemperatur
+    # if checktable(tn)==False:
+    #     create_table(tn, settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
+    #     init_Kesselvalues(tn)
 
-    # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis) ggf. erzeugen
-    tn= settings.ZeitSteuerung
-    # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
-    # wird nur wegen der Initialisierung bnötigt.
-    create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
-    # hier kein Init! Die ersten Daten kommen über die GUI. Oder sind schon drin.
+    # # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis) ggf. erzeugen
+    # tn= settings.ZeitSteuerung
+    # # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
+    # # wird nur wegen der Initialisierung bnötigt.
+    # create_table(tn,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
+    # # hier kein Init! Die ersten Daten kommen über die GUI. Oder sind schon drin.
+
+    # # Brennersensortabelle anlegen
+    # # hier kein Init, reine Protokolltablle
+    # tn=settings.Brennersensor
+    # create_table(tn, settings.sql_brennersensor_p1,settings.sql_brennersensor_p2)
+
 
 
 

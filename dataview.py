@@ -5,15 +5,15 @@
 
 import settings
 from dataclasses import dataclass, field
-# import asyncio
-# import aiosqlite
-# from aiosqlite import Error
 import logging
 from dbinit import checktable
 import threading
 import time
 import sqlite3
 from enum import Enum
+from dataview_sensor import SensorView
+from dataview_kessel import KesselView
+from dataview_zeitst import ZeitView
 
 
 # Muster für logging
@@ -67,17 +67,10 @@ class dv(Enum):
     Hand_Dusche_changetime=31
     threadstop=32
 
-class sens(Enum):
-    Kesselsensor=0
-    Aussensensor=1
-    Innensensor=2
-    Brauchwassersensor=3
-
-
 
 ##### Start der Idee mit der Idee  der Dataclass
 @dataclass
-class maindata:
+class maindata(SensorView, KesselView, ZeitView):
     # Erkenntnis zu dataclass: wenn man einen Defaultvalue für eine Variable vergibt muss man das für alle
     # folgenden Variablen auch machen. Damit nehme ich nun die Werte, die ich in settings.py vergeben habe.
     # Wenn ich die Variablen verwende, dann wird alles ungültig, wenn ich die anderen teile auch für die Datenklasse umbaue.
@@ -159,14 +152,8 @@ class maindata:
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
-    # Liste für die Sensoren
-    _SensorXListe=[]
-    _SensorYListe=[]
-
-    # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
-    _Zeitsteuerung=[]
-
-     # lädt die Daten aus der Datenbank in die klasseninternen Variablen
+    # lädt die Daten aus der Datenbank aus der Tabelle WorkDataView 
+    # in die klasseninternen Variablen
     def _viewloader(self,initialrun):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
@@ -285,41 +272,6 @@ class maindata:
             logging.error(f"Error {e} ist aufgetreten")
             exit(1)
 
-    # lädt die letzten Werte der Sensoren für die Anzeige
-    def _sensordataload(self):
-        try:
-            with sqlite3.connect(settings.DBPATH) as db:
-                cursor=db.cursor()
-                # Hier kommt nun eine Schleife über alle Sensoren
-                # die in jeder Sensortabelle, die Daten der letzten 24h abfragt
-                # diese Datenmenge muss ggf. reduziert werden, da sonst zu viele Messwerte
-                # für die Anzeige vorhanden sind. Die Ergebnisse müssen wieder der jeweiligen Liste 
-                # zugeordnet werden. Dann kann die Anzeige sie hoffentlich verarbeiten.
-                i=0
-                for tn in settings.TemperaturSensorList:
-                    xl=[]
-                    yl=[]
-                    sql = f"SELECT begin_date FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
-                    cursor.execute(sql)
-                    results=cursor.fetchall()
-                    # Der x-Wert ist die Zeit
-                    xl = [item[0] for item in results]
-                    self._SensorXListe[i] = xl
-
-                    # Der y-Wert ist die Temperatur
-                    sql = f"SELECT value FROM {tn} WHERE begin_date >= datetime('now', '-24 hours');"
-                    cursor.execute(sql)
-                    results=cursor.fetchall()
-                    yl = [item[0] for item in results]
-                    self._SensorYListe[i] = yl
-                    i+=1
-            cursor.close()
-            db.close()
-        except sqlite3.Error as e:
-            logging.error(f"Error {e} ist aufgetreten")
-            exit(1)
-
-
     # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
     # True= "neu lesen"
     def _checkview(self):
@@ -360,103 +312,6 @@ class maindata:
                 logging.debug('WorkdataView Pollen')
                 time.sleep(self._sensorsleeptime)
             
-
-    # Laden der Kesselkennlinie mit x und y Werten
-    def _kesseldataload(self):
-        try:
-            with sqlite3.connect(settings.DBPATH) as db:
-                logging.debug('Kesselkennlinie lesen!')
-                cursor=db.cursor()
-                sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
-                cursor.execute(sql)
-                t=cursor.fetchall()
-                self._KesselDaten_x=[item[0] for item in t]
-                sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
-                cursor.execute(sql)
-                t=cursor.fetchall()
-                cursor.close()
-                self._KesselDaten_y=[item[0] for item in t]
-            db.close()
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Lesen der Kesselkennlinie aufgetreten")
-            exit(1)
-
-
-    
-
-    # Speichern der Kesselkennlinie
-    # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
-    # aber eigentlich muss man die x-Anteile nie schreiben die sind ja fix.
-    def _writeKesselDaten_x(self,value):
-        self._KesselDaten_x=value.copy()
-        try:
-            with sqlite3.connect(settings.DBPATH) as db:
-                logging.debug('Kesselkennline in DB schreiben!')
-                cursor=db.cursor()
-                sql= settings.sql_write_KesselKennlinie_x
-                i=1
-                for _ in range(int(settings.AussenMinTemp),int(settings.AussenMaxTemp),int(settings.AussenTempStep)):
-                    t=(self._KesselDaten_x[i-1],i)
-                    cursor.execute(sql,t)
-                    i+=1
-                cursor.close()
-            db.close()
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_x aufgetreten")
-            exit(1)
-          
-
-    def _writeKesselDaten_y(self,value):
-        self._KesselDaten_y=value.copy()
-        try:
-            db=sqlite3.connect(settings.DBPATH)
-            logging.debug('Kesselkennline in DB schreiben!')
-            cursor=db.cursor()
-            sql= settings.sql_write_KesselKennlinie_y
-            i=1
-            for _ in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
-                t=(self._KesselDaten_y[i-1],i)
-                cursor.execute(sql,t)
-                i+=1
-            db.commit()
-            cursor.close()
-            db.close()
-
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
-            exit(1)
-
-    # Daten der Zeitsteuerung laden
-    def _zeitsteuerungload(self):
-        try:
-            with sqlite3.connect(settings.DBPATH) as db:
-                logging.debug('Zeitsteuerung lesen!')
-                cursor=db.cursor()
-                sql= settings.sql_readzeitsteuerung
-                cursor.execute(sql)
-                t=cursor.fetchall()
-                # self._Zeitsteuerung=[item[0] for item in t]
-                cursor.close()
-            db.close()
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
-            exit(1)
-
-    def _zeitsteuerungwrite(self,value):
-        try:
-            db=sqlite3.connect(settings.DBPATH)
-            logging.debug('Zeitsteuerungs Datensatz in DB schreiben!')
-            cursor=db.cursor()
-            sql= settings.sql_writezeitsteuerung
-            cursor.execute(sql,value)
-            db.commit()
-            cursor.close()
-            db.close()
-
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
-            exit(1)
-
 
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
     # da die GUI immer nach dem DB Modul gestartet wird, müssen 
@@ -614,7 +469,6 @@ class maindata:
     def vBrauchwasserAus(self,value):
         self._BrauchwasserAus=value
         self._writeitem(value,"BrauchwasserAus","BrauchwasserAus_changetime")
-    
 
 
     @property

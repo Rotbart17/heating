@@ -26,9 +26,10 @@ DBPATH = "/home/ernst/Devel/heating/heizung.db"
 FastApiDBPath= "sqlite:///heizung.db"
 FastApiAPPName = "Heizung"
 
-# Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor", "Brennersensor"]
-# Liste damit man alle Sensoren in einer Schleife bearbeiten kann.
+# Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor"]
+# Liste damit man alle Temperatur-Sensoren in einer Schleife bearbeiten kann.
 # wird in den Sensorklassen befüllt mit den einzelnen Sensor Threads
+# Es braucht auch noch einen Brenner Sensor: Brennersensor Der Thread mit dem Brennersensor kann auch in die Liste
 SensorList = []
 
 
@@ -84,22 +85,56 @@ Wintertemp: float = 17
 # die aktuelle KesselSoll wird nur angezeigt und im Regelkreis gesetzt
 # und nur von dort verändert.
 # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird. Fixwert hier im Programm, wird nur gelesen
+Kesselsensor="Kesselsensor"
 Kessel : float = 0
 KesselSoll : float = 0
 KesselMax : float = 90
+
+# die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
+KesselSollTemperatur="KesselSollTemperatur"
+    
+sql_kennlinie_p1="CREATE TABLE IF NOT EXISTS " 
+sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                    value_x real,              \
+                    value_y real           \
+                    );"
+
+# die Kennlinie für KesselSollTemperatur ist:
+# Y=-1.2 x+56 + k
+# Default für k=0:
+# + 10 Grad => 44Grad
+#    0 Grad => 56Grad
+# - 10 Grad => 68Grad
+# initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
+# GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
+KesselKennlinie="((-1.2)*x)+56 + k"
+sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
+sql_write_KesselKennlinie_x = f"UPDATE  {KesselSollTemperatur}  SET value_x= ? WHERE id = ? ;"
+sql_write_KesselKennlinie_y = f"UPDATE  {KesselSollTemperatur}  SET value_y= ? WHERE id = ? ;"
+
+# Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
+KesselDaten_x=[]
+KesselDaten_y=[]
+
+
+
 # Temperaturkonstanten für die Kesselkennlinie
 # um die Rangefunktion verwenden zu können ist jeder Wert mit 10 
 # multipliziert -30 bis 30Grad, Schrittweite 0,5 Grad (Faktor 10 um normale Schleifen 
 # zu verwenden)
+Aussensensor="Aussensensor"
 AussenMinTemp : int = -30
 AussenMaxTemp : int = 30
 AussenTempStep : int = 0.5
+# Aussen ist die aktuelle Aussentemperatur, wird nur vom Sensor verändert, GUI zeigt an
+Aussen : float = 0
 
 
 # Brauchwasser ist die aktuelle Brauchwassertemperatur, kommt vom Sensor, wird nur gelesen
 # BrauchwasserSoll ist die Solltemperatur des Brauchwassers, Wird in der GUI eingestellt und nur dort geschrieben
 # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird, Fixwert hier im Programm
 # BrauchwasserAus ist für das generelle ausschalten des Brauchwasser
+Brauchwassersensor="Brauchwassersensor"
 Brauchwasser : float = 0
 BrauchwasserSoll : float = 55
 BrauchwasserError : float = 70
@@ -111,19 +146,12 @@ Pumpe_Brauchwasser_an : bool = False
 Hand_Dusche : bool = False
 
 # Innen ist die aktuelle Innentemperatur, wird nur vom Sensor verändert, GUI zeigt an
+Innensensor="Innensensor"
 Innen : float = 0
-# Aussen ist die aktuelle Aussentemperatur, wird nur vom Sensor verändert, GUI zeigt an
-Aussen : float = 0
 
 # Signalisiert ob die Pumpen an / aus. Werden nur vom Regelkreis verändert, GUI zeigt an
 Pumpe_oben_an : bool = False
 Pumpe_unten_an : bool = False
-
-# Signalisiert ob der Brenner an ist und ob es eie Störung gibt
-# Brenner_an zeigt, dass Brenner läuft. Wird nur vom Regelkreis verändert, GUI zeigt an
-Brenner_an : bool = False
-# Brenner_Störung zeigt eine Brennerstörung wird nur vom Brenner verändert, GUI zeigt an
-Brenner_Stoerung : bool = False
 
 
 
@@ -200,31 +228,18 @@ read_WorkDataView_complete= f"SELECT * from {WorkDataView} WHERE id =1 ;"
 # löscht Fehlerstatus -> noch unklar
 
 
-# die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
-KesselSollTemperatur="KesselSollTemperatur"
-    
-sql_kennlinie_p1="CREATE TABLE IF NOT EXISTS " 
-sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                    value_x real,              \
-                    value_y real           \
-                    );"
 
-# die Kennlinie für KesselSollTemperatur ist:
-# Y=-1.2 x+56 + k
-# Default für k=0:
-# + 10 Grad => 44Grad
-#    0 Grad => 56Grad
-# - 10 Grad => 68Grad
-# initial mit K=0 befüllen. Die Anpassungen erfolgen über die 
-# GUI für jeden einzelnen Wert. Die Auswertung erfolgt mit eval(...)
-KesselKennlinie="((-1.2)*x)+56 + k"
-sql_init_Kesselkennlinie = f"INSERT OR REPLACE INTO {KesselSollTemperatur} (value_x, value_y) VALUES(?,?);"
-sql_write_KesselKennlinie_x = f"UPDATE  {KesselSollTemperatur}  SET value_x= ? WHERE id = ? ;"
-sql_write_KesselKennlinie_y = f"UPDATE  {KesselSollTemperatur}  SET value_y= ? WHERE id = ? ;"
+# Statements um die Sensortabelle für alle Temperatursensoren zu erzeugen
+sql_create_sensor_table_p1 = "CREATE TABLE IF NOT EXISTS " 
+sql_create_sensor_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                                value real,              \
+                                begin_date int,         \
+                                end_date int,           \
+                                error int            \
+                            ); "
+                
 
-# Variablen um die aktuelle Kesselkennlinie für die Anzeige zu speichern
-KesselDaten_x=[]
-KesselDaten_y=[]
+
 
 # die Tabelle für die Zeitsteuerung heisst:----------
 ZeitSteuerung="ZeitSteuerung"
@@ -238,3 +253,37 @@ sql_zeitsteuerung_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                         );"
 sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};"
 sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis) VALUES (?,?,?,?,?);"
+
+# als Programm brauchen wir 
+# Montag-Sonntag Nachtabsenkung 22:00-7:00
+# Brauchwasser Mo-Fr 6:00-9.00
+# Brauchwasser Sa,So 6:00-9:00
+# Brauchwasser Sa,So 16:00-19:00
+# Heizbetrieb Mo-So 00:00-24:00
+Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00'), \
+                   (2,'Brauchw','Mo-Fr','6:00','9:00'), \
+                   (3,'Brauchw','Sa-So','6:00','9:00'), \
+                   (4,'Brauchw','Sa-So','16:00','19:00'), \
+                   (5,'Heizen','Mo-So','00:00','24:00')   ]
+
+
+
+# Signalisiert ob der Brenner an ist und ob es eie Störung gibt
+# Brenner_an zeigt, dass Brenner läuft. Wird nur vom Regelkreis verändert, GUI zeigt an
+Brenner_an : bool = False
+# Brenner_Störung zeigt eine Brennerstörung wird nur vom Brenner verändert, GUI zeigt an
+Brenner_Stoerung : bool = False
+
+# Die Varianblen für die Brennersensortabelle ----------
+Brennersensor="Brennersensor"
+sql_brennersensor_p1=sql_create_view_table_p1
+sql_brennersensor_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
+                                id integer,      \
+                                brenner_an int,           \
+                                brenner_stoerung int,  \
+                                von text,            \
+                                bis text             \
+                        );"
+sql_readbrennersensor=f"SELECT von FROM {Brennersensor} WHERE von >= ? AND brenner_an='True';"
+sql_writebrennersensorbetrieb=f"INSERT INTO {Brennersensor} brenner_an=?, von=?, bis=?;"
+sql_writebrennersensorstoerung=f"INSERT INTO {Brennersensor} brenner_stoerung=?, von=?, bis=?;"
