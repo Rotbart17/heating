@@ -1,13 +1,14 @@
 
-# Hier wird die Basisklasse für alle Tabellen definiert. Sie wird dann an weitere Kalssen vererbt
+# Hier wird die Basisklasse für alle Tabellen definiert. Sie wird dann an weitere Klassen vererbt
 # Tables
 #       Sensoren(Aussen Innen Brauchwasser Kessel) -> OK
 #       KesselSoll -> OK
+#       Brennersensor
 #       Zeitsteuerung
 #       Workdataview <- Das ist schwierig, da das jetzt schon eine Datenklasse ist.
-#       Brennersensor
+#       
 # Die Tables Class soll, Tabellen Anlegen, löschen, prüfen ob sie Inhalt haben 
-# Sie hat als Pararmeter den Tabellennamen, die beiden Teile zur Anlage der Tabelle
+# Sie hat als Pararmeter den Tabellennamen, die beiden SQL Teile zur Anlage der Tabelle
 
 import logging
 import settings
@@ -107,7 +108,7 @@ class Tables:
     # Prüft ob Daten in der Tabelle sind
     # False= keine Daten drin
     # True = Daten in der Tabelle
-    def _checktable(self):
+    def _checktable(self)->bool:
         
         t=0
         try:
@@ -140,8 +141,8 @@ class KesselSollTemperatur(Tables):
 
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2)
+        self._create_table(self.tablename,sql_p1,sql_p2)
         if self._checktable(self.tablename)==False:
-            self._create_table(self.tablename,sql_p1,sql_p2)
             self._init_Kesselvalues(self.tablename)
 
     def _init_Kesselvalues(self,name):
@@ -159,19 +160,56 @@ class KesselSollTemperatur(Tables):
         
 
 # Zeitsteurungstabelle anlegen, und mit einem Defaultprogramm füllen
+# wenn die Tabelle nicht leer ist
 class Zeitsteuerung(Tables):
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2)
-        # Zeitsteuertabelle (Brauchwasser, Heizen , Nachtabsenkung, von, bis) ggf. erzeugen
+        # Zeitsteuertabelle (Brauchwasser, Heizen, Nachtabsenkung, von, bis) ggf. erzeugen
         # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
         # wird nur wegen der Initialisierung bnötigt.
         self._create_table(self.tablename,sql_p1,sql_p2)
-        # hier muss jetzt noch ein Init hin, damit in der Tabelle ein Grundprogramm drin ist      
-        for i in settings.Standardprogramm:
-            self._init_table(settings.sql_writezeitsteuerung,settings.Standardprogramm[i])
+        # hier muss jetzt noch ein Init hin, damit in der Tabelle ein Grundprogramm drin ist 
+        if self._checktable(self.tablename)==False:
+            for i in settings.Standardprogramm:
+                self._init_table(settings.sql_writezeitsteuerung,settings.Standardprogramm[i])
 
 # Brennerberiebs Logging Table anlegen
+# Tabelle für die Zustände des Brennersensors
 class Brennersensor(Tables):
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2)   
-        self._create_table(self.tablename, settings.sql_brennersensor_p1,settings.sql_brennersensor_p2)
+        self._create_table(self.tablename, self.sql_p1, self.sql_p2)
+
+
+class WorkdataView(Tables):
+    def __init__(self, tablename,sql_p1,sql_p2):
+        super().__init__(tablename,sql_p1,sql_p2) 
+        self._create_table(self.tablename,self.sql_p1, self.sql_p2 )
+        if self._checktable(self.tablename)==False:
+            
+            # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
+            # und einzige Zeile dieser Tabelle erzeugen
+            # init_WorkDataView_sql = "INSERT or REPLACE INTO .... 
+            # und zusätzlich noch zu jedem Wert die Zeit.
+
+            t=time.time_ns()
+            data=(1, t, \
+                settings.Winter, t, \
+                settings.Wintertemp, t,\
+                settings.Kessel, t, \
+                settings.KesselSoll, t,\
+                settings.Brauchwasser, t,\
+                settings.BrauchwasserSoll,t,\
+                settings.BrauchwasserAus,t, \
+                settings.Innen,  t,\
+                settings.Aussen, t,\
+                settings.Pumpe_oben_an, t,\
+                settings.Pumpe_unten_an, t,\
+                settings.Pumpe_Brauchwasser_an, t,\
+                settings.Brenner_an, t,\
+                settings.Brenner_Stoerung, t,\
+                settings.Hand_Dusche, t,\
+                settings.threadstop )
+            # so, die Tabelle existiert. Initdaten sind reingeschrieben.
+            self._init_table(settings.init_WorkDataView_sql,data)
+

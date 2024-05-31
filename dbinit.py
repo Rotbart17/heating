@@ -44,46 +44,46 @@ def close_connection(conn):
         return(True)
 
 
-# Tabelle anlegen wenn sie noch nicht existiert
-def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
+# # Tabelle anlegen wenn sie noch nicht existiert
+# def create_table(tablename, sql_create_table_p1, sql_create_table_p2):
 
-    try:
-        conn = sqlite3.connect(settings.DBPATH)
-        logging.info('DB-Verbindung geöffnet')
+#     try:
+#         conn = sqlite3.connect(settings.DBPATH)
+#         logging.info('DB-Verbindung geöffnet')
         
-    except Error as e:
-        logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
-        exit(1)
-    try:
-        c = conn.cursor()
-        create_table_sql = sql_create_table_p1 + tablename + sql_create_table_p2
-        c.execute(create_table_sql)
-        conn.close()
-        logging.info('Tabelle: ' + tablename +' erstellt')
-    except Error as e:
-        logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
-        exit(1)
-    return
+#     except Error as e:
+#         logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
+#         exit(1)
+#     try:
+#         c = conn.cursor()
+#         create_table_sql = sql_create_table_p1 + tablename + sql_create_table_p2
+#         c.execute(create_table_sql)
+#         conn.close()
+#         logging.info('Tabelle: ' + tablename +' erstellt')
+#     except Error as e:
+#         logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
+#         exit(1)
+#     return
 
-# Tabelle initialisieren
-def init_table(init_sql, data):
-    try:
-        conn = sqlite3.connect(settings.DBPATH)
-        logging.info('DB-Verbindung geöffnet')
+# # Tabelle initialisieren
+# def init_table(init_sql, data):
+#     try:
+#         conn = sqlite3.connect(settings.DBPATH)
+#         logging.info('DB-Verbindung geöffnet')
         
-    except Error as e:
-        logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
-        exit(1)
-    try:
-        c = conn.cursor()
-        c.execute(init_sql,data)
-        conn.commit()
-        conn.close()
-        logging.info('Tabelle initialisiert')
-    except Error as e:
-        logging.error('Es konnte das SQL nicht ausgeführt werden:'+ init_sql + 'Daten:'+ str(data)+ ' Programm wird beendet!')
-        exit(1)
-    return    
+#     except Error as e:
+#         logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
+#         exit(1)
+#     try:
+#         c = conn.cursor()
+#         c.execute(init_sql,data)
+#         conn.commit()
+#         conn.close()
+#         logging.info('Tabelle initialisiert')
+#     except Error as e:
+#         logging.error('Es konnte das SQL nicht ausgeführt werden:'+ init_sql + 'Daten:'+ str(data)+ ' Programm wird beendet!')
+#         exit(1)
+#     return    
 
     
 # # Tabelle mit inhalt löschen
@@ -175,37 +175,38 @@ def checktable(tablename):
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():
     create_db(settings.DBPATH)
+    
     # jetzt die Anzeigeworktabelle definieren und initialisieren
-    tn = settings.WorkDataView
-    if checktable(tn)==False:
-        create_table(tn,settings.sql_create_view_table_p1, settings.sql_create_view_table_p2 )
+    # tn = settings.WorkDataView
+    # if checktable(tn)==False:
+    #     create_table(tn,settings.sql_create_view_table_p1, settings.sql_create_view_table_p2 )
         
-        # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
-        # und einzige Zeile dieser Tabelle erzeugen
-        # init_WorkDataView_sql = "INSERT or REPLACE INTO .... 
-        # und zusätzlich noch zu jedem Wert die Zeit.
+    #     # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
+    #     # und einzige Zeile dieser Tabelle erzeugen
+    #     # init_WorkDataView_sql = "INSERT or REPLACE INTO .... 
+    #     # und zusätzlich noch zu jedem Wert die Zeit.
 
-        t=time.time_ns()
-        data=(1, t, \
-            settings.Winter, t, \
-            settings.Wintertemp, t,\
-            settings.Kessel, t, \
-            settings.KesselSoll, t,\
-            settings.Brauchwasser, t,\
-            settings.BrauchwasserSoll,t,\
-            settings.BrauchwasserAus,t, \
-            settings.Innen,  t,\
-            settings.Aussen, t,\
-            settings.Pumpe_oben_an, t,\
-            settings.Pumpe_unten_an, t,\
-            settings.Pumpe_Brauchwasser_an, t,\
-            settings.Brenner_an, t,\
-            settings.Brenner_Stoerung, t,\
-            settings.Hand_Dusche, t,\
-            settings.threadstop )
+    #     t=time.time_ns()
+    #     data=(1, t, \
+    #         settings.Winter, t, \
+    #         settings.Wintertemp, t,\
+    #         settings.Kessel, t, \
+    #         settings.KesselSoll, t,\
+    #         settings.Brauchwasser, t,\
+    #         settings.BrauchwasserSoll,t,\
+    #         settings.BrauchwasserAus,t, \
+    #         settings.Innen,  t,\
+    #         settings.Aussen, t,\
+    #         settings.Pumpe_oben_an, t,\
+    #         settings.Pumpe_unten_an, t,\
+    #         settings.Pumpe_Brauchwasser_an, t,\
+    #         settings.Brenner_an, t,\
+    #         settings.Brenner_Stoerung, t,\
+    #         settings.Hand_Dusche, t,\
+    #         settings.threadstop )
 
-        init_table(settings.init_WorkDataView_sql,data)
-        # so, die Tabelle existiert. Initdaten sind reingeschrieben.
+    #     init_table(settings.init_WorkDataView_sql,data)
+    #     # so, die Tabelle existiert. Initdaten sind reingeschrieben.
         
 
     # # nun die die Tabelle für die Kesselkennlinie erzeugen und dann mit initialen 

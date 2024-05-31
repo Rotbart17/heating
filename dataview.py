@@ -11,7 +11,7 @@ import threading
 import time
 import sqlite3
 from enum import Enum
-from dataview_sensor import SensorView
+from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
 
@@ -388,7 +388,7 @@ class maindata(SensorView, KesselView, ZeitView):
                 return(value,timestamp)
             
         except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben von {name}:{value} aufgetreten")
+            logging.error(f"Der Fehler {e} ist beim Lesen von {name}:{namect} aufgetreten")
             db.close()
             exit(1)
 

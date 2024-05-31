@@ -1,132 +1,269 @@
 #!/usr/bin/env python3
 # in diesem Modul wird die API für die Oberfläche definiert,
+# die API kommuniziert mit der Dataclass die wiederum mit der DB 
+# man soll ja nich alles als Rootpath machen
+# /Werte
+#       /Winter
+#       /Wintertemp
+#       /Kessel
+#       /KesselSoll  get/post
+#       /Brauchwasser
+#       /BrauchwasserSoll get/post
+#       /BrauchwasserAus  get/post
+#       /Innen
+#       /Aussen
+#       /Pumpe_oben_an
+#       /Pumpe_unten_an
+#       /Pumpe_Brauchwasser_an
+#       /Brenner_an
+#       /Hand_Dusche  get/post
+#       /Brenner_Stoerung
+#       /KesselDaten_x  get/post
+#       /KesselDaten_y  get/post
+#       /AussenDaten_x
+#       /AussenDaten_y
+#       /InnenDaten_x
+#       /InnenDaten_y
+#       /BrauchwasserDaten_x
+#       /BrauchwasserDaten_y
+#       /Zeitsteuerung
+
 
 import settings
 from fastapi import FastAPI, UploadFile,APIRouter, Query, HTTPException 
-# from fastapi.middleware.cors import CORSMiddleware
-# from databases import Database
-import aiosqlite
-# import sqlite3
-import asyncio
+from  pydantic import BaseModel
+from dataview import datav as datav
+
+class LeseWert(BaseModel):
+    Winter:           int | None = None 
+    Wintertemp:       int | None = None
+    Kessel:           int | None = None
+    KesselSoll:       int | None = None
+    Brauchwasser:     int | None = None
+    BrauchwasserSoll: int | None = None
+    BrauchwasserAus:  int | None = None
+    Innen:            int | None = None
+    Aussen:           int | None = None
+    Pumpe_oben_an:    int | None = None
+    Pumpe_unten_an:   int | None = None
+    Pumpe_Brauchwasser_an: int | None = None
+    Brenner_an:       int | None = None
+    Hand_Dusche:      int | None = None
+    Brenner_Stoerung: int | None = None
+    KesselDaten_x:    list[int]| None = None
+    KesselDaten_y:    list[int]| None = None
+    AussenDaten_x:    list[int]| None = None
+    AussenDaten_y:    list[int]| None = None
+    InnenDaten_x:     list[int]| None = None
+    InnenDaten_y:     list[int]| None = None
+    BrauchwasserDaten_x: list[int]| None = None
+    BrauchwasserDaten_y: list[int]| None = None
+    Zeitsteuerung:       list[str]| None = None
 
 
-# Wo ist die DB die Connected wird
-# database = Database("sqlite:///heizung.db")
+
+"""
+   # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
+    # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
+    # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
+
+    @property
+    def vWinter(self):
+        return self._Winter
+    
+    @property
+    def vWintertemp(self):
+        return self._Wintertemp
+    
+    @vWintertemp.setter
+    def vWintertemp(self,value):
+        self._Wintertemp=value
+        self._writeitem(value,"Wintertemp", "Wintertemp_changetime")   
+
+    @property
+    def vKessel(self):
+        return self._Kessel
+    
+    @property
+    def vKesselSoll(self):
+        return self._KesselSoll
+    
+    @property
+    def vBrauchwasser(self):
+        return self._Brauchwasser
+
+    @property
+    def vBrauchwasserSoll(self):
+        return self._BrauchwasserSoll
+    
+    @vBrauchwasserSoll.setter
+    def vBrauchwasserSoll(self,value):
+        # so hier muss das in die DB geschrieben werden
+        self._BrauchwasserSoll=value
+        self._writeitem(value,"BrauchwasserSoll","BrauchwasserSoll_changetime")  
+
+    @property
+    def vBrauchwasserAus(self):
+        return self._BrauchwasserAus
+    
+    @vBrauchwasserAus.setter
+    def vBrauchwasserAus(self,value):
+        self._BrauchwasserAus=value
+        self._writeitem(value,"BrauchwasserAus","BrauchwasserAus_changetime")
+
+
+    @property
+    def vInnen(self):
+        return self._Innen
+    
+    @property
+    def vAussen(self):
+        return self._Aussen
+   
+    @property
+    def vPumpe_oben_an(self):
+        return self._Pumpe_oben_an
+
+    @property
+    def vPumpe_unten_an(self):
+        return self._Pumpe_unten_an
+
+    @property
+    def vPumpe_Brauchwasser_an(self):
+        return self._Pumpe_Brauchwasser_an
+    
+    @property
+    def vBrenner_an(self):
+        return self._Brenner_an
+    
+    @vBrenner_an.setter
+    def vBrenner_an(self,value):
+        # so hier muss das in die DB geschrieben werden
+        # aber als zeichenkette. Damit es leichter lesbar ist
+        self._Brenner_an=value
+        self._writeitem(value,"Brenner_an","Brenner_an_changetime")
+
+    @property
+    def vHand_Dusche(self):
+        return self._Hand_Dusche
+    
+    @vHand_Dusche.setter
+    def vHand_Dusche(self,value):
+        # so hier muss das in die DB geschrieben werden
+        # aber als zeichenkette. Damit es leichter lesbar ist
+        self._Hand_Dusche=value
+        self._Hand_Dusche_changetime=self._writeitem(value,"Hand_Dusche","Hand_Dusche_changetime")
+
+    @property
+    def vBrenner_Stoerung(self):
+        return self._Brenner_Stoerung
+    
+    @property
+    def vKesselDaten_x(self):
+        return self._KesselDaten_x
+    
+    @property
+    def vKesselDaten_y(self):
+        return self._KesselDaten_y
+    
+    @vKesselDaten_y.setter
+    def vKesselDaten_y(self,value):
+        self._writeKesselDaten_y(value)
+
+    @property
+    def vKesselIstDaten_x(self):
+        return self._SensorXListe[sens.Kesselsensor.value]
+
+    @property
+    def vKesselIstDaten_y(self):
+        return self._SensorYListe[sens.Kesselsensor.value]
+
+    @property
+    def vAussenDaten_x(self):
+        return self._SensorXListe[sens.Aussensensor.value]
+
+    @property
+    def vAussenDaten_y(self):
+        return self._SensorYListe[sens.Aussensensor.value]
+
+    @property
+    def vInnenDaten_x(self):
+        return self._SensorXListe[sens.Innensensor.value]
+
+    @property
+    def vInnenDaten_y(self):
+        return self._SensorYListe[sens.Innensensor.value]
+       
+    @property
+    def vBrauchwasserDaten_x(self):
+        return self._SensorXListe[sens.Brauchwassersensor.value]
+
+    @property
+    def vBrauchwasserDaten_y(self):
+        return self._SensorYListe[sens.Brauchwassersensor.value]
+    
+    @property
+    def vZeitsteuerung(self):
+        return (self._Zeitsteuerung)
+
+    @vZeitsteuerung.setter
+    def vZeitsteuerung(self,value):
+        self._zeitsteuerungwrite(value)
+ 
+"""
+
 
 # Wie heisst die APP für FastAPI
 app= FastAPI(title="Heizung")
-
 
 # was passiert beim Startup der API
 # @app.on_event("startup")
 def startup():
     pass
-    # global database
-    # database = aiosqlite.connect(settings.DBPATH)
-    # async def database_connect():
-    #    await database.connect()
 
 # was passiert beim Stopen der API
 @app.on_event("shutdown")
 async def shutdown():
-    await database.close()
-    # async def database_disconnect():
-    #    await database.disconnect()
+    pass
 
 
 
-# http://172.0.0.1:8000/test/1
-
-# nur Spielkram zum experimentieren
-@app.get("/test/{id}")
-async def fetch_data(id: int):
-    database = await aiosqlite.connect(settings.DBPATH)
-    sql = "SELECT * FROM Kesselsensor WHERE id={}".format(int(str(id)))
-    cursor = await database.execute(sql)
-    result= await cursor.fetchall()
-    return result
-
-# holt alle Std-Daten für die Anzeige
-@app.get("/getviewdata")
-async def get_view_data():
-    database = await aiosqlite.connect(settings.DBPATH)
-    sql= f"SELECT * from {settings.WorkDataView} WHERE id=1;"
-    cursor = await database.execute(sql)
-    results = await cursor.fetchall()
-        
-    if not results:
-        raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
-    settings.Winter=results[0][1]
-    settings.Wintertemp=results[0][2]
-    settings.Kessel=results[0][3]
-    settings.KesselSoll=results[0][4]
-    settings.Brauchwasser=results[0][5]
-    settings.Innen=results[0][6]
-    settings.Aussen=results[0][7]
-    settings.Pumpe_oben_an=results[0][8]
-    settings.Pumpe_unten_an=results[0][9]
-    settings.Pumpe_Brauchwasser_an=results[0][10]
-    settings.Brenner_an=results[0][11]
-    settings.Brenner_Stoerung=results[0][12]
-    settings.Hand_Dusche=results[0][13]
-    
-    return results
-
-# holt alle x Daten für Kesselkennliniengrafik
-# @app.get("/gettankdatasetx")
-async def get_tank_dataset_x():
-    sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
-    cursor= await database.execute(sql)
-    results = cursor.fetch_all()
-    if not results:
-        raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
-    settings.tankdataset_x=results
-    print(settings.tankdataset_x)
-    return results
-
-# holt alle y Daten für Kesselkennliniengrafik
-# @app.get("/gettankdatasety")
-async def get_tank_dataset_y():
-    sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
-    cursor= await database.execute(sql)
-    results = await cursor.fetch_all()
-    if not results:
-        raise HTTPException(status_code=404, detail=f"Keine Daten vorhanden!")
-    settings.tankdataset_y=results
-    # print(settings.tankdataset_y)
-    return results
+# http://172.0.0.1/werte/winter:8000
 
 
-# holt alle Daten für Brauchwassergrafik
-# holt alle Daten für Kesselgrafik
-# holt alle Daten für Innen-grafik
-# holt alle Daten für Aussengrafik
+@app.get("/werte/{LeseWert}")
+async def get_lesewert(LeseWert)->int:
+    return datav.vWinter
 
-# Schreibt alle Daten für Kesselkennliniengrafik
-# Schreibt Wintertemp
-# Schreibt Brauchwassertemp
-# holt Loginfo
-# löscht Fehlerstatus
+@app.get("/werte/wintertemp")
+async def get_wintertemp()->int:
+    return datav.vWintertemp
 
+@app.get("/werte/kessel")
+async def get_kessel()->int:
+    return datav.vKessel
 
+@app.get("/werte/kesselsoll")
+async def get_kesselsoll()->int:
+    return datav.vKesselSoll
 
-# wir brauchen für diese Daten Lese und Schreibfunktionen
-# Winter= True
-# Wintertemp=17
-# Kessel = 0
-# ErrorKessel= 90
-# Brauchwasser = 0
-# Innen = 0
-# Aussen = 0
-# Pumpe_oben_an = False
-# Pumpe_unten_an = False
-# Pumpe_Brauchwasser_an = False
-# Brenner_an = False
-# Brenner_Stoerung = False
-# Hand_Dusche = False
+@app.put("/werte/kesselsoll")
+async def get_kesselsoll()->int:
+    pass
+#    return datav.vKesselSoll
 
+@app.get("/werte/brauchwasser")
+async def get_brauchwasser()->int:
+    return datav.vBrauchwasser
 
+@app.get("/werte/brauchwassersoll")
+async def get_brauchwassersoll()->int:
+    return datav.vBrauchwasserSoll
 
+@app.put("/werte/brauchwassersoll")
+async def get_brauchwassersoll()->int:
+    pass
+    # return datav.vBrauchwasser
 
 
 # nicht vergessen! Zum reload nach Codechange!
@@ -138,25 +275,6 @@ async def get_tank_dataset_y():
 # http://127.0.0.1:8000/openapi.json
 
 
-
-
-
-# with ui.row():
-#    ui.label('Aussen').style('color: #888; font-weight: bold')
-#    ui.label(results[Aussen]).style('color: #888; font-weight: bold')
-    
-def main():
-    startup()
-    asyncio.run(get_view_data())
-    get_tank_dataset_x()
-    get_tank_dataset_y()
-
-
-# ui.run()
-if __name__ == '__main__':
-    
-    main()
-    print("Ende!")
     
 
 

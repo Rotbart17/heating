@@ -10,7 +10,7 @@ import settings
 from sensors import sensor
 import threading
 import time
-from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor
+from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
 
 # Constanten
 
@@ -19,7 +19,7 @@ from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor
 def main():
     dbinit.init_db_environment()
     
-    # das könnte ich in init_DB_verschieben. Da man mit return mehrere Werte zurückgeben kann
+    # das könnte ich in init_db verschieben. Da man mit return mehrere Werte zurückgeben kann
     # könnte die Terminierung der Threads auf dieser Ebene bleiben.
     kss= sensor(settings.Kesselsensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
     ass= sensor(settings.Aussensensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
@@ -28,6 +28,7 @@ def main():
     kst= KesselSollTemperatur(settings.KesselSollTemperatur,settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
     zst= Zeitsteuerung(settings.ZeitSteuerung,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
     bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_p1,settings.sql_brennersensor_p2)
+    wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_p1, settings.sql_create_view_table_p2)
     
 
     print("Das sorgt dafür, dass in der DB auch ne handvoll Daten drin sind.")
@@ -45,8 +46,8 @@ def main():
     ass.threadstop=True
     bws.threadstop=True
     iss.threadstop=True
-    zst.threadstop=True
-    bst.threadstop=True
+#     zst.threadstop=True
+#     bst.threadstop=True
     print("ich bin echt neugierig!")
     time.sleep(5)
 
