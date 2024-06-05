@@ -27,7 +27,7 @@ logging.basicConfig(
     filename='gui.log',
     filemode='w',
     format='%(asctime)s %(levelname)s: %(message)s',
-    level=logging.ERROR
+    level=logging.error
 )
 
 def str2bool(value):

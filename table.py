@@ -120,8 +120,11 @@ class Tables:
             exit(1)
         try:
             c = conn.cursor()
-            # t=c.execute(f"SELECT COUNT(*) FROM {tablename}").fetchone()[0]
+            # prüfen ob Tabelle existiert
             t= c.execute(f"SELECT EXISTS(SELECT name FROM sqlite_master WHERE type='table' AND name = '{self.tablename}');").fetchone()[0]
+            # prüfen ob Tabelle einen Inhalt hat
+            if t==1:
+                t=c.execute(f"SELECT COUNT(*) FROM {self.tablename}").fetchone()[0]
             conn.close()
             logging.info('Tabelle '+self.tablename+' enthält :'+str(t)+' Datensätze')
             if t>0 :
@@ -141,11 +144,11 @@ class KesselSollTemperatur(Tables):
 
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2)
-        self._create_table(self.tablename,sql_p1,sql_p2)
-        if self._checktable(self.tablename)==False:
-            self._init_Kesselvalues(self.tablename)
+        self._create_table()
+        if self._checktable()==False:
+            self._init_Kesselvalues()
 
-    def _init_Kesselvalues(self,name):
+    def _init_Kesselvalues(self):
         # k wird als Variable in der Formel settings.KesselKennlinie verwendet
         k=0
         # alles mal 10, damit man range() mit int verwenden kann.
@@ -167,25 +170,25 @@ class Zeitsteuerung(Tables):
         # Zeitsteuertabelle (Brauchwasser, Heizen, Nachtabsenkung, von, bis) ggf. erzeugen
         # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
         # wird nur wegen der Initialisierung bnötigt.
-        self._create_table(self.tablename,sql_p1,sql_p2)
+        self._create_table()
         # hier muss jetzt noch ein Init hin, damit in der Tabelle ein Grundprogramm drin ist 
-        if self._checktable(self.tablename)==False:
+        if self._checktable()==False:
             for i in settings.Standardprogramm:
-                self._init_table(settings.sql_writezeitsteuerung,settings.Standardprogramm[i])
+                self._init_table(settings.sql_writezeitsteuerung,i)
 
 # Brennerberiebs Logging Table anlegen
 # Tabelle für die Zustände des Brennersensors
 class Brennersensor(Tables):
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2)   
-        self._create_table(self.tablename, self.sql_p1, self.sql_p2)
+        self._create_table()
 
 
 class WorkdataView(Tables):
     def __init__(self, tablename,sql_p1,sql_p2):
         super().__init__(tablename,sql_p1,sql_p2) 
-        self._create_table(self.tablename,self.sql_p1, self.sql_p2 )
-        if self._checktable(self.tablename)==False:
+        self._create_table()
+        if self._checktable()==False:
             
             # so nun mal ein paar Init-datenschreiben und wenn noch nicht da die erste 
             # und einzige Zeile dieser Tabelle erzeugen

@@ -27,7 +27,7 @@ class sensor(Tables):
     # def __init__(self,tablename): 
     def __init__(self, tablename,sql_p1,sql_p2) -> None:
         super().__init__(tablename,sql_p1,sql_p2)
-        self._create_table(self.tablename,self.sql_p1,self.sql_p2)
+        self._create_table()
 
         # so, die Tabelle existiert, jetzt noch die Sensorliste aufbauen
         settings.SensorList.append(self)

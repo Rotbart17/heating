@@ -278,7 +278,6 @@ Brenner_Stoerung : bool = False
 Brennersensor="Brennersensor"
 sql_brennersensor_p1=sql_create_view_table_p1
 sql_brennersensor_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                id integer,      \
                                 brenner_an int,           \
                                 brenner_stoerung int,  \
                                 von text,            \
