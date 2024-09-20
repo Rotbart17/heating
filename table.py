@@ -3,9 +3,9 @@
 # Tables
 #       Sensoren(Aussen Innen Brauchwasser Kessel) -> OK
 #       KesselSoll -> OK
-#       Brennersensor
-#       Zeitsteuerung
-#       Workdataview <- Das ist schwierig, da das jetzt schon eine Datenklasse ist.
+#       Brennersensor -> OK
+#       Zeitsteuerung -> OK
+#       Workdataview -> OK
 #       
 # Die Tables Class soll, Tabellen Anlegen, löschen, prüfen ob sie Inhalt haben 
 # Sie hat als Pararmeter den Tabellennamen, die beiden SQL Teile zur Anlage der Tabelle
