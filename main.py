@@ -11,9 +11,14 @@ from sensors import sensor
 import threading
 import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
+import multiprocessing
+import subprocess
 
-# Constanten
-
+# startet die GUI und übergibt 2 Queues zur BiDi Kommunikation
+def start_gui(queue_to_gui,queue_to_main):
+    # Start the GUI process
+    process = subprocess.Popen(['python', 'gui.py', queue_to_gui,queue_to_main])
+    return process
 
 
 def main():
@@ -35,6 +40,10 @@ def main():
     time.sleep(200)
 
     # hier muss die GUI gestartet werden
+    queue_to_gui = multiprocessing.Queue()
+    queue_to_main = multiprocessing.Queue()
+    gui_process = start_gui(queue_to_gui,queue_to_main)
+
     # hier muss der Regelkreis gestartet werden
     # hier muss die Zeitsteuerung gestartet werden
     # der Überwachungsprozess sollte aus system-d gestartet werden.
@@ -46,6 +55,8 @@ def main():
     ass.threadstop=True
     bws.threadstop=True
     iss.threadstop=True
+    queue_to_gui.put("processtop")
+
 #     zst.threadstop=True
 #     bst.threadstop=True
     print("ich bin echt neugierig!")
@@ -55,6 +66,9 @@ def main():
     # Threads wieder einsammeln
     for i in settings.ThreadList:
         i.join(timeout=2)
+
+    # GUI Prozess wieder einsammeln
+    gui_process.wait()
 
   
 

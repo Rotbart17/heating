@@ -8,6 +8,8 @@ from datetime import datetime
 import settings
 from dataview import datav as datav
 import logging
+import sys
+import multiprocessing
 
 
 # Muster für logging
@@ -484,9 +486,20 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             # Schalter Brauchwasser vollstandig ausschalten!
             # ggf die Gleichung füe die Kesselkurve eingeben
 
+# -------------------------------------------------------------------------------------------------
+# Start der GUI
 
-
-
+if __name__ == "__main__":
 # ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True )
-ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
+    # Überprüfen, ob genügend Argumente übergeben wurden
+    if len(sys.argv) != 3:
+        print("Bitte zwei Parameter übergeben.")
+        sys.exit(1)
+
+# Queue Parameter auslesen für die Kommunikation 
+# die Variablen müssen dan Dataviev übergeben werden.
+    queue_to_gui = sys.argv[1]
+    queue_to_main= sys.argv[2]
+
+    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # ui.run()
