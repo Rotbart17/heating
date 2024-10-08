@@ -14,6 +14,8 @@ from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
+from multiprocessing import Queue
+from typing import Any
 
 
 # Muster für logging
@@ -79,6 +81,8 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
+    queue_to_main : Queue[Any]= Queue()
+    queue_to_gui : Queue[Any]= Queue()
 
     # damit man den thread stoppen kann
     threadstop : bool = False

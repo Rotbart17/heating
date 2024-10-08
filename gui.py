@@ -497,9 +497,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
 # Queue Parameter auslesen für die Kommunikation 
-# die Variablen müssen dan Dataviev übergeben werden.
-    queue_to_gui = sys.argv[1]
-    queue_to_main= sys.argv[2]
+# die Variablen müssen an Dataviev übergeben werden.
+    datav.queue_to_gui = sys.argv[1]
+    datav.queue_to_main= sys.argv[2]
 
     ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # ui.run()
