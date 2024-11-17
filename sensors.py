@@ -47,7 +47,7 @@ class sensor(Tables):
         
 
     def startthread(self):
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tablename, args=(self.tablename,))
+        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tablename)
         logging.info('Starte Sensorabfrage '+ self.tablename + '!')
         settings.ThreadList.append(self.x)
         self.x.start()

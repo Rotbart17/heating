@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import plotly.graph_objects as go
+import plotly.graph_objects as go 
 # import pandas as pd
 from nicegui import ui, app
 import time
@@ -9,7 +9,7 @@ import settings
 from dataview import datav as datav
 import logging
 import sys
-import multiprocessing
+import multiprocessing 
 
 
 # Muster für logging
