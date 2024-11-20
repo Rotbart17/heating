@@ -489,6 +489,16 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 # -------------------------------------------------------------------------------------------------
 # Start der GUI
 
+def startnicegui(queuetogui, queuefromgui):
+
+# Queue Parameter auslesen für die Kommunikation 
+# die Variablen müssen an Dataviev übergeben werden.
+    datav.queue_to_gui = queuetogui
+    datav.queue_to_main= queuefromgui
+
+    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
+# -------------------------------------------------------------------------------------------------
+
 if __name__ == "__main__":
 # ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True )
     # Überprüfen, ob genügend Argumente übergeben wurden
@@ -496,10 +506,4 @@ if __name__ == "__main__":
         print("Bitte zwei Parameter übergeben.")
         sys.exit(1)
 
-# Queue Parameter auslesen für die Kommunikation 
-# die Variablen müssen an Dataviev übergeben werden.
-    datav.queue_to_gui = sys.argv[1]
-    datav.queue_to_main= sys.argv[2]
-
-    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # ui.run()

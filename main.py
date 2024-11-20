@@ -12,12 +12,12 @@ import threading
 import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
 import multiprocessing
-import subprocess
+from  gui import startnicegui
 
 # startet die GUI und übergibt 2 Queues zur BiDi Kommunikation
 def start_gui(queue_to_gui,queue_to_main):
     # Start the GUI process
-    process = subprocess.Popen(['python', 'gui.py', queue_to_gui,queue_to_main])
+    process = multiprocessing.Process(target=startnicegui, args=(queue_to_gui, queue_to_main))
     return process
 
 
