@@ -14,7 +14,7 @@ from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
-from multiprocessing import Queue
+from multiprocessing.queues import Queue as MPQueue
 from typing import Any
 
 
@@ -81,8 +81,8 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
-    queue_to_main : Queue[Any]= Queue()
-    queue_to_gui : Queue[Any]= Queue()
+    queue_to_main : Any =None
+    queue_to_gui : Any =None
 
     # damit man den thread stoppen kann
     threadstop : bool = False

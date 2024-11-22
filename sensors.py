@@ -6,6 +6,7 @@ import threading
 import settings
 from settings import SensorList
 from table import Tables
+import random
 
 # Definitionen der Sensorklasse
 # schaun wir mal was ich schon gelernt habe
@@ -101,24 +102,39 @@ class sensor(Tables):
             return (temp)
         
         # Wert in DB speichern 
-        def storevalue(temperature,conn):
+        def storevalue(temperature):
+            maxtry=10
+            t=0
+            conn = sqlite3.connect(settings.DBPATH)
             sql = f"INSERT INTO {tn} (value, begin_date) VALUES ( {temperature}, datetime('now','localtime') );"
-            conn.execute(sql)
-            conn.commit()
-            logging.debug('Sensorwert in '+tn+' gespeichert!')
-            
+            while True:
+                try:
+                    cursor=conn.cursor()
+                    cursor.execute("BEGIN")
+                    conn.execute(sql)
+                    conn.commit()
+                    logging.debug('Sensorwert in '+tn+' gespeichert!')
+                    break
+                except Exception as e:
+                    logging.debug('DB-Fehler '+e+' beim Schreiben in '+tn+' aufgetreten!')
+                    t+=1
+                    if t>=10:
+                       logging.error('DB-Fehler '+e+' beim Schreiben in '+tn+' 10 Mal aufgetreten! Breche ab')
+                       exit(1) 
+                    time.sleep(random.random())
+                    continue
+            conn.close()
 
         # Die Daten Wandeln und speichern
         def processvalue(name:str):
-            conn = sqlite3.connect(settings.DBPATH)
             while (sensor.threadstop == False):
                 rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
-                storevalue(temperature,conn)
+                storevalue(temperature)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(sensor.waittime)
             # Wenn Ende dann abbrechen
-            conn.close()
+  
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
             # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tablename)

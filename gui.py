@@ -506,4 +506,10 @@ if __name__ == "__main__":
         print("Bitte zwei Parameter übergeben.")
         sys.exit(1)
 
+# Queue Parameter auslesen für die Kommunikation 
+# die Variablen müssen an Dataviev übergeben werden.
+    datav.queue_to_gui = sys.argv[1]
+    datav.queue_to_main= sys.argv[2]
+
+    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # ui.run()
