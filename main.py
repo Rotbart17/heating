@@ -8,12 +8,12 @@
 import dbinit
 import settings
 from sensors import sensor
-import threading
+# import threading
 import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
 import multiprocessing
-# from  gui import startnicegui
-import gui
+
+
 
 # startet die GUI und übergibt 2 Queues zur BiDi Kommunikation
 def start_gui(queue_to_gui,queue_to_main):
@@ -22,11 +22,12 @@ def start_gui(queue_to_gui,queue_to_main):
     return process
 
 
-def main():
+def startbackend()-> None:
     dbinit.init_db_environment()
     
     # das könnte ich in init_db verschieben. Da man mit return mehrere Werte zurückgeben kann
     # könnte die Terminierung der Threads auf dieser Ebene bleiben.
+    global kss,ass,bws,iss
     kss= sensor(settings.Kesselsensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
     ass= sensor(settings.Aussensensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
     bws= sensor(settings.Brauchwassersensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
@@ -37,13 +38,13 @@ def main():
     wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_p1, settings.sql_create_view_table_p2)
     
 
-    print("Das sorgt dafür, dass in der DB auch ne handvoll Daten drin sind.")
-    time.sleep(60)
+    # print("Das sorgt dafür, dass in der DB auch ne handvoll Daten drin sind.")
+    # time.sleep(60)
 
     # hier muss die GUI gestartet werden
-    queue_to_gui = multiprocessing.Queue()
-    queue_to_main = multiprocessing.Queue()
-    gui_process = start_gui(queue_to_gui,queue_to_main)
+    # queue_to_gui = multiprocessing.Queue()
+    # queue_to_main = multiprocessing.Queue()
+    # gui_process = start_gui(queue_to_gui,queue_to_main)
 
     # hier muss der Regelkreis gestartet werden
     # hier muss die Zeitsteuerung gestartet werden
@@ -52,11 +53,13 @@ def main():
 
     # hier ziehen wir dann wieder die Bremse
     
-    kss.threadstop=True
-    ass.threadstop=True
-    bws.threadstop=True
-    iss.threadstop=True
-    queue_to_gui.put("processstop")
+def stopbackend(stop:bool):
+
+    kss.threadstop=stop
+    ass.threadstop=stop
+    bws.threadstop=stop
+    iss.threadstop=stop
+    # queue_to_gui.put("processstop")
 
 #     zst.threadstop=True
 #     bst.threadstop=True
@@ -69,15 +72,11 @@ def main():
         i.join(timeout=2)
 
     # GUI Prozess wieder einsammeln
-    gui_process.join()
-
-  
+    # gui_process.join()
 
 
-
-
-if __name__ == '__main__':
+# if __name__ == '__main__':
     
-    main()
-    print("Ende!")
+#    main()
+#    print("Ende!")
     

@@ -14,7 +14,7 @@ from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
-from multiprocessing.queues import Queue as MPQueue
+# from multiprocessing.queues import Queue as MPQueue
 from typing import Any
 
 
@@ -70,7 +70,7 @@ class dv(Enum):
     threadstop=32
 
 
-##### Start der Idee mit der Idee  der Dataclass
+##### Start der Idee mit der Idee der Dataclass
 @dataclass
 class maindata(SensorView, KesselView, ZeitView):
     # Erkenntnis zu dataclass: wenn man einen Defaultvalue für eine Variable vergibt muss man das für alle
@@ -573,8 +573,3 @@ class maindata(SensorView, KesselView, ZeitView):
     def vZeitsteuerung(self,value):
         self._zeitsteuerungwrite(value)
     
-
-
-# es ist schon Mist die Klasse durch den Import in gui.py global zu definieren!
-# da hätte ich gerne einen besseren Ort   
-datav=maindata()

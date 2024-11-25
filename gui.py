@@ -2,14 +2,16 @@
 
 import plotly.graph_objects as go 
 # import pandas as pd
-from nicegui import ui, app
+from nicegui import ui, run,app
 import time
 from datetime import datetime
 import settings
-from dataview import datav as datav
+from dataview import maindata
+from main import startbackend, stopbackend
 import logging
 import sys
-import multiprocessing 
+from multiprocessing import Manager, Queue
+# import multiprocessing
 
 
 # Muster für logging
@@ -19,7 +21,8 @@ import multiprocessing
 # logging.error('error')
 # logging.critical('critical')
 
-
+datav=maindata()
+queue_to_startbackend = Queue()
 # globale Variablen und Funktionen für die 3 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
 
@@ -70,25 +73,28 @@ gradb : float= 0
 gradanpass : float= 0
 
 # Initialisieren von Daten für die GUI. ggf. noch nicht der Weisheit letzter Schluss
-def init_gui_data():
-   
-   logging.basicConfig(
-       filename='gui.log',
-       filemode='w',
-       format='%(asctime)s %(levelname)s: %(message)s',
-       level=logging.INFO
-       )
+def init_data():
+   #  pass
+        
+    run.cpu_bound(startbackend())
+   # logging.basicConfig(
+   #    filename='gui.log',
+   #    filemode='w',
+   #    format='%(asctime)s %(levelname)s: %(message)s',
+   #    level=logging.INFO
+   #    )
 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
-def de_init_gui_data():
+def de_init_data():
+    # stopbackend()
     del datav
 
     
 # Irgendwie durchlaüft nicegui das Programm mehrfach daher geht das hier nicht.
             
-app.on_startup(lambda: init_gui_data())
-app.on_shutdown(lambda: de_init_gui_data())
+app.on_startup(lambda: init_data())
+app.on_shutdown(lambda: de_init_data())
 
 
 
@@ -499,17 +505,14 @@ def startnicegui(queuetogui, queuefromgui):
     ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
 # -------------------------------------------------------------------------------------------------
 
-if __name__ == "__main__":
-# ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True )
-    # Überprüfen, ob genügend Argumente übergeben wurden
-    if len(sys.argv) != 3:
-        print("Bitte zwei Parameter übergeben.")
-        sys.exit(1)
+# if __name__ == "__main__":
+# ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True, dark= True)
+
 
 # Queue Parameter auslesen für die Kommunikation 
 # die Variablen müssen an Dataviev übergeben werden.
-    datav.queue_to_gui = sys.argv[1]
-    datav.queue_to_main= sys.argv[2]
+#   datav.queue_to_gui = sys.argv[1]
+#   datav.queue_to_main= sys.argv[2]
 
-    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
-# ui.run()
+# ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480))
+ui.run(favicon='🚀',port=8000,title='Buderus Ecomatic', dark= True)
