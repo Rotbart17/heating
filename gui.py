@@ -21,8 +21,13 @@ from multiprocessing import Manager, Queue
 # logging.error('error')
 # logging.critical('critical')
 
-datav=maindata()
-queue_to_startbackend = Queue()
+# nur die datav Klasse initialisieren wenn der Subprozess
+# von nicegui gestratetwird damit die Prozesse nicht 2 Mal gestartet sind.
+
+if __name__ in ['__mp_main__', '__main__']:
+    datav=maindata()
+    queue_to_startbackend = Queue()
+
 # globale Variablen und Funktionen für die 3 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
 
