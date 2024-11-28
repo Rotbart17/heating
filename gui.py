@@ -11,7 +11,7 @@ from main import startbackend, stopbackend
 import logging
 import sys
 from multiprocessing import Manager, Queue
-# import multiprocessing
+import multiprocessing
 
 
 # Muster für logging
@@ -25,8 +25,11 @@ from multiprocessing import Manager, Queue
 # von nicegui gestratetwird damit die Prozesse nicht 2 Mal gestartet sind.
 
 if __name__ in ['__mp_main__', '__main__']:
+    # global datav
     datav=maindata()
-    queue_to_startbackend = Queue()
+    global queue_to_backend, queue_from_backend
+    queue_to_backend = Queue()
+    queue_from_backend = Queue()
 
 # globale Variablen und Funktionen für die 3 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
@@ -79,24 +82,28 @@ gradanpass : float= 0
 
 # Initialisieren von Daten für die GUI. ggf. noch nicht der Weisheit letzter Schluss
 def init_data():
-   #  pass
-        
-    run.cpu_bound(startbackend())
-   # logging.basicConfig(
-   #    filename='gui.log',
-   #    filemode='w',
-   #    format='%(asctime)s %(levelname)s: %(message)s',
-   #    level=logging.INFO
-   #    )
+    global backendproc
+    backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
+    backendproc.start()
+
+    # run.cpu_bound(startbackend(queue_to_backend,queue_from_backend))
+    # logging.basicConfig(
+    #    filename='gui.log',
+    #    filemode='w',
+    #    format='%(asctime)s %(levelname)s: %(message)s',
+    #    level=logging.INFO
+    #    )
 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
 def de_init_data():
-    # stopbackend()
-    del datav
+    stopbackend(True)
+    datav.threadstop=True
+    backendproc.join()
+    # del datav
 
     
-# Irgendwie durchlaüft nicegui das Programm mehrfach daher geht das hier nicht.
+# Irgendwie durchläuft nicegui das Programm mehrfach.
             
 app.on_startup(lambda: init_data())
 app.on_shutdown(lambda: de_init_data())

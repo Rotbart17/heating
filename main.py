@@ -11,22 +11,13 @@ from sensors import sensor
 # import threading
 import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
-import multiprocessing
+from multiprocessing import Queue
 
 
-
-# startet die GUI und übergibt 2 Queues zur BiDi Kommunikation
-def start_gui(queue_to_gui,queue_to_main):
-    # Start the GUI process
-    process = multiprocessing.Process(target=gui, name="GUI-Prozess", args=(queue_to_gui, queue_to_main))
-    return process
-
-
-def startbackend()-> None:
+def startbackend(queue_to_startbackend:Queue, queue_from_backend:Queue)-> None:
     dbinit.init_db_environment()
     
-    # das könnte ich in init_db verschieben. Da man mit return mehrere Werte zurückgeben kann
-    # könnte die Terminierung der Threads auf dieser Ebene bleiben.
+
     global kss,ass,bws,iss
     kss= sensor(settings.Kesselsensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
     ass= sensor(settings.Aussensensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2)
