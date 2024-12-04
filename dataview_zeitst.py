@@ -19,24 +19,25 @@ logging.basicConfig(
 @dataclass
 class ZeitView:
     # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
-    _Zeitsteuerung=[]
+    _Zeitsteuerungszeilen=[]
 
-    # Daten der Zeitsteuerung laden
+    # liest alle Daten der Zeitsteuerungstabelle
     def _zeitsteuerungload(self):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
-                logging.debug('Zeitsteuerung lesen!')
+                logging.debug('Zeitsteuerungstabelle lesen!')
                 cursor=db.cursor()
                 sql= settings.sql_readzeitsteuerung
                 cursor.execute(sql)
                 t=cursor.fetchall()
-                # self._Zeitsteuerung=[item[0] for item in t]
+                self._Zeitsteuerungszeilen=[item for item in t]
                 cursor.close()
             db.close()
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
             exit(1)
 
+    # schreibt eine Zeile in die Zeitteuerungstabelle
     def _zeitsteuerungwrite(self,value):
         try:
             db=sqlite3.connect(settings.DBPATH)
