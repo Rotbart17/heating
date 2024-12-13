@@ -14,7 +14,7 @@ from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataVi
 from multiprocessing import Queue
 
 
-def startbackend(queue_to_startbackend:Queue, queue_from_backend:Queue)-> None:
+def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
     dbinit.init_db_environment()
     
 
@@ -42,15 +42,13 @@ def startbackend(queue_to_startbackend:Queue, queue_from_backend:Queue)-> None:
     # der Überwachungsprozess sollte aus system-d gestartet werden.
 
 
-    # hier ziehen wir dann wieder die Bremse
-    
-def stopbackend(stop:bool):
+# hier ziehen wir dann wieder die Bremse    
+def stopbackend(stop:bool)->None:
 
     kss.threadstop=stop
     ass.threadstop=stop
     bws.threadstop=stop
     iss.threadstop=stop
-    # queue_to_gui.put("processstop")
 
 #     zst.threadstop=True
 #     bst.threadstop=True
@@ -62,8 +60,6 @@ def stopbackend(stop:bool):
     for i in settings.ThreadList:
         i.join(timeout=2)
 
-    # GUI Prozess wieder einsammeln
-    # gui_process.join()
 
 
 # if __name__ == '__main__':

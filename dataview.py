@@ -87,9 +87,6 @@ class maindata(SensorView, KesselView, ZeitView):
     # damit man den thread stoppen kann
     threadstop : bool = False
 
-    # Wartezeit in Sec bevor die nächste Abfrage der Sensordaten durchgeführt werden
-    _sensorsleeptime : int = 60
-
     #Wartezeit in Sec bevor die nächste Abfrage des WorkdataView durchgeführt wird
     _sleeptime : int = 5
 
@@ -115,6 +112,7 @@ class maindata(SensorView, KesselView, ZeitView):
     # Kessel ist die aktuelle Kesseltemperatur
     # KesselSoll ist die KesselSolltemperatur
     # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
+    # KesselDaten_x und y ist die KesselSollkennlinie
     # die x und y Listen sind die Sensordaten nach x und y gesplittet. 
     # Die Grafikfunktion braucht diese Trennung
     _Kessel : float = 0
@@ -122,17 +120,17 @@ class maindata(SensorView, KesselView, ZeitView):
     _KesselMax : float = 90
     _KesselDaten_x : list = field(default_factory=list)
     _KesselDaten_y : list = field(default_factory=list)
-    _KesselIstDaten_x : list = field(default_factory=list)
-    _KesselIstDaten_y : list = field(default_factory=list)
+    #_KesselIstDaten_x : list = field(default_factory=list)
+    #_KesselIstDaten_y : list = field(default_factory=list)
 
 
     # Brauchwasser ist die aktuelle Brauchwassertemperatur
     # BrauchwasserSoll ist die Solltemperatur des Brauchwassers
     # BrauchwasserError ist die Temperatur bei der ein Fehler ausgelöst wird
-    # BrauchwasserAus ist Wahr wenn kein Brauchwasser erzeugt werdensoll.
+    # BrauchwasserAus ist Wahr wenn kein Brauchwasser erzeugt werden soll.
     _Brauchwasser : float = 0
-    _BrauchwasserDaten_x : list = field(default_factory=list)
-    _BrauchwasserDaten_y : list = field(default_factory=list)
+    #_BrauchwasserDaten_x : list = field(default_factory=list)
+    #_BrauchwasserDaten_y : list = field(default_factory=list)
     _BrauchwasserSoll : float = 55
     _BrauchwasserError : float = 70
     _BrauchwasserAus : bool = False
@@ -141,12 +139,13 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # Innen ist die aktuelle Innentemperatur
     _Innen : float = 0
-    _InnenDaten_x : list = field(default_factory=list)
-    _InnenDaten_y : list = field(default_factory=list)
+    #_InnenDaten_x : list = field(default_factory=list)
+    #_InnenDaten_y : list = field(default_factory=list)
+    
     # Innen ist die aktuelle Aussentemperatur
     _Aussen : float = 0 
-    _AussenDaten_x : list = field(default_factory=list)
-    _AussenDaten_y : list = field(default_factory=list)
+    #_AussenDaten_x : list = field(default_factory=list)
+    #_AussenDaten_y : list = field(default_factory=list)
 
     # Signalisiert ob die Pumpen an /  aus sind
     _Pumpe_oben_an : bool = False
@@ -302,19 +301,19 @@ class maindata(SensorView, KesselView, ZeitView):
         while (self.threadstop ==False):
             if self._datawrite==False:
                 
-                self._sensordataload()
-                logging.debug('Sensordata Pollen')
+                self._viewloader(False)
+                logging.debug('WorkdataView Pollen')
                 time.sleep(self._sleeptime)
             else:
                 time.sleep((self._sleeptime)/100)
 
-    # pollt regelmäßig neue Sensordaten für die Anzeige
-    def _sensorpolling(self,dummy):
-        while (self.threadstop ==False):
-            if self._checkview():
-                self._sensordataload()
-                logging.debug('WorkdataView Pollen')
-                time.sleep(self._sensorsleeptime)
+    # pollt regelmäßig neue Sensordaten für die Anzeige 1 mal pro Minute
+    # def _sensorpolling(self,dummy):
+    #    while (self.threadstop ==False):
+    #        if self._checkview():
+    #            self._sensordataload()
+    #            logging.debug('Sensordata Pollen')
+    #            time.sleep(self._sensorsleeptime)
             
 
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.
@@ -325,14 +324,14 @@ class maindata(SensorView, KesselView, ZeitView):
         # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
         # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
         # aber so müsste es ja auchgehen.
-        self._SensorXListe.append(self._KesselDaten_x)
-        self._SensorXListe.append(self._AussenDaten_x)
-        self._SensorXListe.append(self._InnenDaten_x)
-        self._SensorXListe.append(self._BrauchwasserDaten_x)
-        self._SensorYListe.append(self._KesselDaten_y)
-        self._SensorYListe.append(self._AussenDaten_y)
-        self._SensorYListe.append(self._InnenDaten_y)
-        self._SensorYListe.append(self._BrauchwasserDaten_y)
+        # self._SensorXListe.append(self._KesselDaten_x)
+        #self._SensorXListe.append(self._AussenDaten_x)
+        #self._SensorXListe.append(self._InnenDaten_x)
+        #self._SensorXListe.append(self._BrauchwasserDaten_x)
+        #self._SensorYListe.append(self._KesselDaten_y)
+        #self._SensorYListe.append(self._AussenDaten_y)
+        #self._SensorYListe.append(self._InnenDaten_y)
+        #self._SensorYListe.append(self._BrauchwasserDaten_y)
 
         if checktable(settings.WorkDataView)==False:
             logging.error(f'Die Tabelle {settings.WorkDataView} existiert nicht. Programm wird beendet')
@@ -345,8 +344,8 @@ class maindata(SensorView, KesselView, ZeitView):
         # Laden der initialen Kesselkennlinie
         self._kesseldataload()
 
-        # Laden der Initialen SensorWerte
-        self._sensordataload()
+        # Laden der initialen SensorWerte
+        # self._sensordataload()
 
         # Zeitsteuerung laden
         self._zeitsteuerungload()
@@ -363,12 +362,12 @@ class maindata(SensorView, KesselView, ZeitView):
         self.dv_poll.start()
         logging.debug('DB-Abfrage Thread dataview gestartet!')
 
-        global sensor_poll
-        self.sensor_poll = threading.Thread(target=self._sensorpolling, name="Thread-GUI-Sensorpolling", args=(dummy,))
-        logging.info('Starte DB-Abfrage Sensor Thread!')
-        settings.ThreadList.append(self.sensor_poll)
-        self.sensor_poll.start()
-        logging.debug('DB-Abfrage Thread Sensor gestartet!')
+        #global sensor_poll
+        #self.sensor_poll = threading.Thread(target=self._sensorpolling, name="Thread-GUI-Sensorpolling", args=(dummy,))
+        #logging.info('Starte DB-Abfrage Sensor Thread!')
+        #settings.ThreadList.append(self.sensor_poll)
+        #self.sensor_poll.start()
+        #logging.debug('DB-Abfrage Thread Sensor gestartet!')
 
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
@@ -428,7 +427,7 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
     # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
-    # viele Variablen werden nur gelesen. Sie weren durch Sensoren, Oder Regelkreise gesetzt
+    # viele Variablen werden nur gelesen. Sie werden durch Sensoren, Oder Regelkreise gesetzt
 
     @property
     def vWinter(self):
@@ -533,37 +532,37 @@ class maindata(SensorView, KesselView, ZeitView):
     def vKesselDaten_y(self,value):
         self._writeKesselDaten_y(value)
 
-    @property
-    def vKesselIstDaten_x(self):
-        return self._SensorXListe[sens.Kesselsensor.value]
+#    @property
+#    def vKesselIstDaten_x(self):
+#        return self._SensorXListe[sens.Kesselsensor.value]
 
-    @property
-    def vKesselIstDaten_y(self):
-        return self._SensorYListe[sens.Kesselsensor.value]
+    # @property
+    # def vKesselIstDaten_y(self):
+    #     return self._SensorYListe[sens.Kesselsensor.value]
 
-    @property
-    def vAussenDaten_x(self):
-        return self._SensorXListe[sens.Aussensensor.value]
+    # @property
+    # def vAussenDaten_x(self):
+    #     return self._SensorXListe[sens.Aussensensor.value]
 
-    @property
-    def vAussenDaten_y(self):
-        return self._SensorYListe[sens.Aussensensor.value]
+    # @property
+    # def vAussenDaten_y(self):
+    #     return self._SensorYListe[sens.Aussensensor.value]
 
-    @property
-    def vInnenDaten_x(self):
-        return self._SensorXListe[sens.Innensensor.value]
+    # @property
+    # def vInnenDaten_x(self):
+    #     return self._SensorXListe[sens.Innensensor.value]
 
-    @property
-    def vInnenDaten_y(self):
-        return self._SensorYListe[sens.Innensensor.value]
+    # @property
+    # def vInnenDaten_y(self):
+    #     return self._SensorYListe[sens.Innensensor.value]
        
-    @property
-    def vBrauchwasserDaten_x(self):
-        return self._SensorXListe[sens.Brauchwassersensor.value]
+    # @property
+    # def vBrauchwasserDaten_x(self):
+    #     return self._SensorXListe[sens.Brauchwassersensor.value]
 
-    @property
-    def vBrauchwasserDaten_y(self):
-        return self._SensorYListe[sens.Brauchwassersensor.value]
+    # @property
+    # def vBrauchwasserDaten_y(self):
+    #     return self._SensorYListe[sens.Brauchwassersensor.value]
     
     @property
     def vZeitsteuerung(self):

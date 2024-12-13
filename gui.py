@@ -490,8 +490,11 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
     #---------------------------------------------------------------------------------------------------------   
     # Vierter  Reiter ------------------
+
+    
     with ui.tab_panel(einstellungen):
         with ui.grid(rows=4,columns=4):    
+            
             # hier brauchen wir nun Sommer Winterumschaltung Temp
             def setwinter(value):
                 datav.vWintertemp=value
@@ -500,6 +503,9 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
             ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
                 on_change=lambda e: setwinter(e.value)).classes('flex-1 w-32')
+            
+            # Knopf zum Ausschalten
+            ui.button('Programm Stop', color='#1e5569', on_click=lambda: de_init_data()).classes('col-start-4 w-25 h-25')
             # offene Themen:
             # Schalter Brauchwasser vollstandig ausschalten!
             # ggf die Gleichung füe die Kesselkurve eingeben

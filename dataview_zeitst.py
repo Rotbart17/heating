@@ -20,6 +20,7 @@ logging.basicConfig(
 class ZeitView:
     # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
     _Zeitsteuerungszeilen=[]
+    
 
     # liest alle Daten der Zeitsteuerungstabelle
     def _zeitsteuerungload(self):
@@ -29,8 +30,8 @@ class ZeitView:
                 cursor=db.cursor()
                 sql= settings.sql_readzeitsteuerung
                 cursor.execute(sql)
-                t=cursor.fetchall()
-                self._Zeitsteuerungszeilen=[item for item in t]
+                self._Zeitsteuerungszeilen=cursor.fetchall()
+                # self._Zeitsteuerungszeilen=[item for item in t]
                 cursor.close()
             db.close()
         except sqlite3.Error as e:
