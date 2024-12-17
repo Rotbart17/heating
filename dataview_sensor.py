@@ -42,7 +42,17 @@ class SensorView:
     _InnenDaten_y : list = field(default_factory=list)
     _AussenDaten_x : list = field(default_factory=list)
     _AussenDaten_y : list = field(default_factory=list)
-    
+        # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
+    # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
+    # aber so müsste es ja auchgehen.
+    _SensorXListe.append(_KesselIstDaten_x)
+    _SensorXListe.append(_AussenDaten_x)
+    _SensorXListe.append(_InnenDaten_x)
+    _SensorXListe.append(_BrauchwasserDaten_x)
+    _SensorYListe.append(_KesselIstDaten_y)
+    _SensorYListe.append(_AussenDaten_y)
+    _SensorYListe.append(_InnenDaten_y)
+    _SensorYListe.append(_BrauchwasserDaten_y) 
         
     # Wartezeit in Sec bevor die nächste Abfrage der Sensordaten durchgeführt werden
     _sensorsleeptime : int = 60
@@ -50,22 +60,7 @@ class SensorView:
     # dummy Definition wird dann in der Hauptlklasse gesetzt
     threadstop=False
     
-    def __post_init__(self):
-        # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
-        # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
-        # aber so müsste es ja auchgehen.
-        self._SensorXListe.append(self._KesselIstDaten_x)
-        self._SensorXListe.append(self._AussenDaten_x)
-        self._SensorXListe.append(self._InnenDaten_x)
-        self._SensorXListe.append(self._BrauchwasserDaten_x)
-        self._SensorYListe.append(self._KesselIstDaten_y)
-        self._SensorYListe.append(self._AussenDaten_y)
-        self._SensorYListe.append(self._InnenDaten_y)
-        self._SensorYListe.append(self._BrauchwasserDaten_y)
-        
-        
-        # Laden der initialen SensorWerte
-        self._sensordataload()
+    def _start_sensor_thread(self):           
         global sensor_poll
         _dummy=0 
         self.sensor_poll = threading.Thread(target=self._sensorpolling, name="Thread-GUI-Sensorpolling", args=(_dummy,))

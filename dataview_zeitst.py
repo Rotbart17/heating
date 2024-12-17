@@ -42,15 +42,31 @@ class ZeitView:
     def _zeitsteuerungwrite(self,value):
         try:
             db=sqlite3.connect(settings.DBPATH)
-            logging.debug('Zeitsteuerungs Datensatz in DB schreiben!')
+            logging.debug('Zeitsteuerungs Datensätze in DB schreiben!')
             cursor=db.cursor()
-            sql= settings.sql_writezeitsteuerung
-            cursor.execute(sql,value)
-            db.commit()
+            cursor.execute("BEGIN")
+            # Tabelleninhalt löschen
+            sql= settings.sql_deletezeitsteuerung
+            cursor.execute(sql)
+            # jetzt den Inhalt der Tabelle wiedr in die DB schreiben 
+            for i in value:
+                sql= settings.sql_writezeitsteuerung
+                cursor.execute(sql,value)
+            cursor.execute("COMMIT")
             cursor.close()
-            db.close()
-
+        
         except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
+            cursor.execute("ROLLBACK")
+            logging.error(f"Der Fehler {e} ist beim Schreiben der Zeitsteuerungstabelle aufgetreten")
             exit(1)
+        finally:
+            db.close()
+    
+    @property
+    def vZeitsteuerung(self):
+        return (self._Zeitsteuerungszeilen)
 
+    @vZeitsteuerung.setter
+    def vZeitsteuerung(self,value):
+        self._zeitsteuerungwrite(value)
+    

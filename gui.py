@@ -25,37 +25,44 @@ import multiprocessing
 # von nicegui gestratetwird damit die Prozesse nicht 2 Mal gestartet sind.
 
 if __name__ in ['__mp_main__', '__main__']:
-    # global datav
-    datav=maindata()
-    global queue_to_backend, queue_from_backend
+    global backendproc , queue_to_backend, queue_from_backend
     queue_to_backend = Queue()
     queue_from_backend = Queue()
+    backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
+    backendproc.start()
+    # global datav
+    datav=maindata()
+   
 
 # globale Variablen und Funktionen für die 3 Reiter "Einstellungen
 # Spalten für die Tabelle der Heizungssteuerung: Typ (z.B. Brauchwasser), Tage, Zeit von, zeit bis
 
-rows = []  # leeres Feld für die Zeilen der Tabelle
+# rows = []  # leeres Feld für die Zeilen der Tabelle
 
 @ui.refreshable
 def update_table() ->None:
     global table, columns, rows
     columns = [
-        {'name': 'id',       'label': 'ID' ,      'field': 'id'  , 'required': True, 'sortable': True,'align': 'left'},
-        {'name': 'typ',      'label': 'Typ',      'field': 'typ' , 'required': True},
-        {'name': 'tage',     'label': 'Tage',     'field': 'tage', 'required': True},
-        {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von' , 'required': True},
-        {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis' , 'required': True},
+        {'name': 'id',       'label': 'ID' ,      'field': 'line_id'  , 'required': True, 'sortable': True,'align': 'left'},
+        {'name': 'typ',      'label': 'Typ',      'field': 'type'     , 'required': True},
+        {'name': 'tage',     'label': 'Tage',     'field': 'tage'     , 'required': True},
+        {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von'      , 'required': True},
+        {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis'      , 'required': True},
     ]
-    rows
+    # rows=[] #[item for item in datav.vZeitsteuerung]
     #title='Steuerdaten'
-    table=ui.table(selection='single',columns=columns, rows=rows, row_key='id',on_select=handle_click).classes('w-11/12 mr-4').props('hide-no-data')
+    rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 'bis': item[4]} for item in datav.vZeitsteuerung]
+    table=ui.table(selection='single',columns=columns, rows=rows, row_key='line_id',on_select=handle_click).classes('w-11/12 mr-4').props('hide-no-data')
 
 # Zeilennummer in der Tabelle
-id : int=0
+if len(datav._Zeitsteuerungszeilen)> 0:
+    id = len (datav._Zeitsteuerungszeilen)
+else:
+    id=0
 # Welche Zeile in der Tabelle wird bearbeitet
 handle_id: int=0 
 # welcher Heiztyp
-typ :int=0
+heiztype :int=0
 # wann wird der Heiztyp verwendet
 tage:int=0
 # Zeitperiode für den Heiztyp
@@ -82,17 +89,11 @@ gradanpass : float= 0
 
 # Initialisieren von Daten für die GUI. ggf. noch nicht der Weisheit letzter Schluss
 def init_data():
-    global backendproc
-    backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
-    backendproc.start()
+    pass
+   # global backendproc
+   # backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
+   # backendproc.start()
 
-    # run.cpu_bound(startbackend(queue_to_backend,queue_from_backend))
-    # logging.basicConfig(
-    #    filename='gui.log',
-    #    filemode='w',
-    #    format='%(asctime)s %(levelname)s: %(message)s',
-    #    level=logging.INFO
-    #    )
 
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
@@ -263,11 +264,11 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         def handle_click():
             # ui.notify(table.selected)
             if table.selected != []:
-                global id, typ,tage,von,bis,handle_id
+                global id, heiztype,tage,von,bis,handle_id
                 # print("Handle Click:",table.selected)
-                handle_id =table.selected[0]['id']
-                typval=table.selected[0]['typ']
-                typ=typ_r_dict[typval]
+                handle_id =table.selected[0]['line_id']
+                typval=table.selected[0]['type']
+                heiztype=typ_r_dict[typval]
                 tageval=table.selected[0]['tage']
                 tage=tage_r_dict[tageval]
                 von=table.selected[0]['von']
@@ -292,7 +293,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # setzt den Typ    
         def settyp(value):
             global typ
-            typ=value
+            heiztype=value
             # ui.notify(typ)
 
         # Setzt die Tage
@@ -325,13 +326,13 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             with ui.grid(columns=2, rows=3):
                 # schliesst den Dialog
                 def close_add():
-                    global id, typ, tage, von, bis
+                    global id, heiztype, tage, von, bis
                     id +=1
-                    # print('Anzulegen:',id,typ,tage,von,bis)
-                    if typ != 0 and tage !=0:
-                        table.add_rows({'id': id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
-                        # print('Neu Angelegt:',id,typ,tage,von,bis)
-                        datav.vZeitsteuerung=tuple((id, typdict[typ], tagedict[tage],von,bis))
+                    # print('Anzulegen:',line_id,heiztype,tage,von,bis)
+                    if heiztype != 0 and tage !=0:
+                        table.add_rows({'line_id': id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                        # print('Neu Angelegt:',line_id,heiztype,tage,von,bis)
+                        datav.vZeitsteuerung=tuple((id, typdict[heiztype], tagedict[tage],von,bis))
                         tabledialogadd.close()
                 
                 ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
@@ -342,9 +343,9 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
         # Daten für den Anzeigedialog updaten
         def updateeditdialog():
-            # print("vor dem Edit Dialog:",handle_id,typ,tage,von,bis)
+            # print("vor dem Edit Dialog:",handle_id,heiztype,tage,von,bis)
             if handle_id !=0:
-                s1.value=typ
+                s1.value=heiztype
                 s2.value=tage
                 s3.value=von
                 s4.value=bis
@@ -356,18 +357,18 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             with ui.grid(columns=2, rows=3):
                 # schliesst den Dialog
                 def close_edit():
-                    # print("Nach Edit",handle_id, typ,tage,von,bis)
+                    # print("Nach Edit",handle_id, heiztype,tage,von,bis)
                 
                     if table.selected != []:
-                        if typ != 0 and tage !=0:
+                        if heiztype != 0 and tage !=0:
                             # aktuelle zeile entfernen
                             remove()
                             #neue Zeile Hinzufügen
-                            table.add_rows({'id': handle_id, 'typ':typdict[typ], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                            table.add_rows({'line_id': handle_id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
                             # hier muss die Zeile in die DB
                             # table.sorted
-                            # print('Edit Neu Angelegt:',handle_id,typ,tage,von,bis)
-                            datav.vZeitsteuerung=(handle_id, typdict[typ], tagedict[tage],von,bis)
+                            # print('Edit Neu Angelegt:',handle_id,heiztype,tage,von,bis)
+                            datav.vZeitsteuerung=(handle_id, typdict[heiztype], tagedict[tage],von,bis)
                             update_table.refresh()
                     # handle_id=0
                     tabledialogedit.close()
@@ -379,7 +380,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 ui.button('OK', on_click=close_edit).classes('w-20')
         
 
-        # hier beginnt die Anzeige der  linken Seite des Reiters -----------
+        # hier beginnt die Anzeige der linken Seite des Reiters -----------
         # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
         with ui.row(wrap=False):
             # ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
@@ -532,5 +533,6 @@ def startnicegui(queuetogui, queuefromgui):
 #   datav.queue_to_gui = sys.argv[1]
 #   datav.queue_to_main= sys.argv[2]
 
+
 # ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480))
-ui.run(favicon='🚀',port=8000,title='Buderus Ecomatic', dark= True)
+ui.run(favicon='🚀',port=8000,title='Buderus Ecomatic', dark= True, reload= False)
