@@ -38,7 +38,7 @@ class ZeitView:
             logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
             exit(1)
 
-    # schreibt eine Zeile in die Zeitteuerungstabelle
+    # schreibt die Liste der Dictionaryzeilen in die Zeitteuerungstabelle
     def _zeitsteuerungwrite(self,value):
         try:
             db=sqlite3.connect(settings.DBPATH)
@@ -49,9 +49,9 @@ class ZeitView:
             sql= settings.sql_deletezeitsteuerung
             cursor.execute(sql)
             # jetzt den Inhalt der Tabelle wiedr in die DB schreiben 
+            sql= settings.sql_writezeitsteuerung
             for i in value:
-                sql= settings.sql_writezeitsteuerung
-                cursor.execute(sql,value)
+                cursor.execute(sql,i)
             cursor.execute("COMMIT")
             cursor.close()
         

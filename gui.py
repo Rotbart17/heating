@@ -273,14 +273,17 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                 tage=tage_r_dict[tageval]
                 von=table.selected[0]['von']
                 bis=table.selected[0]['bis']
-                # print("global gesetzt handle_id:",handle_id,"typ:",typ,"tage:",tage,von, bis)
+                print("global gesetzt handle_id:",handle_id,"typ:",typval,"tage:",tage,von, bis)
             
                                 
         # löscht eine markierte Tabellenzeile
         def remove():
             # ui.notify(table.selected)
-            if table.selected!=None:
-                table.remove_rows(table.selected[0])
+            if table.selected!=[]:
+                table.remove_row(table.selected[0])
+                rows.sort(key=lambda x: x['line_id'])
+                datav.vZeitsteuerung=rows
+            
 
         # Prüft ob es eine gültige Zeit ist
         def isTimeFormat(input):
@@ -292,7 +295,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
         # setzt den Typ    
         def settyp(value):
-            global typ
+            global heiztype
             heiztype=value
             # ui.notify(typ)
 
@@ -301,60 +304,73 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             global tage
             tage=value
             # ui.notify(tage)
+            
+
+            
 
         # Setzt den Beginn einer Aufgabe
         def setvon(value):
-            erg=isTimeFormat(value)
-            if erg == True:
-                global von
-                von=value
-                # ui.notify(von)
-            return(erg)
+            global von
+            von=value
+            # ui.notify(von)
+            return(True)
 
         # setzt  das Ende einer Aufgabe
         def setbis(value):
-            erg=isTimeFormat(value)
-            if erg == True:
-                global bis
-                bis=value
-                # ui.notify(bis)   
-            return(erg)
+            global bis
+            bis=value
+            # ui.notify(bis)   
+            return(True)
         
 
         # Definition des Dialog für das Hinzufügen von Werten
         with ui.dialog() as tabledialogadd, ui.card().classes('top-8 left-8'):
-            with ui.grid(columns=2, rows=3):
+            with ui.grid(columns=3, rows=3):
                 # schliesst den Dialog
                 def close_add():
-                    global id, heiztype, tage, von, bis
+                    global id, heiztype, tage, von, bis,rows
                     id +=1
                     # print('Anzulegen:',line_id,heiztype,tage,von,bis)
                     if heiztype != 0 and tage !=0:
-                        table.add_rows({'line_id': id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                        table.add_row({'line_id': id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
                         # print('Neu Angelegt:',line_id,heiztype,tage,von,bis)
-                        datav.vZeitsteuerung=tuple((id, typdict[heiztype], tagedict[tage],von,bis))
+                        rows.sort(key=lambda x: x['line_id'])
+                        datav.vZeitsteuerung=rows
                         tabledialogadd.close()
                 
-                ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
-                ui.select(options=tagedict, label='Tage', with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
-                ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
-                ui.input(label='Zeit bis', value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
+                s1=ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
+                s2=ui.select(options=tagedict, label='Tage', with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
+                ui.label(' ')
+                s3=ui.input(label='Zeit von', value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
+                # Eingabe von zeitvon
+                with ui.dialog().props('no-parent-event') as menuvon:
+                    ui.time().bind_value_to(s3)
+                ui.icon('watch_later').on('click', menuvon.open).classes('cursor-pointer').classes('text-4xl')
+                ui.label(' ')
+                
+                # Eingabe von zeitbis
+                s4=ui.input(label='Zeit bis', value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
+                with ui.dialog().props('no-parent-event') as menubis:
+                    ui.time().bind_value_to(s4)
+                ui.icon('watch_later').on('click', menubis.open).classes('cursor-pointer').classes('text-4xl')
+                
                 ui.button('OK', on_click=close_add).classes('w-20')
 
         # Daten für den Anzeigedialog updaten
         def updateeditdialog():
             # print("vor dem Edit Dialog:",handle_id,heiztype,tage,von,bis)
+            global s3
             if handle_id !=0:
                 s1.value=heiztype
                 s2.value=tage
                 s3.value=von
                 s4.value=bis
                 tabledialogedit.open()
-
-
+        
+        
         # macht eine Tabellenzeile editierbar
         with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
-            with ui.grid(columns=2, rows=3):
+            with ui.grid(columns=3, rows=3):
                 # schliesst den Dialog
                 def close_edit():
                     # print("Nach Edit",handle_id, heiztype,tage,von,bis)
@@ -362,21 +378,33 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                     if table.selected != []:
                         if heiztype != 0 and tage !=0:
                             # aktuelle zeile entfernen
-                            remove()
-                            #neue Zeile Hinzufügen
-                            table.add_rows({'line_id': handle_id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
-                            # hier muss die Zeile in die DB
-                            # table.sorted
+                            table.remove_row(table.selected[0])
+                            # neue Zeile Hinzufügen
+                            table.add_row({'line_id': handle_id, 'type':typdict[heiztype], 'tage':tagedict[tage], 'von':von, 'bis': bis})
+                            table.update()
                             # print('Edit Neu Angelegt:',handle_id,heiztype,tage,von,bis)
-                            datav.vZeitsteuerung=(handle_id, typdict[heiztype], tagedict[tage],von,bis)
-                            update_table.refresh()
+                            rows.sort(key=lambda x: x['line_id'])
+                            datav.vZeitsteuerung=rows
+                    
                     # handle_id=0
-                    tabledialogedit.close()
+                    tabledialogedit.close()             
                 
                 s1=ui.select(options=typdict, label='Typ',   with_input=True, on_change=lambda e: settyp(e.value)).classes('w-30')
                 s2=ui.select(options=tagedict,label='Tage',  with_input=True, on_change=lambda e: settage(e.value)).classes('w-40')
+                ui.label(' ')
                 s3=ui.input(label='Zeit von',  value='12:00',placeholder='Zeit', validation={'Ungültig!!': lambda value: setvon(value)==True}).classes('w-30')
-                s4=ui.input(label='Zeit bis',  value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')
+                # Eingabe von zeitvon
+                with ui.dialog().props('no-parent-event') as menuvon:
+                    ui.time().bind_value_to(s3)
+                ui.icon('watch_later').on('click', menuvon.open).classes('cursor-pointer').classes('text-4xl')
+                ui.label(' ')
+                
+                # Eingabe von zeitbis
+                s4=ui.input(label='Zeit bis',  value='12:01',placeholder='Zeit', validation={'Ungültig!! (Format)': lambda value: setbis(value)==True}).classes('w-30')              
+                with ui.dialog().props('no-parent-event') as menubis:
+                    ui.time().bind_value_to(s4)
+                ui.icon('watch_later').on('click', menubis.open).classes('cursor-pointer').classes('text-4xl')
+                
                 ui.button('OK', on_click=close_edit).classes('w-20')
         
 
@@ -388,8 +416,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
             ui.button('Löschen', on_click=remove).classes('ml-8')
 
-        # Das malt dann die Tabelle unter die Knöpfe 
-            
+        # Das malt dann die Tabelle unter die Knöpfe    
         update_table()
 
         

@@ -251,7 +251,7 @@ sql_zeitsteuerung_p2=" (line_id integer,      \
                         bis text             \
                         );"
 sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};"
-sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis) VALUES (?,?,?,?,?);"
+sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis) VALUES (:line_id,:type,:tage,:von,:bis);"
 sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 
 # als Programm brauchen wir 
