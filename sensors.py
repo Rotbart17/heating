@@ -7,6 +7,7 @@ import settings
 from settings import SensorList
 from table import Tables
 import random
+from multiprocessing import Queue
 
 # Definitionen der Sensorklasse
 # schaun wir mal was ich schon gelernt habe
@@ -26,9 +27,11 @@ class sensor(Tables):
 
     # DB Tabelle anlegen wenn notwendig
     # def __init__(self,tablename): 
-    def __init__(self, tablename,sql_p1,sql_p2) -> None:
+    def __init__(self, tablename:str,sql_p1:str,sql_p2:str,queue_to_backend:Queue,queue_from_backend:Queue) -> None:
         super().__init__(tablename,sql_p1,sql_p2)
         self._create_table()
+        self.queue_to_backend=queue_to_backend
+        self.queue_from_backend=queue_from_backend
 
         # so, die Tabelle existiert, jetzt noch die Sensorliste aufbauen
         settings.SensorList.append(self)
@@ -36,6 +39,22 @@ class sensor(Tables):
         # ok jetzt ist eigetlich alles vorbereitet, jetzt noch die Sensorabfrage starten
         self.startthread()
 
+
+    def getqueuevalue(self)->None:
+        '''Fragt einen Wert aus der Queue ab. Wenn der Wert dem Namen des Sensors
+        entspricht wird threadstop auf True gesetzt. Mal sehen wo ich dann die Threads wieder
+        einsammeln kann'''
+        try:
+            result=self.queue_to_backend.get(block=False)
+        except self.queue_to_backend.empty:
+            pass
+        
+        if result == self.tablename:
+            self.threadstop=True
+        else:
+            #wenn es nicht das richtige Event war, wieder draufpacken
+            self.queue_to_backend.put_nowait(result)
+        
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
@@ -112,6 +131,7 @@ class sensor(Tables):
                     cursor=conn.cursor()
                     cursor.execute("BEGIN")
                     conn.execute(sql)
+                    cursor.execute("COMMIT")
                     conn.commit()
                     logging.debug('Sensorwert in '+tn+' gespeichert!')
                     break
@@ -127,17 +147,18 @@ class sensor(Tables):
 
         # Die Daten Wandeln und speichern
         def processvalue(name:str):
-            while (sensor.threadstop == False):
+            while (self.threadstop == False):
                 rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(sensor.waittime)
-            # Wenn Ende dann abbrechen
-  
+                time.sleep(self.waittime)
+                self.getqueuevalue()
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
-            # Warten, dass Thread wieder zurückkommt.
+
+        # Warten, dass Thread wieder zurückkommt.
         processvalue(self.tablename)
+        
 
         
         

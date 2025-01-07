@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# in diesem Modul wird die Datenaustauschstruktur für die Sensoren definiert
+# in diesem Modul wird die Datenaustauschstruktur für die Zeitsteuerung definiert
 # sie versteckt die Datenbankzugriffe in einer Klasse
-# so zumindest die Idee!
+
 
 import settings
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ logging.basicConfig(
 @dataclass
 class ZeitView:
     # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
-    _Zeitsteuerungszeilen=[]
+    Zeitsteuerungszeilen=[]
     
 
     # liest alle Daten der Zeitsteuerungstabelle
@@ -30,7 +30,7 @@ class ZeitView:
                 cursor=db.cursor()
                 sql= settings.sql_readzeitsteuerung
                 cursor.execute(sql)
-                self._Zeitsteuerungszeilen=cursor.fetchall()
+                self.Zeitsteuerungszeilen=cursor.fetchall()
                 # self._Zeitsteuerungszeilen=[item for item in t]
                 cursor.close()
             db.close()
@@ -64,7 +64,7 @@ class ZeitView:
     
     @property
     def vZeitsteuerung(self):
-        return (self._Zeitsteuerungszeilen)
+        return (self.Zeitsteuerungszeilen)
 
     @vZeitsteuerung.setter
     def vZeitsteuerung(self,value):

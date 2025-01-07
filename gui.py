@@ -43,20 +43,22 @@ if __name__ in ['__mp_main__', '__main__']:
 def update_table() ->None:
     global table, columns, rows
     columns = [
-        {'name': 'id',       'label': 'ID' ,      'field': 'line_id'  , 'required': True, 'sortable': True,'align': 'left'},
-        {'name': 'typ',      'label': 'Typ',      'field': 'type'     , 'required': True},
-        {'name': 'tage',     'label': 'Tage',     'field': 'tage'     , 'required': True},
-        {'name': 'zeitvon',  'label': 'Zeit von', 'field': 'von'      , 'required': True},
-        {'name': 'zeitbis',  'label': 'Zeit bis', 'field': 'bis'      , 'required': True},
+        {'name': 'id',        'label': 'ID' ,       'field': 'line_id'   , 'required': True, 'sortable': True,'align': 'left'},
+        {'name': 'typ',       'label': 'Typ',       'field': 'type'      , 'required': True},
+        {'name': 'tage',      'label': 'Tage',      'field': 'tage'      , 'required': True},
+        {'name': 'zeitvon',   'label': 'Zeit von',  'field': 'von'       , 'required': True},
+        {'name': 'zeitbis',   'label': 'Zeit bis',  'field': 'bis'       , 'required': True},
+        {'name': 'active',    'label': 'Aktiv'   ,  'field': 'active'    , 'required': True},
+        {'name': 'changetime','label': 'Changetime','field': 'changetime', 'required': True, 'classes': 'hidden','headerClasses': 'hidden'}  
     ]
-    # rows=[] #[item for item in datav.vZeitsteuerung]
+    
     #title='Steuerdaten'
-    rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 'bis': item[4]} for item in datav.vZeitsteuerung]
+    rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 'bis': item[4], 'active':item[5], 'changetime':item[6]} for item in datav.vZeitsteuerung]
     table=ui.table(selection='single',columns=columns, rows=rows, row_key='line_id',on_select=handle_click).classes('w-11/12 mr-4').props('hide-no-data')
 
 # Zeilennummer in der Tabelle
-if len(datav._Zeitsteuerungszeilen)> 0:
-    id = len (datav._Zeitsteuerungszeilen)
+if len(datav.Zeitsteuerungszeilen)> 0:
+    id = len (datav.Zeitsteuerungszeilen)
 else:
     id=0
 # Welche Zeile in der Tabelle wird bearbeitet
@@ -108,8 +110,6 @@ def de_init_data():
             
 app.on_startup(lambda: init_data())
 app.on_shutdown(lambda: de_init_data())
-
-
 
 
 #---------------------------------------------------------------------------------------------------------
@@ -303,10 +303,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         def settage(value):
             global tage
             tage=value
-            # ui.notify(tage)
-            
-
-            
+            # ui.notify(tage)    
 
         # Setzt den Beginn einer Aufgabe
         def setvon(value):
@@ -541,24 +538,6 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 # -------------------------------------------------------------------------------------------------
 # Start der GUI
 
-def startnicegui(queuetogui, queuefromgui):
-
-# Queue Parameter auslesen für die Kommunikation 
-# die Variablen müssen an Dataviev übergeben werden.
-    datav.queue_to_gui = queuetogui
-    datav.queue_to_main= queuefromgui
-
-    ui.run(native=False, favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480), dark=True )
-# -------------------------------------------------------------------------------------------------
-
-# if __name__ == "__main__":
-# ui.run(title='Buderus Ecomatic',window_size=(800,480), resizable=False, confirm_close=True, dark= True)
-
-
-# Queue Parameter auslesen für die Kommunikation 
-# die Variablen müssen an Dataviev übergeben werden.
-#   datav.queue_to_gui = sys.argv[1]
-#   datav.queue_to_main= sys.argv[2]
 
 
 # ui.run(favicon='🚀',port=8000, title='Buderus Ecomatic',window_size=(800,480))

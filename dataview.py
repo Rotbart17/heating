@@ -510,9 +510,9 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # @property
     # def vZeitsteuerung(self):
-    #     return (self._Zeitsteuerungszeilen)
+    #     return (self.Zeitsteuerungszeilen)
 
     # @vZeitsteuerung.setter
     # def vZeitsteuerung(self,value):
-    #     self._zeitsteuerungwrite(value)
+    #     self.zeitsteuerungwrite(value)
     

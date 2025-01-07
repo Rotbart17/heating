@@ -2,6 +2,7 @@
 # hier sind slle globalen Variablen und verwendeten Basiseinstellungen gesammelt
 
 import logging
+from time import time
 
 
 # Muster für logging
@@ -248,23 +249,26 @@ sql_zeitsteuerung_p2=" (line_id integer,      \
                         type text,           \
                         tage text,           \
                         von text,            \
-                        bis text             \
+                        bis text,             \
+                        active int,           \
+                        changetime int,       \
                         );"
-sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis FROM {ZeitSteuerung};"
-sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis) VALUES (:line_id,:type,:tage,:von,:bis);"
+sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis, active, changetime FROM {ZeitSteuerung};"
+sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis, active, changetime)  VALUES (:line_id,:type,:tage,:von,:bis,:active,:changetime);"
 sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 
 # als Programm brauchen wir 
-# Montag-Sonntag Nachtabsenkung 22:00-7:00
-# Brauchwasser Mo-Fr 6:00-9.00
-# Brauchwasser Sa,So 6:00-9:00
-# Brauchwasser Sa,So 16:00-19:00
-# Heizbetrieb Mo-So 00:00-24:00
-Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00'), \
-                     (2,'Brauchw','Mo-Fr','6:00','9:00'), \
-                     (3,'Brauchw','Sa-So','6:00','9:00'), \
-                     (4,'Brauchw','Sa-So','16:00','19:00'), \
-                     (5,'Heizen','Mo-So','00:00','24:00')   ]
+# Montag-Sonntag Nachtabsenkung 22:00-7:00,inaktiv, keine Zeit
+# Brauchwasser Mo-Fr 6:00-9.00,inaktiv, keine Zeit
+# Brauchwasser Sa,So 6:00-9:00,inaktiv, keine Zeit
+# Brauchwasser Sa,So 16:00-19:00,inaktiv, keine Zeit
+# Heizbetrieb Mo-So 00:00-24:00,inaktiv, keine Zeit
+changetime=time.time_ns()
+Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,{changetime}), \
+                     (2,'Brauchw','Mo-Fr','6:00','9:00',0,{changetime}), \
+                     (3,'Brauchw','Sa-So','6:00','9:00',0,{changetime}), \
+                     (4,'Brauchw','Sa-So','16:00','19:00',0,{changetime}), \
+                     (5,'Heizen','Mo-So','00:00','24:00',0,{changetime})   ]
 
 
 
