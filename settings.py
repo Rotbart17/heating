@@ -301,7 +301,7 @@ Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,{changetime}), \
                      (2,'Brauchw','Mo-Fr','6:00','9:00',0,{changetime}), \
                      (3,'Brauchw','Sa-So','6:00','9:00',0,{changetime}), \
                      (4,'Brauchw','Sa-So','16:00','19:00',0,{changetime}), \
-                     (5,'Heizen','Mo-So','00:00','24:00',0,{changetime})   ]
+                     (5,'Heizen','Mo-So','00:00','23:59',0,{changetime})   ]
 
 
 

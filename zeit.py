@@ -26,9 +26,6 @@ datav=maindata()
 # 60 sec schlafen bevor die Programmsteuerung erneut die aktuellen Werte prüft.
 sleeptime= 60
 
-def programloop()->None:
-    pass
-
 
 def time_in_range(von:str, bis:str,zeitpunkt:str)->bool:
     '''Prüft ob ein Zeitpunkt innerhalb eines Zeitbereichs liegt'''
