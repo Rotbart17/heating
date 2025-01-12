@@ -86,10 +86,14 @@ Wintertemp: float = 17
 # die aktuelle KesselSoll wird nur angezeigt und im Regelkreis gesetzt
 # und nur von dort verändert.
 # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird. Fixwert hier im Programm, wird nur gelesen
+# Heizen: soll geheizt werden
+# Nachtabsenkung: Ist die Nachabsenkung an?
 Kesselsensor="Kesselsensor"
 Kessel : float = 0
 KesselSoll : float = 0
 KesselMax : float = 90
+Heizen : int= False
+Nachtabsenkung : int =True
 
 # die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
 KesselSollTemperatur="KesselSollTemperatur"
@@ -140,6 +144,7 @@ Brauchwasser : float = 0
 BrauchwasserSoll : float = 55
 BrauchwasserError : float = 70
 BrauchwasserAus : bool = False
+Brauchwasserbereiten :bool = False
 
 # Pumpe_Brauchwasser_an wird von dem Prozess der Brauchwasser überwachung verändert. GUI zeigt nur an.
 Pumpe_Brauchwasser_an : bool = False
@@ -174,12 +179,18 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
                                 Kessel_changetime int,         \
                                 KesselSoll real,   \
                                 KesselSoll_changetime int,   \
+                                Heizen int, \
+                                Heizen_changetime int, \
+                                Nachtabsenkung int, \
+                                Nachtabsenkung_changetime int, \
                                 Brauchwasser real,           \
                                 Brauchwasser_changetime int,           \
                                 BrauchwasserSoll real,   \
                                 BrauchwasserSoll_changetime int,   \
                                 BrauchwasserAus int,   \
                                 BrauchwasserAus_changetime int,  \
+                                Brauchwasserbereiten int,  \
+                                Brauchwasserbereiten_changetime int, \
                                 Innen real,           \
                                 Innen_changetime int,           \
                                 Aussen real,           \
@@ -201,24 +212,46 @@ sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
-                        id, Viewchanged, \
-                        Winter, Winter_changetime,\
-                        Wintertemp, Wintertemp_changetime,\
-                        Kessel, Kessel_changetime, \
-                        KesselSoll, KesselSoll_changetime,\
-                        Brauchwasser, Brauchwasser_changetime, \
-                        BrauchwasserSoll, BrauchwasserSoll_changetime,\
-                        BrauchwasserAus, BrauchwasserAus_changetime,  \
-                        Innen, Innen_changetime, \
-                        Aussen, Aussen_changetime, \
-                        Pumpe_oben_an, Pumpe_oben_an_changetime,\
-                        Pumpe_unten_an, Pumpe_unten_an_changetime,\
-                        Pumpe_Brauchwasser_an, Pumpe_Brauchwasser_an_changetime,\
-                        Brenner_an, Brenner_an_changetime,\
-                        Brenner_Stoerung, Brenner_Stoerung_changetime,\
-                        Hand_Dusche, Hand_Dusche_changetime,\
-                        threadstop ) \
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+                            id, Viewchanged, \
+                            Winter, Winter_changetime,\
+                            Wintertemp, Wintertemp_changetime,\
+                            Kessel, Kessel_changetime, \
+                            KesselSoll, KesselSoll_changetime,\
+                            Heizen, Heizen_changetime, \
+                            Nachtabsenkung, Nachtabsenkung_changetime, \
+                            Brauchwasser, Brauchwasser_changetime, \
+                            BrauchwasserSoll, BrauchwasserSoll_changetime,\
+                            BrauchwasserAus, BrauchwasserAus_changetime,  \
+                            Brauchwasserbereiten, Brauchwasserbereiten_changetime, \
+                            Innen, Innen_changetime, \
+                            Aussen, Aussen_changetime, \
+                            Pumpe_oben_an, Pumpe_oben_an_changetime,\
+                            Pumpe_unten_an, Pumpe_unten_an_changetime,\
+                            Pumpe_Brauchwasser_an, Pumpe_Brauchwasser_an_changetime,\
+                            Brenner_an, Brenner_an_changetime,\
+                            Brenner_Stoerung, Brenner_Stoerung_changetime,\
+                            Hand_Dusche, Hand_Dusche_changetime,\
+                            threadstop ) \
+                        VALUES(:id, :Viewchanged, \
+                            :Winter, :Winter_changetime, \
+                            :Wintertemp, :Wintertemp_changetime,\
+                            :Kessel, :Kessel_changetime,\
+                            :KesselSoll,:KesselSoll_changetime,\
+                            :Heizen,:Heizen_changetime,\
+                            :Nachtabsenkung, :Nachtabsenkung_changetime, \
+                            :Brauchwasser, :Brauchwasser_changetime, \
+                            :BrauchwasserSoll, :BrauchwasserSoll_changetime,\
+                            :BrauchwasserAus, :BrauchwasserAus_changetime,  \
+                            :Brauchwasserbereiten, :Brauchwasserbereiten_changetime, \
+                            :Innen, :Innen_changetime, \
+                            :Aussen, :Aussen_changetime, \
+                            :Pumpe_oben_an, :Pumpe_oben_an_changetime,\
+                            :Pumpe_unten_an, :Pumpe_unten_an_changetime,\
+                            :Pumpe_Brauchwasser_an, :Pumpe_Brauchwasser_an_changetime,\
+                            :Brenner_an, :Brenner_an_changetime,\
+                            :Brenner_Stoerung, :Brenner_Stoerung_changetime,\
+                            :Hand_Dusche, :Hand_Dusche_changetime,\
+                            :threadstop);"
 
 write_WorkDataView_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
 read_WorkDataView_complete= f"SELECT * from {WorkDataView} WHERE id =1 ;"

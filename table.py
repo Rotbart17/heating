@@ -201,9 +201,12 @@ class WorkdataView(Tables):
                 settings.Wintertemp, t,\
                 settings.Kessel, t, \
                 settings.KesselSoll, t,\
+                settings.Heizen, t, \
+                settings.Nachtabsenkung, t, \
                 settings.Brauchwasser, t,\
                 settings.BrauchwasserSoll,t,\
                 settings.BrauchwasserAus,t, \
+                settings.Brauchwasserbereiten, t, \
                 settings.Innen,  t,\
                 settings.Aussen, t,\
                 settings.Pumpe_oben_an, t,\

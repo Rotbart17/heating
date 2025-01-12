@@ -45,29 +45,35 @@ class dv(Enum):
     Kessel_changetime=7
     KesselSoll=8
     KesselSoll_changetime=9
-    Brauchwasser=10
-    Brauchwasser_changetime=11
-    BrauchwasserSoll=12
-    BrauchwasserSoll_changetime=13
-    BrauchwasserAus=14
-    BrauchwasserAus_changetime=15
-    Innen=16
-    Innen_changetime=17
-    Aussen=18
-    Aussen_changetime=19
-    Pumpe_oben_an=20
-    Pumpe_oben_an_changetime=21
-    Pumpe_unten_an=22
-    Pumpe_unten_an_changetime=23
-    Pumpe_Brauchwasser_an=24
-    Pumpe_Brauchwasser_an_changetime=25
-    Brenner_an=26
-    Brenner_an_changetime=27
-    Brenner_Stoerung=28
-    Brenner_Stoerung_changetime=29
-    Hand_Dusche=30
-    Hand_Dusche_changetime=31
-    threadstop=32
+    Heizen=10
+    Heizen_changetime=11
+    Nachtabsenkung=12
+    Nachtabsenkung_changetime=13
+    Brauchwasser=14
+    Brauchwasser_changetime=15
+    BrauchwasserSoll=16
+    BrauchwasserSoll_changetime=17
+    BrauchwasserAus=18
+    BrauchwasserAus_changetime=19
+    Brauchwasserbereiten=20
+    Brauchwasserbereiten_changetime=21
+    Innen=22
+    Innen_changetime=23
+    Aussen=24
+    Aussen_changetime=25
+    Pumpe_oben_an=26
+    Pumpe_oben_an_changetime=27
+    Pumpe_unten_an=28
+    Pumpe_unten_an_changetime=29
+    Pumpe_Brauchwasser_an=30
+    Pumpe_Brauchwasser_an_changetime=31
+    Brenner_an=32
+    Brenner_an_changetime=33
+    Brenner_Stoerung=34
+    Brenner_Stoerung_changetime=35
+    Hand_Dusche=36
+    Hand_Dusche_changetime=37
+    threadstop=38
 
 
 ##### Start der Idee mit der Idee der Dataclass
@@ -112,12 +118,16 @@ class maindata(SensorView, KesselView, ZeitView):
     # Kessel ist die aktuelle Kesseltemperatur
     # KesselSoll ist die KesselSolltemperatur
     # KesselMax ist die Temperatur bei der ein Fehler ausgelöst wird
+    # Heizen: soll geheizt werden
+    # Nachabsenkung: soll die Temperatur Nachts abgesenkt werden?
     # KesselDaten_x und y ist die KesselSollkennlinie
     # die x und y Listen sind die Sensordaten nach x und y gesplittet. 
     # Die Grafikfunktion braucht diese Trennung
     _Kessel : float = 0
     _KesselSoll : float = 0
     _KesselMax : float = 90
+    _Heizen : bool = False
+    _Nachtabsenkung: bool = False
     _KesselDaten_x : list = field(default_factory=list)
     _KesselDaten_y : list = field(default_factory=list)
     #_KesselIstDaten_x : list = field(default_factory=list)
@@ -134,6 +144,7 @@ class maindata(SensorView, KesselView, ZeitView):
     _BrauchwasserSoll : float = 55
     _BrauchwasserError : float = 70
     _BrauchwasserAus : bool = False
+    _Brauchwasserbereiten : bool =False
     _Pumpe_Brauchwasser_an : bool =False
     _Hand_Dusche : bool = False
 
@@ -179,12 +190,18 @@ class maindata(SensorView, KesselView, ZeitView):
                     self._Kessel_changetime=results[dv.Kessel_changetime.value]
                     self._KesselSoll=results[dv.KesselSoll.value]
                     self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
+                    self._Heizen=results[dv.Heizen.value]
+                    self._Heizen_changetime=results[dv.Heizen_changetime.value]
+                    self._Nachtabsenkung=results[dv.Nachtabsenkung.value]
+                    self._Nachtabsenkung_changetime=results[dv.Nachtabsenkung_changetime.value]
                     self._Brauchwasser=results[dv.Brauchwasser.value]
                     self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
                     self._BrauchwasserSoll=results[dv.BrauchwasserSoll.value]
                     self._BrauchwasserSoll_changetime=results[dv.BrauchwasserSoll_changetime.value]
                     self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
                     self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
+                    self._Brauchwasserbereiten=results[dv.Brauchwasserbereiten.value]
+                    self._Brauchwasserbereiten_changetime=results[dv.Brauchwasserbereiten_changetime.value]
                     self._Innen=results[dv.Innen.value]
                     self._Innen_changetime=results[dv.Innen_changetime.value]
                     self._Aussen=results[dv.Aussen.value]
@@ -224,6 +241,14 @@ class maindata(SensorView, KesselView, ZeitView):
                         self._KesselSoll=results[dv.KesselSoll.value]
                         self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
                     
+                    if self._Heizen_changetime<results[dv.Heizen_changetime.value]:
+                        self._Heizen=results[dv.Heizen.value]
+                        self._Heizen_changetime=results[dv.Heizen_changetime.value]
+                    
+                    if self._Nachtabsenkung_changetime<results[dv.Nachtabsenkung_changetime.value]:
+                        self._Nachtabsenkung=results[dv.Nachtabsenkung.value]
+                        self._Nachtabsenkung_changetime=results[dv.Nachtabsenkung_changetime.value]
+                    
                     if self._Brauchwasser_changetime<results[dv.Brauchwasser_changetime.value]:
                         self._Brauchwasser=results[dv.Brauchwasser.value]
                         self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
@@ -235,6 +260,10 @@ class maindata(SensorView, KesselView, ZeitView):
                     if self._BrauchwasserAus_changetime<results[dv.BrauchwasserAus_changetime.value]:
                         self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
                         self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
+                    
+                    if self._Brauchwasserbereiten_changetime<results[dv.Brauchwasserbereiten_changetime.value]:
+                        self._Brauchwasserbereiten=results[dv.Brauchwasserbereiten.value]
+                        self._Brauchwasserbereiten_changetime=results[dv.Brauchwasserbereiten_changetime.value]
                     
                     if self._Innen_changetime<results[dv.Innen_changetime.value]:
                         self._Innen=results[dv.Innen.value]
@@ -427,6 +456,26 @@ class maindata(SensorView, KesselView, ZeitView):
         return self._KesselSoll
     
     @property
+    def vHeizen(self):
+        return self._Heizen
+    
+    @vHeizen.setter
+    def vHeizen(self,value):
+        # so hier muss das in die DB geschrieben werden
+        self._Heizen=value
+        self._writeitem(value,"Heizen","Heizen_changetime")  
+    
+    @property
+    def vNachtabsenkung(self):
+        return self._Nachtabsenkung
+    
+    @vNachtabsenkung.setter
+    def vNachtabsenkung(self,value):
+        # so hier muss das in die DB geschrieben werden
+        self._Nachtabsenkung=value
+        self._writeitem(value,"Nachtabsenkung","Nachtabsenkung_changetime")  
+    
+    @property
     def vBrauchwasser(self):
         return self._Brauchwasser
 
@@ -448,7 +497,15 @@ class maindata(SensorView, KesselView, ZeitView):
     def vBrauchwasserAus(self,value):
         self._BrauchwasserAus=value
         self._writeitem(value,"BrauchwasserAus","BrauchwasserAus_changetime")
-
+        
+    @property
+    def vBrauchwasserbereiten(self):
+        return self._Brauchwasserbereiten
+    
+    @vBrauchwasserbereiten.setter
+    def vBrauchwasserbereiten(self,value):
+        self._Brauchwasserbereiten=value
+        self._writeitem(value,"Brauchwasserbereiten","Brauchwasserbereiten_changetime")
 
     @property
     def vInnen(self):
@@ -507,12 +564,3 @@ class maindata(SensorView, KesselView, ZeitView):
     @vKesselDaten_y.setter
     def vKesselDaten_y(self,value):
         self._writeKesselDaten_y(value)
-
-    # @property
-    # def vZeitsteuerung(self):
-    #     return (self.Zeitsteuerungszeilen)
-
-    # @vZeitsteuerung.setter
-    # def vZeitsteuerung(self,value):
-    #     self.zeitsteuerungwrite(value)
-    
