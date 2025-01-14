@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import logging
 import sqlite3
 from enum import Enum
+from time import time
 
 logging.basicConfig(
     filename='gui.log',
@@ -48,9 +49,12 @@ class ZeitView:
             # Tabelleninhalt löschen
             sql= settings.sql_deletezeitsteuerung
             cursor.execute(sql)
-            # jetzt den Inhalt der Tabelle wiedr in die DB schreiben 
+            # jetzt den Inhalt der Tabelle wieder in die DB schreiben 
             sql= settings.sql_writezeitsteuerung
+            # Speicherzeit zum Vermerk damit man weiß ob man alles lesen muss.
+            changetime=time.time_ns()
             for i in value:
+                i[6]=changetime
                 cursor.execute(sql,i)
             cursor.execute("COMMIT")
             cursor.close()

@@ -2,7 +2,7 @@
 # hier sind slle globalen Variablen und verwendeten Basiseinstellungen gesammelt
 
 import logging
-from time import time
+import time
 
 
 # Muster für logging

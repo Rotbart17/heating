@@ -306,7 +306,7 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
     # True= "neu lesen"
-    def _checkview(self):
+    def _checkview(self)->bool:
         db=sqlite3.connect(settings.DBPATH)
         cursor=db.cursor()
         sql=f"SELECT ViewChanged FROM {settings.WorkDataView} WHERE id=1"

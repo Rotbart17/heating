@@ -21,14 +21,14 @@ import random
 from dataview import maindata
 import time
 
-datav=maindata()
+
 
 # 60 sec schlafen bevor die Programmsteuerung erneut die aktuellen Werte prüft.
 sleeptime= 60
 
 
 def time_in_range(von:str, bis:str,zeitpunkt:str)->bool:
-    '''Prüft ob ein Zeitpunkt innerhalb eines Zeitbereichs liegt'''
+    '''Prüft ob ein Zeitpunkt innerhalb eines Zeitbereichs liegt. Zeit in Form von hh:mm'''
     vonstunde, vonminute = von.split(":")
     bisstunde, bisminute = bis.split(":")
     zeitpunktstunde, zeitpunktminute =zeitpunkt.split(":")
@@ -106,7 +106,9 @@ def evaluate_program()->None:
     
 def start_evaluatethread()->None:
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
-    
+    global datav 
+    datav=maindata()
+   
     x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung")
     logging.info('Starte Prgrammsteuerungsthread')
     settings.ThreadList.append(x)

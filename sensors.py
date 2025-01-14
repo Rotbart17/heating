@@ -132,7 +132,7 @@ class sensor(Tables):
                     cursor.execute("BEGIN")
                     conn.execute(sql)
                     cursor.execute("COMMIT")
-                    conn.commit()
+                    # conn.commit()
                     logging.debug('Sensorwert in '+tn+' gespeichert!')
                     break
                 except Exception as e:
