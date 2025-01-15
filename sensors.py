@@ -8,6 +8,8 @@ from settings import SensorList
 from table import Tables
 import random
 from multiprocessing import Queue
+from queue import Empty
+
 
 # Definitionen der Sensorklasse
 # schaun wir mal was ich schon gelernt habe
@@ -46,8 +48,9 @@ class sensor(Tables):
         einsammeln kann'''
         try:
             result=self.queue_to_backend.get(block=False)
-        except self.queue_to_backend.empty:
-            pass
+        # except self.queue_to_backend.empty:
+        except Empty:
+            return
         
         if result == self.tablename:
             self.threadstop=True

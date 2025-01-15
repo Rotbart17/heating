@@ -31,7 +31,7 @@ if __name__ in ['__mp_main__', '__main__']:
     backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
     backendproc.start()
     # global datav
-    time.sleep(2)
+    time.sleep(10)
     datav=maindata()
    
 
