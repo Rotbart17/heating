@@ -45,7 +45,7 @@ class Tables:
             conn.close()
             logging.info('Tabelle: ' + self.tablename +' erstellt')
         except Error as e:
-            logging.error('Es konnte kein Cursor in der Datenbank erstellt werden um die Tabellen zu erzeugen. Programm wird beendet!')
+            logging.error('Beim ezeugen von:'+self.tablename+ 'ist Fehler '+e+' aufgetreten. Programm wird beendet!')
             exit(1)
         return
 

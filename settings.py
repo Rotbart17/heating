@@ -278,16 +278,18 @@ sql_create_sensor_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  
 # die Tabelle für die Zeitsteuerung heisst:----------
 ZeitSteuerung="ZeitSteuerung"
 sql_zeitsteuerung_p1=sql_create_view_table_p1
-sql_zeitsteuerung_p2=" (line_id integer,      \
-                        type text,           \
-                        tage text,           \
-                        von text,            \
-                        bis text,             \
-                        active int,           \
-                        changetime int,       \
+sql_zeitsteuerung_p2=" (line_id integer,\
+                        type text,      \
+                        tage text,      \
+                        von text,       \
+                        bis text,       \
+                        active int,     \
+                        changetime int \
                         );"
+
 sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis, active, changetime FROM {ZeitSteuerung};"
-sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis, active, changetime)  VALUES (:line_id,:type,:tage,:von,:bis,:active,:changetime);"
+sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis, active, changetime) \
+      VALUES (:line_id,:type,:tage,:von,:bis,:active,:changetime);"
 sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 
 # als Programm brauchen wir 
@@ -297,11 +299,11 @@ sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 # Brauchwasser Sa,So 16:00-19:00,inaktiv, keine Zeit
 # Heizbetrieb Mo-So 00:00-24:00,inaktiv, keine Zeit
 changetime=time.time_ns()
-Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,{changetime}), \
-                     (2,'Brauchw','Mo-Fr','6:00','9:00',0,{changetime}), \
-                     (3,'Brauchw','Sa-So','6:00','9:00',0,{changetime}), \
-                     (4,'Brauchw','Sa-So','16:00','19:00',0,{changetime}), \
-                     (5,'Heizen','Mo-So','00:00','23:59',0,{changetime})   ]
+Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,changetime), \
+                     (2,'Brauchw','Mo-Fr','6:00','9:00',0,changetime), \
+                     (3,'Brauchw','Sa-So','6:00','9:00',0,changetime), \
+                     (4,'Brauchw','Sa-So','16:00','19:00',0,changetime), \
+                     (5,'Heizen','Mo-So','00:00','23:59',0,changetime)   ]
 
 
 

@@ -31,7 +31,7 @@ if __name__ in ['__mp_main__', '__main__']:
     backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
     backendproc.start()
     # global datav
-    time.sleep(10)
+    time.sleep(40)
     datav=maindata()
    
 
@@ -369,10 +369,10 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # macht eine Tabellenzeile editierbar
         with ui.dialog() as tabledialogedit, ui.card().classes('top-8 left-8'):
             with ui.grid(columns=3, rows=3):
+
                 # schliesst den Dialog
                 def close_edit():
-                    # print("Nach Edit",handle_id, heiztype,tage,von,bis)
-                
+                    # print("Nach Edit",handle_id, heiztype,tage,von,bis)               
                     if table.selected != []:
                         if heiztype != 0 and tage !=0:
                             # aktuelle zeile entfernen
@@ -382,8 +382,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                             table.update()
                             # print('Edit Neu Angelegt:',handle_id,heiztype,tage,von,bis)
                             rows.sort(key=lambda x: x['line_id'])
-                            datav.vZeitsteuerung=rows
-                    
+                            datav.vZeitsteuerung=rows                   
                     # handle_id=0
                     tabledialogedit.close()             
                 

@@ -139,10 +139,10 @@ class sensor(Tables):
                     logging.debug('Sensorwert in '+tn+' gespeichert!')
                     break
                 except Exception as e:
-                    logging.debug('DB-Fehler '+e+' beim Schreiben in '+tn+' aufgetreten!')
+                    logging.debug('DB-Fehler '+str(e)+' beim Schreiben in '+tn+' aufgetreten!')
                     t+=1
                     if t>=10:
-                       logging.error('DB-Fehler '+e+' beim Schreiben in '+tn+' 10 Mal aufgetreten! Breche ab')
+                       logging.error('DB-Fehler '+str(e)+' beim Schreiben in '+tn+' 10 Mal aufgetreten! Breche ab')
                        exit(1) 
                     time.sleep(random.random())
                     continue
