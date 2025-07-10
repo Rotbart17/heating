@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Dieses Modul wir mom. nicht verwendet.
+#
 # in diesem Modul wird die API für die Oberfläche definiert,
 # die API kommuniziert mit der Dataclass die wiederum mit der DB 
 # man soll ja nich alles als Rootpath machen

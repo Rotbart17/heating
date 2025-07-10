@@ -29,7 +29,7 @@ logging.basicConfig(
     filename='gui.log',
     filemode='w',
     format='%(asctime)s %(levelname)s: %(message)s',
-    level=logging.error
+    level=logging.ERROR
 )
 
 def str2bool(value):
@@ -377,8 +377,9 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
     def _readitem(self,name,namect,value,timestamp):
+        db=sqlite3.connect(settings.DBPATH)
         try: 
-            db=sqlite3.connect(settings.DBPATH)
+            
             cursor=db.cursor()
             # t=(name,namect,settings.WorkDataView)
             sql= f"SELECT {name}, {namect} FROM {settings.WorkDataView} WHERE id=1;"
@@ -403,9 +404,9 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # scheibt jeden Wert einzeln in die DB zusammen mit den Zeitstempeln
     def _writeitem(self,value,name,namect):
+        db=sqlite3.connect(settings.DBPATH)
         try:
             self._datawrite=True
-            db=sqlite3.connect(settings.DBPATH)
             cursor=db.cursor()
             timestamp=time.time_ns()
             # den neuen Wert und den Time Stamp zwei Mal schreiben damit klar ist, dass sich was geändert hat.
