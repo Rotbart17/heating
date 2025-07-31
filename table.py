@@ -21,11 +21,10 @@ import time
 
 class Tables:
 
-    def __init__(self, tablename,sql_p1,sql_p2) -> None:
+    def __init__(self, tablename: str, sql_columns: str) -> None:
+        """Initialisiert die Tabellen-Basisklasse."""
         self.tablename=tablename
-        self.sql_p1=sql_p1
-        self.sql_p2=sql_p2
-        # Tabelle Anlegen
+        self.sql_columns = sql_columns
 
     # Tabelle anlegen wenn sie noch nicht existiert
     def _create_table(self):
@@ -39,59 +38,62 @@ class Tables:
             exit(1)
         try:
             c = conn.cursor()
-            create_table_sql = self.sql_p1 + self.tablename + self.sql_p2
+            create_table_sql = f"CREATE TABLE IF NOT EXISTS {self.tablename} {self.sql_columns}"
             c.execute(create_table_sql)
             conn.commit()
             conn.close()
-            logging.info('Tabelle: ' + self.tablename +' erstellt')
+            logging.info(f'Tabelle: {self.tablename} erstellt')
         except Error as e:
-            logging.error('Beim ezeugen von:'+self.tablename+ 'ist Fehler '+e+' aufgetreten. Programm wird beendet!')
+            logging.error(f'Beim erzeugen von: {self.tablename} + ist Fehler {e} aufgetreten. Programm wird beendet!')
             exit(1)
         return
 
         
-    # Tabelle mit Inhalt löschen
+
     def _drop_table(self):
-        
+        ''' Tabelle löschen'''
         try:
-            conn = sqlite3.connect(settings.DBPATH)
-            logging.info('DB-Verbindung geöffnet')
-            cursor= conn.cursor()
-            cursor.execute("DROP TABLE ",self.tablename)
-            conn.commit()
-            conn.close()
-            logging.info('Tabelle '+self.tablename+' gelöscht.')
+            # SQL-Identifier wie Tabellennamen können nicht durch Platzhalter (?) ersetzt werden.
+            # Sie müssen sicher in den SQL-String eingefügt werden.
+            # Da der Tabellenname intern verwaltet wird, ist die Verwendung eines f-Strings hier unbedenklich.
+            sql = f"DROP TABLE IF EXISTS {self.tablename}"
+            with sqlite3.connect(settings.DBPATH) as conn:
+                logging.info(f"DB-Verbindung für DROP TABLE '{self.tablename}' geöffnet")
+                cursor = conn.cursor()
+                cursor.execute(sql)
+            logging.info(f"Tabelle '{self.tablename}' erfolgreich gelöscht.")
+            return True
         except Error as e:
-            logging.error('Tabelle '+self.tablename+' konte nicht gelöscht werden.')
-            exit(1)
-        finally:
-            return(True)
+            logging.error(f"Fehler beim Löschen der Tabelle '{self.tablename}': {e}")
+            # Die ursprüngliche Exception wird weitergeleitet, um dem aufrufenden Code die Fehlerbehandlung zu ermöglichen.
+            raise
 
 
-    # Tabelleninhalt löschen
+  
     def _empty_table(self):
+        ''' Tabelle leeren'''
         try:
-            conn = sqlite3.connect(settings.DBPATH)
-            logging.info('DB-Verbindung geöffnet')
-            cursor= conn.cursor()
-            cursor.execute("DELETE FROM ",self.tablename)
-            conn.commit()
-            conn.close()
+            with sqlite3.connect(settings.DBPATH) as conn:
+                logging.info('DB-Verbindung geöffnet')
+                cursor = conn.cursor()
+                sql = f"DELETE FROM {self.tablename}"
+                cursor.execute(sql)
+            logging.info(f'Daten in {self.tablename} gelöscht.')
+            return True
         except Error as e:
-            logging.error('Daten in '+self.tablename+' konten nicht gelöscht werden.')
-            exit(1)
-        finally:
-            logging.info('Daten in '+self.tablename+' gelöscht.')
-            return(True)
+            logging.error(f'Daten in {self.tablename} konnten nicht gelöscht werden.')
+            raise Exception from e
 
-    # Tabelle initialisieren
+   
     def _init_table(self,init_sql, data):
+        ''' Tabelle initialisieren'''
+
         try:
             conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
             
         except Error as e:
-            logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
+            logging.error(f'Es konnte keine Verbindung zur Datenbank {settings.DBPATH} erstellt werden. Programm wird beendet')
             exit(1)
         try:
             c = conn.cursor()
@@ -100,17 +102,19 @@ class Tables:
             conn.close()
             logging.info('Tabelle initialisiert')
         except Error as e:
-            logging.error('Es konnte das SQL nicht ausgeführt werden:'+ init_sql + 'Daten:'+ str(data)+ ' Programm wird beendet!')
+            logging.error(f'Es konnte das SQL nicht ausgeführt werden:{init_sql} Daten: {str(data)} Fehler:{str(e)}')
             exit(1)
         return  
 
 
-    # Prüft ob Daten in der Tabelle sind
-    # False= keine Daten drin
-    # True = Daten in der Tabelle
+
     def _checktable(self)->bool:
+        '''    Prüft ob Daten in der Tabelle sind
+               False= keine Daten drin
+               True = Daten in der Tabelle'''
         
         t=0
+        erg=False
         try:
             conn = sqlite3.connect(settings.DBPATH)
             logging.info('DB-Verbindung geöffnet')
@@ -126,33 +130,29 @@ class Tables:
             if t==1:
                 t=c.execute(f"SELECT COUNT(*) FROM {self.tablename}").fetchone()[0]
             conn.close()
-            logging.info('Tabelle '+self.tablename+' enthält :'+str(t)+' Datensätze')
+            logging.info(f'Tabelle {self.tablename} enthält :{str(t)} Datensätze')
             if t>0 :
                 erg=True
             else:
                 erg=False
         except Error as e:
-            logging.info('Es konnte die Tabelle '+ self.tablename +' nicht abgefragt werden!')
+            logging.info(f'Es konnte die Tabelle {self.tablename} nicht abgefragt werden!')
                 
         return (erg)
 
 
-
-
-# legt die Tabelle an wenn nötig, füllt sie wenn nötig
 class KesselSollTemperatur(Tables):
-
-    def __init__(self, tablename,sql_p1,sql_p2):
-        super().__init__(tablename,sql_p1,sql_p2)
+    '''legt die KesselSolTemperatur Tabelle an wenn nötig, füllt sie wenn nötig'''
+    def __init__(self, tablename: str, sql_columns: str):
+        super().__init__(tablename, sql_columns)
         self._create_table()
         if self._checktable()==False:
             self._init_Kesselvalues()
 
     def _init_Kesselvalues(self):
-        # k wird als Variable in der Formel settings.KesselKennlinie verwendet
-        k=0
-        # alles mal 10, damit man range() mit int verwenden kann.
-        # die Kennlinie geht von -30 bis 30 Grad Schritt 0.5
+        ''' k wird als Variable in der Formel settings.KesselKennlinie verwendet
+         alles mal 10, damit man range() mit int verwenden kann.
+         die Kennlinie geht von -30 bis 30 Grad Schritt 0.5'''
         for i in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
             x= float(i/10)
             y=round(eval(settings.KesselKennlinie),1)
@@ -162,11 +162,13 @@ class KesselSollTemperatur(Tables):
             self._init_table(sql,data)
         
 
-# Zeitsteurungstabelle anlegen, und mit einem Defaultprogramm füllen
-# wenn die Tabelle nicht leer ist
+
 class Zeitsteuerung(Tables):
-    def __init__(self, tablename,sql_p1,sql_p2):
-        super().__init__(tablename,sql_p1,sql_p2)
+    '''Zeitsteurungstabelle anlegen, und mit einem Defaultprogramm füllen
+       wenn die Tabelle nicht leer ist'''
+       
+    def __init__(self, tablename: str, sql_columns: str):
+        super().__init__(tablename, sql_columns)
         # Zeitsteuertabelle (Brauchwasser, Heizen, Nachtabsenkung, von, bis) ggf. erzeugen
         # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
         # wird nur wegen der Initialisierung bnötigt.
@@ -176,17 +178,19 @@ class Zeitsteuerung(Tables):
             for i in settings.Standardprogramm:
                 self._init_table(settings.sql_writezeitsteuerung,i)
 
-# Brennerberiebs Logging Table anlegen
-# Tabelle für die Zustände des Brennersensors
+
 class Brennersensor(Tables):
-    def __init__(self, tablename,sql_p1,sql_p2):
-        super().__init__(tablename,sql_p1,sql_p2)   
+    '''Brennerberiebs Logging Tabelle anlegen
+        Tabelle für die Zustände des Brennersensors'''
+    def __init__(self, tablename: str, sql_columns: str):
+        super().__init__(tablename, sql_columns)
         self._create_table()
 
 
 class WorkdataView(Tables):
-    def __init__(self, tablename,sql_p1,sql_p2):
-        super().__init__(tablename,sql_p1,sql_p2) 
+    '''WorkdataView Tabelle und Default Inhalt anlegen'''
+    def __init__(self, tablename: str, sql_columns: str):
+        super().__init__(tablename, sql_columns)
         self._create_table()
         if self._checktable()==False:
             
@@ -218,4 +222,3 @@ class WorkdataView(Tables):
                 settings.threadstop )
             # so, die Tabelle existiert. Initdaten sind reingeschrieben.
             self._init_table(settings.init_WorkDataView_sql,data)
-

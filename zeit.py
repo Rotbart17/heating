@@ -12,7 +12,7 @@
 # Hand/Dusche hat einen Vorrang vor der Heizung. Das muss aber im Regelkreis berücksichtigt werden.
 # Werte: Brauchwasser an / aus, Heizung an / aus, Nachtabsenkung an / aus
 # Schlafen
-import datetime
+from datetime import datetime
 import logging
 import threading
 import settings
@@ -47,10 +47,12 @@ def day_in_range(programday:int)->bool:
     # Montag ist 1 .... Sonntag ist 7,
     # 8:'Mo-Fr', 9:'Sa-So', 10:'Mo-So' 
     # siehe Definition in gui.py
-    dayofWeek=datetime.datetime.today().isoweekday()
-    if programday<=7:
-        return dayofWeek==programday
-    else:
+    dayofWeek=datetime.today().isoweekday()
+    if programday<=7 and dayofWeek==programday:
+        return (True)
+    if programday<=7 and dayofWeek!=programday:
+        return (False)
+    if programday>7:  
         # Mo-Fr
         if programday == 8:
             if dayofWeek <=5:
@@ -66,11 +68,12 @@ def day_in_range(programday:int)->bool:
         # Mo-So
         if programday == 10:
             return (True)
+    return (False)  
 
        
 def evaluate_program()->None:
     '''Wertet die Programmsteuerungstabelle minütlich aus und setzt/löscht die Variablen für Brauchwasser, Heizung und Nachtabsenkung'''
-    # rows=[]
+    
     while(datav.threadstop==True):
         # Programmsteuerungsdaten einlesen
         # typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
@@ -101,7 +104,7 @@ def evaluate_program()->None:
                             datav.vNachtabsenkung=False
                 case _:
                     # Hier sollte niemand vorbeischauen
-                    exit(1)
+                    logging.error(f"Der ausgewählte Heiztyp  {zs['type']} ist unbekannt!")
         time.sleep(sleeptime)
     
 def start_evaluatethread()->None:

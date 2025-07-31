@@ -97,12 +97,10 @@ Nachtabsenkung : int =True
 
 # die Tabelle der Kesseltemperatur Kennlinien Werte heisst:----------
 KesselSollTemperatur="KesselSollTemperatur"
-    
-sql_kennlinie_p1="CREATE TABLE IF NOT EXISTS " 
-sql_kennlinie_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                    value_x real,              \
-                    value_y real           \
-                    );"
+
+sql_kennlinie_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            value_x real,
+                            value_y real);"""
 
 # die Kennlinie für KesselSollTemperatur ist:
 # Y=-1.2 x+56 + k
@@ -130,7 +128,7 @@ KesselDaten_y=[]
 Aussensensor="Aussensensor"
 AussenMinTemp : int = -30
 AussenMaxTemp : int = 30
-AussenTempStep : int = 0.5
+AussenTempStep : float = 0.5
 # Aussen ist die aktuelle Aussentemperatur, wird nur vom Sensor verändert, GUI zeigt an
 Aussen : float = 0
 
@@ -168,47 +166,46 @@ WorkDataView = "WorkDataView"
 # changetime ist der Zeitpunkt der letzten Änderung in ns
 # ViewChange ist der Zeitpunkt an dem die letzte Änderung an irgendeiner Stelle im View
 # vorgenommen wurde
-sql_create_view_table_p1 = "CREATE TABLE IF NOT EXISTS " 
-sql_create_view_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                ViewChanged int, \
-                                Winter int,              \
-                                Winter_changetime int,              \
-                                Wintertemp real,           \
-                                Wintertemp_changetime int,           \
-                                Kessel real,         \
-                                Kessel_changetime int,         \
-                                KesselSoll real,   \
-                                KesselSoll_changetime int,   \
-                                Heizen int, \
-                                Heizen_changetime int, \
-                                Nachtabsenkung int, \
-                                Nachtabsenkung_changetime int, \
-                                Brauchwasser real,           \
-                                Brauchwasser_changetime int,           \
-                                BrauchwasserSoll real,   \
-                                BrauchwasserSoll_changetime int,   \
-                                BrauchwasserAus int,   \
-                                BrauchwasserAus_changetime int,  \
-                                Brauchwasserbereiten int,  \
-                                Brauchwasserbereiten_changetime int, \
-                                Innen real,           \
-                                Innen_changetime int,           \
-                                Aussen real,           \
-                                Aussen_changetime int,           \
-                                Pumpe_oben_an int,           \
-                                Pumpe_oben_an_changetime int,           \
-                                Pumpe_unten_an int,           \
-                                Pumpe_unten_an_changetime int,           \
-                                Pumpe_Brauchwasser_an int,           \
-                                Pumpe_Brauchwasser_an_changetime int,           \
-                                Brenner_an int,           \
-                                Brenner_an_changetime int,           \
-                                Brenner_Stoerung int,           \
-                                Brenner_Stoerung_changetime int,           \
-                                Hand_Dusche int,            \
-                                Hand_Dusche_changetime int,            \
-                                threadstop int  \
-                            ); "
+sql_create_view_table_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                    ViewChanged int,
+                                    Winter int,
+                                    Winter_changetime int,
+                                    Wintertemp real,
+                                    Wintertemp_changetime int,
+                                    Kessel real,
+                                    Kessel_changetime int,
+                                    KesselSoll real,
+                                    KesselSoll_changetime int,
+                                    Heizen int,
+                                    Heizen_changetime int,
+                                    Nachtabsenkung int,
+                                    Nachtabsenkung_changetime int,
+                                    Brauchwasser real,
+                                    Brauchwasser_changetime int,
+                                    BrauchwasserSoll real,
+                                    BrauchwasserSoll_changetime int,
+                                    BrauchwasserAus int,
+                                    BrauchwasserAus_changetime int,
+                                    Brauchwasserbereiten int,
+                                    Brauchwasserbereiten_changetime int,
+                                    Innen real,
+                                    Innen_changetime int,
+                                    Aussen real,
+                                    Aussen_changetime int,
+                                    Pumpe_oben_an int,
+                                    Pumpe_oben_an_changetime int,
+                                    Pumpe_unten_an int,
+                                    Pumpe_unten_an_changetime int,
+                                    Pumpe_Brauchwasser_an int,
+                                    Pumpe_Brauchwasser_an_changetime int,
+                                    Brenner_an int,
+                                    Brenner_an_changetime int,
+                                    Brenner_Stoerung int,
+                                    Brenner_Stoerung_changetime int,
+                                    Hand_Dusche int,
+                                    Hand_Dusche_changetime int,
+                                    threadstop int
+                                );"""
 
 # InitWorkDataView SQL, schreibt die erste Zeile mit Basiswerten
 init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
@@ -264,28 +261,25 @@ read_WorkDataView_complete= f"SELECT * from {WorkDataView} WHERE id =1 ;"
 
 
 # Statements um die Sensortabelle für alle Temperatursensoren zu erzeugen
-sql_create_sensor_table_p1 = "CREATE TABLE IF NOT EXISTS " 
-sql_create_sensor_table_p2 = " (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                value real,              \
-                                begin_date int,         \
-                                end_date int,           \
-                                error int            \
-                            ); "
+sql_create_sensor_table_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                      value real,
+                                      begin_date int,
+                                      end_date int,
+                                      error int
+                                  );"""
                 
 
 
 
 # die Tabelle für die Zeitsteuerung heisst:----------
 ZeitSteuerung="ZeitSteuerung"
-sql_zeitsteuerung_p1=sql_create_view_table_p1
-sql_zeitsteuerung_p2=" (line_id integer,\
-                        type text,      \
-                        tage text,      \
-                        von text,       \
-                        bis text,       \
-                        active int,     \
-                        changetime int \
-                        );"
+sql_zeitsteuerung_columns = """(line_id integer,
+                                type text,
+                                tage text,
+                                von text,
+                                bis text,
+                                active int,
+                                changetime int);"""
 
 sql_readzeitsteuerung=f"SELECT line_id, type, tage, von, bis, active, changetime FROM {ZeitSteuerung};"
 sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, tage, von, bis, active, changetime) \
@@ -315,13 +309,12 @@ Brenner_Stoerung : bool = False
 
 # Die Varianblen für die Brennersensortabelle ----------
 Brennersensor="Brennersensor"
-sql_brennersensor_p1=sql_create_view_table_p1
-sql_brennersensor_p2=" (id integer PRIMARY KEY AUTOINCREMENT NOT NULL,  \
-                                brenner_an int,           \
-                                brenner_stoerung int,  \
-                                von text,            \
-                                bis text             \
-                        );"
+sql_brennersensor_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                brenner_an int,
+                                brenner_stoerung int,
+                                von text,
+                                bis text
+                            );"""
 sql_readbrennersensor=f"SELECT von FROM {Brennersensor} WHERE von >= ? AND brenner_an='True';"
 sql_writebrennersensorbetrieb=f"INSERT INTO {Brennersensor} brenner_an=?, von=?, bis=?;"
 sql_writebrennersensorstoerung=f"INSERT INTO {Brennersensor} brenner_stoerung=?, von=?, bis=?;"
