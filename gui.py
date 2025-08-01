@@ -84,12 +84,6 @@ typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
 typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
 
 
-# Kesseldatenanpassungsvariablen
-# Grad von, Grad bis, Gradanpassung
-gradv : float= 0
-gradb : float= 0
-gradanpass : float= 0
-
 # Initialisieren von Daten für die GUI. ggf. noch nicht der Weisheit letzter Schluss
 def init_data():
     pass
@@ -131,66 +125,6 @@ with ui.footer(value=True).classes('height-hint=30') as footer:
     ui.label('Buderus Ecomatic Digital V1.0.0')
 
 
-# Alle Sensordaten für die Grafik auf im ersten Reiter updaten
-# Messwertreihen zuweisen
-def updatesensordata():
-    figtemp['data'][0]['x']=datav.vAussenDaten_x
-    figtemp['data'][0]['y']=datav.vAussenDaten_y
-    figtemp['data'][1]['x']=datav.vInnenDaten_x
-    figtemp['data'][1]['y']=datav.vInnenDaten_y
-    figtemp['data'][2]['x']=datav.vKesselIstDaten_x
-    figtemp['data'][2]['y']=datav.vKesselIstDaten_y
-    figtemp['data'][3]['x']=datav.vBrauchwasserDaten_x
-    figtemp['data'][3]['y']=datav.vBrauchwasserDaten_y
-    ui.update(plottemp)
-
-
-# ------------------
-# Grafiken anzeigen
-def malen() -> None:
-
-    global figtemp
-    figtemp = {
-        'data': 
-        [
-            {
-                'type': 'scatter',
-                'name': 'Aussen-T',
-                'x': datav.vAussenDaten_x,
-                'y': datav.vAussenDaten_y,
-            },
-            {
-                'type': 'scatter',
-                'name': 'Innen-T',
-                'x': datav.vInnenDaten_x,
-                'y': datav.vInnenDaten_y,
-            },
-            {
-                'type': 'scatter',
-                'name': 'Kessel-T',
-                'x': datav.vKesselIstDaten_x,
-                'y': datav.vKesselIstDaten_y,
-            },
-            {
-                'type': 'scatter',
-                'name': 'Brauchw-T',
-                'x': datav.vBrauchwasserDaten_x,
-                'y': datav.vBrauchwasserDaten_y,
-            },          
-        ],
-        'layout': 
-        {
-            'margin': {'l': 35, 'r': 20, 't': 20, 'b': 40},
-            'plot_bgcolor': '#E5ECF6',
-            'xaxis': {'title': 'Datum Uhrzeit','gridcolor': 'white'},
-            'yaxis': {'title': 'Temperatur','gridcolor': 'white'},
-        },
-    }
-    global plottemp
-    plottemp= ui.plotly(figtemp).classes('w-full h-40 col-start-1 col-span-4') 
-    ui.update(plottemp)
-
-
 # Hand Dusche toggeln
 def set_hand_dusche():
     if datav.vHand_Dusche==False:
@@ -199,9 +133,6 @@ def set_hand_dusche():
     else:
         datav.vHand_Dusche=False
         ui.notify('Brauchwasser ausgeschaltet!')
-       
-# Alle 2 Minuten das Upate der Daten für die Grafik aufrufen
-ui.timer(120.0, lambda: updatesensordata()) 
 
 #---------------------------------------------------------------------------------------------------------
 # hier werden 4 TABs definiert (Information  / Heizbetrieb / Kesselsteuerung / Einstellungen)
@@ -212,37 +143,57 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     # Erster Reiter ------------------
     with ui.tab_panel(information):
         with ui.grid(columns=4, rows=1).classes('w-full'):
-        # Zeile 1      
-            ui.label(f'Aussen-Temp = {datav.vAussen}').classes('text-base col-start-1')
-            if datav.vWinter==True:
-                t='Winterbetrieb'
-            else:
-                t='Sommerbetrieb'
-            ui.label(f'{t}').classes('text-base col-start-2 ')
-            ui.label(f'Innen-Temp = {datav.vInnen}').classes('text-base col-start-3')   
+            # Zeile 1
+            ui.label().bind_text_from(datav, 'vAussen', lambda v: f'Aussen-Temp = {v}').classes('text-base col-start-1')
+            ui.label().bind_text_from(datav, 'vWinter', lambda v: 'Winterbetrieb' if v else 'Sommerbetrieb').classes('text-base col-start-2 ')
+            ui.label().bind_text_from(datav, 'vInnen', lambda v: f'Innen-Temp = {v}').classes('text-base col-start-3')
             ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-25 h-25')
 
         # Zeile 2
         with ui.grid(columns=4, rows=1).classes('w-full'):    
-            malen()
+            figtemp = go.Figure()
+            figtemp.add_trace(go.Scatter(x=datav.vAussenDaten_x, y=datav.vAussenDaten_y, name='Aussen-T'))
+            figtemp.add_trace(go.Scatter(x=datav.vInnenDaten_x, y=datav.vInnenDaten_y, name='Innen-T'))
+            figtemp.add_trace(go.Scatter(x=datav.vKesselIstDaten_x, y=datav.vKesselIstDaten_y, name='Kessel-T'))
+            figtemp.add_trace(go.Scatter(x=datav.vBrauchwasserDaten_x, y=datav.vBrauchwasserDaten_y, name='Brauchw-T'))
+            figtemp.update_layout(margin=dict(l=35, r=20, t=20, b=40), plot_bgcolor='#E5ECF6',
+                                      xaxis=dict(title='Datum Uhrzeit', gridcolor='white'),
+                                      yaxis=dict(title='Temperatur', gridcolor='white'))
+            # Wir übergeben das Figure-Objekt an das UI-Element, behalten aber eine Referenz darauf.
+            plottemp = ui.plotly(figtemp).classes('w-full h-40 col-start-1 col-span-4')
+
+            def updatesensordata():
+                # Wir operieren direkt auf unserem 'figtemp'-Objekt.
+                # Der Linter weiß, dass 'figtemp' ein go.Figure ist und kennt dessen Methoden.
+                with figtemp.batch_update():
+                    figtemp.update_traces(x=datav.vAussenDaten_x, y=datav.vAussenDaten_y, selector={'name': 'Aussen-T'})
+                    figtemp.update_traces(x=datav.vInnenDaten_x, y=datav.vInnenDaten_y, selector={'name': 'Innen-T'})
+                    figtemp.update_traces(x=datav.vKesselIstDaten_x, y=datav.vKesselIstDaten_y, selector={'name': 'Kessel-T'})
+                    figtemp.update_traces(x=datav.vBrauchwasserDaten_x, y=datav.vBrauchwasserDaten_y, selector={'name': 'Brauchw-T'})
+                
+                # Nachdem wir das Datenmodell (figtemp) geändert haben,
+                # teilen wir dem UI-Element mit, dass es sich neu zeichnen soll.
+                plottemp.update()
+
+            # Die Sensordaten in datav werden alle 60s aktualisiert. Wir passen den Timer an.
+            ui.timer(60.0, updatesensordata)
 
         # Zeile 3
-        with ui.grid(columns=4, rows=2).classes('w-full'):      
-            ui.label(f'Kessel-Soll-Temp = {datav.vKesselSoll}').classes('text-base col-start-1  flex items-center')  
-            ui.label(f'Kessel-Temp = {datav.vKessel}').classes('text-base flex items-center')
-            ui.label(f'Brauchw-Temp = {datav.vBrauchwasser}').classes('text-base col-start-3 flex items-center') 
+        with ui.grid(columns=4, rows=2).classes('w-full'):
+            ui.label().bind_text_from(datav, 'vKesselSoll', lambda v: f'Kessel-Soll-Temp = {v}').classes('text-base col-start-1  flex items-center')
+            ui.label().bind_text_from(datav, 'vKessel', lambda v: f'Kessel-Temp = {v}').classes('text-base flex items-center')
+            ui.label().bind_text_from(datav, 'vBrauchwasser', lambda v: f'Brauchw-Temp = {v}').classes('text-base col-start-3 flex items-center')
             ui.label('Brauchw-Pumpe').classes('text-base col-start-4 flex items-center')
-            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_Brauchwasser_an',value='True').classes('mt-3')
-
+            ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_Brauchwasser_an').classes('mt-3')
         # Zeile 4
-            ui.label(f'Brenner läuft').classes('text-base col-start-1 h-9')
-            ui.spinner(type='ball', color='red' ,size='sm').bind_visibility_from(target_object=datav,target_name='vBrenner_an', value='False').classes('h-9')
+            ui.label('Brenner läuft').classes('text-base col-start-1 h-9')
+            ui.spinner(type='ball', color='red', size='sm').bind_visibility_from(datav, 'vBrenner_an').classes('h-9')
             ui.label('Brennerstörung').classes('text-base col-start-2 h-9')
-            ui.spinner(size='sm',color='red').bind_visibility_from(target_object=datav,target_name='vBrenner_Stoerung', value='False').classes('h-9')
+            ui.spinner(size='sm', color='red').bind_visibility_from(datav, 'vBrenner_Stoerung').classes('h-9')
             ui.label('H-Pumpe oben').classes('text-base col-start-3 h-9')
-            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_oben_an', value='False').classes('h-9')
+            ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_oben_an').classes('h-9')
             ui.label('H-Pumpe unten').classes('text-base col-start-4  h-9')
-            ui.spinner('Facebook',size='sm').bind_visibility_from(target_object=datav,target_name='vPumpe_unten_an', value='False').classes('h-9')
+            ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_unten_an').classes('h-9')
 
     #---------------------------------------------------------------------------------------------------------      
     # Zweiter Reiter ------------------
@@ -421,96 +372,52 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
-        # ui.label('Kesselsteuerung')           
-        figkessel = {
-            'data': 
-            [
-                {
-                    'type': 'scatter',
-                    'name': 'Kessel',
-                    'x': datav.vKesselDaten_x,
-                    'y': datav.vKesselDaten_y,
-                },          
-            ],
-            'layout': 
-            {
-                'margin': {'l': 35, 'r': 20, 't': 20, 'b': 35},
-                'plot_bgcolor': '#E5ECF6',
-                'xaxis': {'title': 'Aussentemp','gridcolor': 'white'},
-                'yaxis': {'title': 'Kesseltemp','gridcolor': 'white'},
-            },
-        }
-        plotkessel= ui.plotly(figkessel).classes('w-full h-64')  
-        # jetzt braucht es noch Knöpfe und Funktionen um die Kurve zu verändern
-        # "von Grad", "bis Grad", "Yeränderung" -> 3Knöpfe
-        # alle in einer Zeile
-        def gradvon(value):
-            global gradv
-            gradv=value
-            # ui.notify(gradv) 
-            
-        # Die eingegebene Temperatur liegt im Bereich von -30 und 30 Grad
-        # Die "Bis Temperatur" muss größer sein als die "von Temperatur"
-        def gradbis(value):
-            global gradb
-            gradb=value
-            # ui.notify(gradb) 
-            
-        def gradanpassen(value):
-            global gradanpass
-            gradanpass=value
-            # ui.notify(gradanpass) 
-            
-        # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an 
-        def anpassen():
-            with plotkessel:
-                if gradanpass!=0:
-                    startidx = 0
-                    stopidx=0
-                    foundstart= False
-                    foundstop=False
-                    i=0
-                    for _ in datav.vKesselDaten_x:
-                        if (datav.vKesselDaten_x[i]>= gradv) and foundstart==False:
-                            # Anfang des zu veränderden Intervalls
-                            startidx=i
-                            foundstart=True
-                        if (datav.vKesselDaten_x[i]> gradb) and foundstop==False:
-                            # gerade übder das ENde des Intervalls hinaus
-                            stopidx=i-1
-                            foundstop=True
-                            break
-                        i+=1
+        # Die Kessel-Grafik wird modern und robust mit plotly.graph_objects erstellt.
+        figkessel = go.Figure(go.Scatter(
+            x=datav.vKesselDaten_x,
+            y=datav.vKesselDaten_y,
+            name='Kessel',
+        ))
+        figkessel.update_layout(
+            margin={'l': 35, 'r': 20, 't': 20, 'b': 35},
+            plot_bgcolor='#E5ECF6',
+            xaxis={'title': 'Aussentemp', 'gridcolor': 'white'},
+            yaxis={'title': 'Kesseltemp', 'gridcolor': 'white'},
+        )
+        # Wir machen die Grafik editierbar und fügen einen Event-Handler für 'relayout' hinzu.
+        plotkessel = ui.plotly(figkessel, config={'editable': True}).classes('w-full h-64')  # type: ignore
 
-                    # So jetzt sollten Anfang und Ende festliegen
-                    # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
-                    # ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
-                    if startidx<=stopidx and startidx>=0 and stopidx>=0:
-                        # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
-                        # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
-                        templist=datav.vKesselDaten_y.copy()
-                        i=startidx
-                        while i<=stopidx:
-                            templist[i]+=gradanpass
-                            i+=1
-                        datav.vKesselDaten_y=templist.copy()
-                        plotkessel.figure['data'][0]['y']=templist.copy()
-                        ui.update(plotkessel)
-                        
-                    else:
-                        ui.notify(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
-            ui.update(plotkessel)
-        
+        def handle_curve_drag(e):
+            """Wird aufgerufen, wenn der Benutzer einen Punkt auf der Kennlinie verschiebt."""
+            event_data = e.args
+            # Plotly sendet bei einer Punkt-Verschiebung ein Event mit diesem spezifischen Schlüssel.
+            # Wir prüfen, ob dieser Schlüssel vorhanden ist, um nur auf diese Aktion zu reagieren.
+            if event_data and 'update_sources[0]' in event_data:
+                update_info = event_data['update_sources[0]']
+                if 'point_index' in update_info and 'y' in update_info:
+                    point_index = update_info['point_index'][0]
+                    new_y_value = round(update_info['y'][0], 1)  # Runden auf eine Nachkommastelle
 
-        # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
-        with ui.grid(columns=4, rows=1).classes('w-full'):
-            ui.number(label='Grad von',   value='0', step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
-            ui.number(label='Grad bis',   value='0', step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
-            ui.number(label='Anpassen um',value='0', step=(settings.AussenTempStep/10), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
-            ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
+                    # Eine Kopie der y-Werte erstellen, um sie sicher zu ändern.
+                    templist = datav.vKesselDaten_y.copy()
+
+                    # Nur speichern, wenn sich der Wert tatsächlich geändert hat.
+                    if templist[point_index] != new_y_value:
+                        templist[point_index] = new_y_value
+
+                        # Die neuen Daten im Datenmodell speichern (dies löst die Speicherung in der DB aus).
+                        datav.vKesselDaten_y = templist
+
+                        # Den Benutzer über die erfolgreiche Speicherung informieren.
+                        x_val = datav.vKesselDaten_x[point_index]
+                        ui.notify(f"Punkt bei {x_val}°C auf {new_y_value}°C gesetzt und gespeichert.")
+
+        # Den Event-Handler an das Plot-Element binden.
+        plotkessel.on('relayout', handle_curve_drag)
+
+        # Die numerischen Eingabefelder sind nicht mehr notwendig, da die Interaktion direkt über die Grafik erfolgt.
+        # with ui.grid(columns=4, rows=1).classes('w-full'):
+        #     ... (alter Code für die Eingabefelder)
 
 
     #---------------------------------------------------------------------------------------------------------   

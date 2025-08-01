@@ -29,8 +29,8 @@ class sensor(Tables):
 
     # DB Tabelle anlegen wenn notwendig
     # def __init__(self,tablename): 
-    def __init__(self, tablename:str,sql_p1:str,sql_p2:str,queue_to_backend:Queue,queue_from_backend:Queue) -> None:
-        super().__init__(tablename,sql_p1,sql_p2)
+    def __init__(self, tablename:str, sql_columns:str, queue_to_backend:Queue, queue_from_backend:Queue) -> None:
+        super().__init__(tablename, sql_columns)
         self._create_table()
         self.queue_to_backend=queue_to_backend
         self.queue_from_backend=queue_from_backend

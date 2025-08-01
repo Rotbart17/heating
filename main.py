@@ -18,14 +18,14 @@ def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
     
 
     global kss,ass,bws,iss
-    kss= sensor(settings.Kesselsensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2,queue_to_backend,queue_from_backend)
-    ass= sensor(settings.Aussensensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2,queue_to_backend,queue_from_backend)
-    bws= sensor(settings.Brauchwassersensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2,queue_to_backend,queue_from_backend)
-    iss= sensor(settings.Innensensor,settings.sql_create_sensor_table_p1,settings.sql_create_sensor_table_p2,queue_to_backend,queue_from_backend)
-    kst= KesselSollTemperatur(settings.KesselSollTemperatur,settings.sql_kennlinie_p1,settings.sql_kennlinie_p2)
-    zst= Zeitsteuerung(settings.ZeitSteuerung,settings.sql_zeitsteuerung_p1,settings.sql_zeitsteuerung_p2)
-    bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_p1,settings.sql_brennersensor_p2)
-    wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_p1, settings.sql_create_view_table_p2)
+    kss= sensor(settings.Kesselsensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
+    ass= sensor(settings.Aussensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
+    bws= sensor(settings.Brauchwassersensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
+    iss= sensor(settings.Innensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
+    kst= KesselSollTemperatur(settings.KesselSollTemperatur, settings.sql_kennlinie_columns)
+    zst= Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns)
+    bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns)
+    wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns)
     start_evaluatethread()
     
     # der Überwachungsprozess sollte aus system-d gestartet werden.

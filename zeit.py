@@ -108,6 +108,7 @@ def evaluate_program()->None:
         time.sleep(sleeptime)
     
 def start_evaluatethread()->None:
+
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
     datav=maindata()
