@@ -31,7 +31,7 @@ if __name__ in ['__mp_main__', '__main__']:
     backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
     backendproc.start()
     # global datav
-    time.sleep(40)
+    time.sleep(10)
     datav=maindata()
    
 
@@ -156,7 +156,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             figtemp.add_trace(go.Scatter(x=datav.vInnenDaten_x, y=datav.vInnenDaten_y, name='Innen-T'))
             figtemp.add_trace(go.Scatter(x=datav.vKesselIstDaten_x, y=datav.vKesselIstDaten_y, name='Kessel-T'))
             figtemp.add_trace(go.Scatter(x=datav.vBrauchwasserDaten_x, y=datav.vBrauchwasserDaten_y, name='Brauchw-T'))
-            figtemp.update_layout(margin=dict(l=35, r=20, t=20, b=40), plot_bgcolor='#E5ECF6',
+            figtemp.update_layout(margin=dict(l=35, r=20, t=9, b=18), plot_bgcolor='#E5ECF6',
                                       xaxis=dict(title='Datum Uhrzeit', gridcolor='white'),
                                       yaxis=dict(title='Temperatur', gridcolor='white'))
             # Wir übergeben das Figure-Objekt an das UI-Element, behalten aber eine Referenz darauf.
@@ -372,52 +372,98 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
-        # Die Kessel-Grafik wird modern und robust mit plotly.graph_objects erstellt.
-        figkessel = go.Figure(go.Scatter(
-            x=datav.vKesselDaten_x,
-            y=datav.vKesselDaten_y,
-            name='Kessel',
-        ))
-        figkessel.update_layout(
-            margin={'l': 35, 'r': 20, 't': 20, 'b': 35},
-            plot_bgcolor='#E5ECF6',
-            xaxis={'title': 'Aussentemp', 'gridcolor': 'white'},
-            yaxis={'title': 'Kesseltemp', 'gridcolor': 'white'},
-        )
-        # Wir machen die Grafik editierbar und fügen einen Event-Handler für 'relayout' hinzu.
-        plotkessel = ui.plotly(figkessel, config={'editable': True}).classes('w-full h-64')  # type: ignore
+        # ui.label('Kesselsteuerung')           
+        figkessel = {
+            'data': 
+            [
+                {
+                    'type': 'scatter',
+                    'name': 'Kessel',
+                    'x': datav.vKesselDaten_x,
+                    'y': datav.vKesselDaten_y,
+                },          
+            ],
+            'layout': 
+            {
+                'margin': {'l': 35, 'r': 20, 't': 20, 'b': 35},
+                'plot_bgcolor': '#E5ECF6',
+                'xaxis': {'title': 'Aussentemp','gridcolor': 'white'},
+                'yaxis': {'title': 'Kesseltemp','gridcolor': 'white'},
+            },
+        }
+        plotkessel= ui.plotly(figkessel).classes('w-full h-64')  
+        # jetzt braucht es noch Knöpfe und Funktionen um die Kurve zu verändern
+        # "von Grad", "bis Grad", "Yeränderung" -> 3Knöpfe
+        # alle in einer Zeile
+        def gradvon(value):
+            global gradv
+            gradv=value
+            # ui.notify(gradv) 
+            
+        # Die eingegebene Temperatur liegt im Bereich von -30 und 30 Grad
+        # Die "Bis Temperatur" muss größer sein als die "von Temperatur"
+        def gradbis(value):
+            global gradb
+            gradb=value
+            # ui.notify(gradb) 
+            
+        def gradanpassen(value):
+            global gradanpass
+            gradanpass=value
+            # ui.notify(gradanpass) 
+            
+        # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an 
+        def anpassen():
+            with plotkessel:
+                if gradanpass!=0:
+                    startidx = 0
+                    stopidx=0
+                    foundstart= False
+                    foundstop=False
+                    i=0
+                    for _ in datav.vKesselDaten_x:
+                        if (datav.vKesselDaten_x[i]>= gradv) and foundstart==False:
+                            # Anfang des zu veränderden Intervalls
+                            startidx=i
+                            foundstart=True
+                        if (datav.vKesselDaten_x[i]> gradb) and foundstop==False:
+                            # gerade übder das ENde des Intervalls hinaus
+                            stopidx=i-1
+                            foundstop=True
+                            break
+                        i+=1
 
-        def handle_curve_drag(e):
-            """Wird aufgerufen, wenn der Benutzer einen Punkt auf der Kennlinie verschiebt."""
-            event_data = e.args
-            # Plotly sendet bei einer Punkt-Verschiebung ein Event mit diesem spezifischen Schlüssel.
-            # Wir prüfen, ob dieser Schlüssel vorhanden ist, um nur auf diese Aktion zu reagieren.
-            if event_data and 'update_sources[0]' in event_data:
-                update_info = event_data['update_sources[0]']
-                if 'point_index' in update_info and 'y' in update_info:
-                    point_index = update_info['point_index'][0]
-                    new_y_value = round(update_info['y'][0], 1)  # Runden auf eine Nachkommastelle
+                    # So jetzt sollten Anfang und Ende festliegen
+                    # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
+                    # ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
+                    if startidx<=stopidx and startidx>=0 and stopidx>=0:
+                        # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
+                        # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
+                        templist=datav.vKesselDaten_y.copy()
+                        i=startidx
+                        while i<=stopidx:
+                            templist[i]+=gradanpass
+                            i+=1
+                        datav.vKesselDaten_y=templist.copy()
+                        figkessel['data'][0]['y']=templist.copy()
+                        ui.update(plotkessel)
+                        
+                    else:
+                        ui.notify(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
+            ui.update(plotkessel)
+        
 
-                    # Eine Kopie der y-Werte erstellen, um sie sicher zu ändern.
-                    templist = datav.vKesselDaten_y.copy()
+        # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
+        with ui.grid(columns=4, rows=1).classes('w-full'):
+            ui.number(label='Grad von',   value=0, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
+            ui.number(label='Grad bis',   value=0, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
+            ui.number(label='Anpassen um',value=0, step=(settings.AussenTempStep/10), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
+            ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
 
-                    # Nur speichern, wenn sich der Wert tatsächlich geändert hat.
-                    if templist[point_index] != new_y_value:
-                        templist[point_index] = new_y_value
 
-                        # Die neuen Daten im Datenmodell speichern (dies löst die Speicherung in der DB aus).
-                        datav.vKesselDaten_y = templist
-
-                        # Den Benutzer über die erfolgreiche Speicherung informieren.
-                        x_val = datav.vKesselDaten_x[point_index]
-                        ui.notify(f"Punkt bei {x_val}°C auf {new_y_value}°C gesetzt und gespeichert.")
-
-        # Den Event-Handler an das Plot-Element binden.
-        plotkessel.on('relayout', handle_curve_drag)
-
-        # Die numerischen Eingabefelder sind nicht mehr notwendig, da die Interaktion direkt über die Grafik erfolgt.
-        # with ui.grid(columns=4, rows=1).classes('w-full'):
-        #     ... (alter Code für die Eingabefelder)
 
 
     #---------------------------------------------------------------------------------------------------------   
