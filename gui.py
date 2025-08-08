@@ -13,6 +13,20 @@ import sys
 from multiprocessing import Manager, Queue
 import multiprocessing
 
+# Fügt eigenes CSS hinzu, um die Pfeile der numerischen Eingabe ui.input zu vergrößern
+# funktioniert nicht bei Firefox
+ui.add_head_html('''
+<style>
+/* Vergrößert die Auf/Ab-Pfeile in numerischen Eingabefeldern für WebKit-Browser (Chrome, Safari, etc.) */
+.q-field__native::-webkit-inner-spin-button,
+.q-field__native::-webkit-outer-spin-button {
+    /* Die Breite und Höhe können nach Bedarf angepasst werden */
+    width: 1.2em;
+    height: 2.2em;
+    opacity: 1; /* Stellt sicher, dass die Pfeile sichtbar sind */
+}
+</style>
+''')
 
 # Muster für logging
 # logging.debug('debug')
@@ -144,9 +158,9 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     with ui.tab_panel(information):
         with ui.grid(columns=4, rows=1).classes('w-full'):
             # Zeile 1
-            ui.label().bind_text_from(datav, 'vAussen', lambda v: f'Aussen-Temp = {v}').classes('text-base col-start-1')
-            ui.label().bind_text_from(datav, 'vWinter', lambda v: 'Winterbetrieb' if v else 'Sommerbetrieb').classes('text-base col-start-2 ')
-            ui.label().bind_text_from(datav, 'vInnen', lambda v: f'Innen-Temp = {v}').classes('text-base col-start-3')
+            ui.label().bind_text_from(datav, 'vAussen', lambda v: f'Aussen-Temp = {v}').classes('text-sm col-start-1')
+            ui.label().bind_text_from(datav, 'vWinter', lambda v: 'Winterbetrieb' if v else 'Sommerbetrieb').classes('text-sm col-start-2 ')
+            ui.label().bind_text_from(datav, 'vInnen', lambda v: f'Innen-Temp = {v}').classes('text-sm col-start-3')
             ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-25 h-25')
 
         # Zeile 2
@@ -180,19 +194,19 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
         # Zeile 3
         with ui.grid(columns=4, rows=2).classes('w-full'):
-            ui.label().bind_text_from(datav, 'vKesselSoll', lambda v: f'Kessel-Soll-Temp = {v}').classes('text-base col-start-1  flex items-center')
-            ui.label().bind_text_from(datav, 'vKessel', lambda v: f'Kessel-Temp = {v}').classes('text-base flex items-center')
-            ui.label().bind_text_from(datav, 'vBrauchwasser', lambda v: f'Brauchw-Temp = {v}').classes('text-base col-start-3 flex items-center')
-            ui.label('Brauchw-Pumpe').classes('text-base col-start-4 flex items-center')
+            ui.label().bind_text_from(datav, 'vKesselSoll', lambda v: f'Kessel-Soll-Temp = {v}').classes('text-sm col-start-1  flex items-center')
+            ui.label().bind_text_from(datav, 'vKessel', lambda v: f'Kessel-Temp = {v}').classes('text-sm flex items-center')
+            ui.label().bind_text_from(datav, 'vBrauchwasser', lambda v: f'Brauchw-Temp = {v}').classes('text-sm col-start-3 flex items-center')
+            ui.label('Brauchw-Pumpe').classes('text-sm col-start-4 flex items-center')
             ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_Brauchwasser_an').classes('mt-3')
         # Zeile 4
-            ui.label('Brenner läuft').classes('text-base col-start-1 h-9')
+            ui.label('Brenner läuft').classes('text-sm col-start-1 h-9')
             ui.spinner(type='ball', color='red', size='sm').bind_visibility_from(datav, 'vBrenner_an').classes('h-9')
-            ui.label('Brennerstörung').classes('text-base col-start-2 h-9')
+            ui.label('Brennerstörung').classes('text-sm col-start-2 h-9')
             ui.spinner(size='sm', color='red').bind_visibility_from(datav, 'vBrenner_Stoerung').classes('h-9')
-            ui.label('H-Pumpe oben').classes('text-base col-start-3 h-9')
+            ui.label('H-Pumpe oben').classes('text-sm col-start-3 h-9')
             ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_oben_an').classes('h-9')
-            ui.label('H-Pumpe unten').classes('text-base col-start-4  h-9')
+            ui.label('H-Pumpe unten').classes('text-sm col-start-4  h-9')
             ui.spinner('facebook', size='sm').bind_visibility_from(datav, 'vPumpe_unten_an').classes('h-9')
 
     #---------------------------------------------------------------------------------------------------------      
@@ -359,7 +373,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
         # hier beginnt die Anzeige der linken Seite des Reiters -----------
         # Zuerst 3 Knöpfe in einer Zeile und dann die Tabelle
         with ui.row(wrap=False):
-            # ui.label('Steuerdaten:').classes('text-base').classes('mt-4')
+            # ui.label('Steuerdaten:').classes('text-sm').classes('mt-4')
             ui.button('Neu', on_click=tabledialogadd.open).classes('ml-4')
             ui.button('Ändern', on_click=updateeditdialog).classes('ml-8')
             ui.button('Löschen', on_click=remove).classes('ml-8')
@@ -373,9 +387,9 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
         # ui.label('Kesselsteuerung') 
-        gradv=0.0
-        gradb=0.0
-        gradanpass=0.0
+        gradv=0
+        gradb=0
+        gradanpass=0
               
         figkessel = {
             'data': 
@@ -446,8 +460,7 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                         # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
                         # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
                         templist=datav.vKesselDaten_y.copy()
-                        i=range(startidx,stopidx+1)
-                        for _ in i:
+                        for _ in range(startidx,stopidx+1):
                             templist[_]+=gradanpass
                         # i=startidx
                         # while i<=stopidx:
@@ -466,12 +479,12 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
 
         # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
         with ui.grid(columns=4, rows=1).classes('w-full'):
-            ui.number(label='Temp von',   value=0.0, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Temp von', suffix='°C', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
-            ui.number(label='Temp bis',   value=0.0, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Temp bis', suffix='°C', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
-            ui.number(label='Anpassen um',value=0.0, step=(settings.AussenTempStep), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Differenz', suffix='°C', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
+            ui.number(label='Temp von',   value=gradv, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Temp von', suffix='°C', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-6 ml-10')
+            ui.number(label='Temp bis',   value=gradb, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Temp bis', suffix='°C', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-6 ml-2')
+            ui.number(label='Anpassen um',value=gradanpass, step=(settings.AussenTempStep), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Differenz', suffix='°C', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-6 ml-2')
             ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
 
 
