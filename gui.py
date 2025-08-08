@@ -372,7 +372,11 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
     #---------------------------------------------------------------------------------------------------------            
     # Dritter Reiter -----------------------------------------------            
     with ui.tab_panel(kesselsteuerung):
-        # ui.label('Kesselsteuerung')           
+        # ui.label('Kesselsteuerung') 
+        gradv=0.0
+        gradb=0.0
+        gradanpass=0.0
+              
         figkessel = {
             'data': 
             [
@@ -414,12 +418,14 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
             
         # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an 
         def anpassen():
+            global gradv, gradb, gradanpass
             with plotkessel:
                 if gradanpass!=0:
                     startidx = 0
                     stopidx=0
                     foundstart= False
                     foundstop=False
+                      
                     i=0
                     for _ in datav.vKesselDaten_x:
                         if (datav.vKesselDaten_x[i]>= gradv) and foundstart==False:
@@ -440,27 +446,32 @@ with ui.tab_panels(tabs, value=information).classes('w-full'):
                         # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
                         # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
                         templist=datav.vKesselDaten_y.copy()
-                        i=startidx
-                        while i<=stopidx:
-                            templist[i]+=gradanpass
-                            i+=1
+                        i=range(startidx,stopidx+1)
+                        for _ in i:
+                            templist[_]+=gradanpass
+                        # i=startidx
+                        # while i<=stopidx:
+                        #     templist[i]+=gradanpass
+                        #     i+=1
                         datav.vKesselDaten_y=templist.copy()
                         figkessel['data'][0]['y']=templist.copy()
                         ui.update(plotkessel)
                         
                     else:
-                        ui.notify(f"Kesselkurvenanpassung misslungen Startindex:{startidx} Stopindex{stopidx}")
-            ui.update(plotkessel)
+                        ui.notify(f"Kesselkurvenanpassung misslungen Starttemp:{datav.vKesselDaten_x[startidx]} Stoptemp:{datav.vKesselDaten_x[stopidx]}")
+                        ui.notify(f"startidx:{startidx}, stopidx:{stopidx}")
+            plotkessel.update()
+            
         
 
         # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.                    
         with ui.grid(columns=4, rows=1).classes('w-full'):
-            ui.number(label='Grad von',   value=0, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Grad von', suffix='Grad', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
-            ui.number(label='Grad bis',   value=0, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Grad bis', suffix='Grad', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
-            ui.number(label='Anpassen um',value=0, step=(settings.AussenTempStep/10), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                      placeholder='Differenz', suffix='Grad', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
+            ui.number(label='Temp von',   value=0.0, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Temp von', suffix='°C', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-4')
+            ui.number(label='Temp bis',   value=0.0, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Temp bis', suffix='°C', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-4')
+            ui.number(label='Anpassen um',value=0.0, step=(settings.AussenTempStep), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
+                      placeholder='Differenz', suffix='°C', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-4')
             ui.button('OK', on_click=anpassen).classes('w-20 mt-4') 
 
 
