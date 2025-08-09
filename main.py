@@ -9,7 +9,7 @@ from sensors import sensor
 # import threading
 import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
-from multiprocessing import Queue#
+from multiprocessing import Queue
 from zeit import start_evaluatethread
 
 def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:

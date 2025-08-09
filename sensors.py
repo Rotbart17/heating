@@ -57,7 +57,12 @@ class sensor(Tables):
         else:
             #wenn es nicht das richtige Event war, wieder draufpacken
             self.queue_to_backend.put_nowait(result)
-        
+
+    def putqueuevalue(self)->None:
+        '''Senden den Tabellennamen und uo in die Queue um zu signalisieren, dass
+        der Sensor jetzt seinen Betrieb aufnimmt. Wwnn alle Threads laufen, kann die GUI mit dem Init fortfahren'''
+        self.queue_from_backend.put(self.tablename+"_up")
+
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
     def __del__(self):
@@ -74,6 +79,7 @@ class sensor(Tables):
         logging.info('Starte Sensorabfrage '+ self.tablename + '!')
         settings.ThreadList.append(self.x)
         self.x.start()
+        self.putqueuevalue()
         logging.debug('Sensorabfrage '+ self.tablename + ' gestartet!')
         
     # Das hier ist der Teil, der im Thread läuft
@@ -150,6 +156,7 @@ class sensor(Tables):
 
         # Die Daten Wandeln und speichern
         def processvalue(name:str):
+            
             while (self.threadstop == False):
                 rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
