@@ -27,6 +27,10 @@ DBPATH = "/home/ernst/Devel/heating/heizung.db"
 FastApiDBPath= "sqlite:///heizung.db"
 FastApiAPPName = "Heizung"
 
+# Alle Tabellennamen
+AllTableList=["Aussensensor", "Kesselsensor", "Innensensor", "Brauchwassersensor",
+              "KesselSollTemperatur", "ZeitSteuerung", "Brennersensor", "WorkDataView"]
+   
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor"]
 # Liste damit man alle Temperatur-Sensoren in einer Schleife bearbeiten kann.
 # wird in den Sensorklassen befüllt mit den einzelnen Sensor Threads

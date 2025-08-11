@@ -12,7 +12,7 @@ import logging
 import sys
 from multiprocessing import Manager, Queue
 import multiprocessing
-
+from queue import Empty
 # Fügt eigenes CSS hinzu, um die Pfeile der numerischen Eingabe ui.input zu vergrößern
 # funktioniert nicht bei Firefox
 ui.add_head_html('''
@@ -44,8 +44,30 @@ if __name__ in ['__mp_main__', '__main__']:
     queue_from_backend = Queue()
     backendproc = multiprocessing.Process(target=startbackend, name="Backend-Prozess", args=(queue_to_backend, queue_from_backend)) 
     backendproc.start()
-    # global datav
-    time.sleep(10)
+
+    # Warten, bis alle Backend-Prozesse (Tabellen) ihre Bereitschaft signalisiert haben.
+    # Wir erwarten für jede Tabelle aus settings.AllTableList eine Nachricht.
+    expected_tables = set(settings.AllTableList)
+    ready_tables = set()
+
+    timeout = 30  # Sekunden
+    start_time = time.time()
+
+    logging.info("Warte auf Backend-Prozesse...")
+    while len(ready_tables) < len(expected_tables):
+        if time.time() - start_time > timeout:
+            missing = expected_tables - ready_tables
+            logging.error(f"Timeout beim Warten auf Backend-Prozesse. Fehlende Tabellen: {missing}")
+            sys.exit("Backend konnte nicht initialisiert werden.")
+        try:
+            message = queue_from_backend.get(timeout=1)
+            table_name = message.replace('_up', '')
+            if table_name in expected_tables and table_name not in ready_tables:
+                ready_tables.add(table_name)
+                logging.info(f"Backend-Tabelle '{table_name}' ist bereit. ({len(ready_tables)}/{len(expected_tables)})")
+        except Empty:
+            continue
+    logging.info("Alle Backend-Prozesse sind bereit. Initialisiere GUI-Daten.")
     datav=maindata()
    
 
