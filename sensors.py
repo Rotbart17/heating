@@ -30,38 +30,15 @@ class sensor(Tables):
     # DB Tabelle anlegen wenn notwendig
     # def __init__(self,tablename): 
     def __init__(self, tablename:str, sql_columns:str, queue_to_backend:Queue, queue_from_backend:Queue) -> None:
-        super().__init__(tablename, sql_columns)
+        super().__init__(tablename, sql_columns, queue_to_backend,queue_from_backend)
         self._create_table()
-        self.queue_to_backend=queue_to_backend
-        self.queue_from_backend=queue_from_backend
+
 
         # so, die Tabelle existiert, jetzt noch die Sensorliste aufbauen
         settings.SensorList.append(self)
         logging.info('Sensor '+ self.tablename +' in die Sensorliste eingehängt!')
         # ok jetzt ist eigetlich alles vorbereitet, jetzt noch die Sensorabfrage starten
         self.startthread()
-
-
-    def getqueuevalue(self)->None:
-        '''Fragt einen Wert aus der Queue ab. Wenn der Wert dem Namen des Sensors
-        entspricht wird threadstop auf True gesetzt. Mal sehen wo ich dann die Threads wieder
-        einsammeln kann'''
-        try:
-            result=self.queue_to_backend.get(block=False)
-        # except self.queue_to_backend.empty:
-        except Empty:
-            return
-        
-        if result == self.tablename:
-            self.threadstop=True
-        else:
-            #wenn es nicht das richtige Event war, wieder draufpacken
-            self.queue_to_backend.put_nowait(result)
-
-    def putqueuevalue(self)->None:
-        '''Senden den Tabellennamen und uo in die Queue um zu signalisieren, dass
-        der Sensor jetzt seinen Betrieb aufnimmt. Wwnn alle Threads laufen, kann die GUI mit dem Init fortfahren'''
-        self.queue_from_backend.put(self.tablename+"_up")
 
 
     # DB Verbindung schließen wenn Objekt gelöscht wird
@@ -79,7 +56,7 @@ class sensor(Tables):
         logging.info('Starte Sensorabfrage '+ self.tablename + '!')
         settings.ThreadList.append(self.x)
         self.x.start()
-        self.putqueuevalue()
+        self._putqueuevalue()
         logging.debug('Sensorabfrage '+ self.tablename + ' gestartet!')
         
     # Das hier ist der Teil, der im Thread läuft
@@ -163,7 +140,7 @@ class sensor(Tables):
                 storevalue(temperature)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
                 time.sleep(self.waittime)
-                self.getqueuevalue()
+                self._getqueuevalue()
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
 
         # Warten, dass Thread wieder zurückkommt.

@@ -15,16 +15,20 @@ import settings
 import sqlite3
 from sqlite3 import Error
 import time
+from multiprocessing import Queue
+from queue import Empty
 
 
 
 
 class Tables:
 
-    def __init__(self, tablename: str, sql_columns: str) -> None:
+    def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue) -> None:
         """Initialisiert die Tabellen-Basisklasse."""
         self.tablename=tablename
         self.sql_columns = sql_columns
+        self.queue_to_backend=queue_to_backend
+        self.queue_from_backend=queue_from_backend
 
     # Tabelle anlegen wenn sie noch nicht existiert
     def _create_table(self):
@@ -139,15 +143,38 @@ class Tables:
             logging.info(f'Es konnte die Tabelle {self.tablename} nicht abgefragt werden!')
                 
         return (erg)
+    
+    def _getqueuevalue(self)->None:
+        '''Fragt einen Wert aus der Queue ab. Wenn der Wert dem Namen des Sensors
+        entspricht wird threadstop auf True gesetzt. Mal sehen wo ich dann die Threads wieder
+        einsammeln kann'''
+        try:
+            result=self.queue_to_backend.get(block=False)
+        # except self.queue_to_backend.empty:
+        except Empty:
+            return
+        
+        if result == self.tablename:
+            self.threadstop=True
+        else:
+            #wenn es etwas andreses war, wieder draufpacken
+            self.queue_to_backend.put_nowait(result)
+
+    def _putqueuevalue(self)->None:
+        '''Senden des Tabellennamen und "_up" in die Queue um zu signalisieren, dass
+        der Prozess jetzt seinen Betrieb aufnimmt. Wenn alle Threads laufen, kann die GUI mit dem Init fortfahren'''
+        self.queue_from_backend.put(self.tablename+"_up")
+
 
 
 class KesselSollTemperatur(Tables):
     '''legt die KesselSolTemperatur Tabelle an wenn nötig, füllt sie wenn nötig'''
-    def __init__(self, tablename: str, sql_columns: str):
-        super().__init__(tablename, sql_columns)
+    def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue):
+        super().__init__(tablename, sql_columns,queue_to_backend, queue_from_backend)
         self._create_table()
         if self._checktable()==False:
             self._init_Kesselvalues()
+        self._putqueuevalue()
 
     def _init_Kesselvalues(self):
         ''' k wird als Variable in der Formel settings.KesselKennlinie verwendet
@@ -160,6 +187,7 @@ class KesselSollTemperatur(Tables):
             data=(x,y)
             sql = settings.sql_init_Kesselkennlinie
             self._init_table(sql,data)
+        self._putqueuevalue()
         
 
 
@@ -167,30 +195,32 @@ class Zeitsteuerung(Tables):
     '''Zeitsteurungstabelle anlegen, und mit einem Defaultprogramm füllen
        wenn die Tabelle nicht leer ist'''
        
-    def __init__(self, tablename: str, sql_columns: str):
-        super().__init__(tablename, sql_columns)
+    def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue):
+        super().__init__(tablename, sql_columns, queue_to_backend, queue_from_backend)
         # Zeitsteuertabelle (Brauchwasser, Heizen, Nachtabsenkung, von, bis) ggf. erzeugen
         # kein checktable notwendig, da das der SQL befehl selbst erledigt, 
         # wird nur wegen der Initialisierung bnötigt.
         self._create_table()
-        # hier muss jetzt noch ein Init hin, damit in der Tabelle ein Grundprogramm drin ist 
+        # jetzt noch ein Init, damit in der Tabelle ein Grundprogramm drin ist 
         if self._checktable()==False:
             for i in settings.Standardprogramm:
                 self._init_table(settings.sql_writezeitsteuerung,i)
+        self._putqueuevalue()
 
 
 class Brennersensor(Tables):
     '''Brennerberiebs Logging Tabelle anlegen
         Tabelle für die Zustände des Brennersensors'''
-    def __init__(self, tablename: str, sql_columns: str):
-        super().__init__(tablename, sql_columns)
+    def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue):
+        super().__init__(tablename, sql_columns,queue_to_backend, queue_from_backend)
         self._create_table()
+        self._putqueuevalue()
 
 
 class WorkdataView(Tables):
     '''WorkdataView Tabelle und Default Inhalt anlegen'''
-    def __init__(self, tablename: str, sql_columns: str):
-        super().__init__(tablename, sql_columns)
+    def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue):
+        super().__init__(tablename, sql_columns, queue_to_backend, queue_from_backend)
         self._create_table()
         if self._checktable()==False:
             
@@ -222,3 +252,4 @@ class WorkdataView(Tables):
                 settings.threadstop )
             # so, die Tabelle existiert. Initdaten sind reingeschrieben.
             self._init_table(settings.init_WorkDataView_sql,data)
+            self._putqueuevalue()
