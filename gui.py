@@ -13,6 +13,7 @@ import sys
 from multiprocessing import Manager, Queue
 import multiprocessing
 from queue import Empty
+
 # Fügt eigenes CSS hinzu, um die Pfeile der numerischen Eingabe ui.input zu vergrößern
 # funktioniert nicht bei Firefox
 ui.add_head_html('''

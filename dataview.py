@@ -14,7 +14,7 @@ from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
-# from multiprocessing.queues import Queue as MPQueue
+from multiprocessing import Queue
 from typing import Any
 
 
@@ -79,6 +79,11 @@ class dv(Enum):
 ##### Start der Idee mit der Idee der Dataclass
 @dataclass
 class maindata(SensorView, KesselView, ZeitView):
+    
+    def __init__(self, queue_to_backend:Queue, queue_from_backend:Queue)->None:
+        self.queue_to_backend=queue_to_backend
+        self.queue_from_backend=queue_from_backend
+        
     # Erkenntnis zu dataclass: wenn man einen Defaultvalue für eine Variable vergibt muss man das für alle
     # folgenden Variablen auch machen. Damit nehme ich nun die Werte, die ich in settings.py vergeben habe.
     # Wenn ich die Variablen verwende, dann wird alles ungültig, wenn ich die anderen teile auch für die Datenklasse umbaue.
@@ -87,8 +92,6 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
-    queue_to_main : Any =None
-    queue_to_gui : Any =None
 
     # damit man den thread stoppen kann
     threadstop : bool = False
@@ -373,6 +376,9 @@ class maindata(SensorView, KesselView, ZeitView):
         logging.debug('DB-Abfrage Thread dataview gestartet!')
 
         self._start_sensor_thread()
+        # jetzt ist alles gestartet 
+        self.queue_from_backend.put("WorkDataView_up")
+        
     
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
