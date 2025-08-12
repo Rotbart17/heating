@@ -2,14 +2,15 @@
 # dieses Modul setzt die Werte für den Regelkreis die sich durch die Programmsteuerung ändern
 # Eigenen Thread eröffnen
 # Schleife die nur bei threadstop beendet wird
-# prüfen ab man die aktuellen Programmsterungsdaten hat
+# prüfen ab man die aktuellen Programmsteurungsdaten hat
 # Programmsteuerungsdaten lesen
 # Werte für den Vergleich adaptieren
 # Vergleich mit dem Tag(en) beginnen
 #   Wenn das passt den Uhrzeitbereich abchecken
 #       Wenn das passt dann die entsprechende Variable setzen
 #       Wenn es nicht passt die entsprechende Variable löschen 
-# Hand/Dusche hat einen Vorrang vor der Heizung. Das muss aber im Regelkreis berücksichtigt werden.
+# Hand/Dusche hat einen Vorrang vor dem Heizbetrieb. Das muss aber im Regelkreis berücksichtigt werden.
+# Fähigkeiten:
 # Werte: Brauchwasser an / aus, Heizung an / aus, Nachtabsenkung an / aus
 # Schlafen
 from datetime import datetime
@@ -20,6 +21,8 @@ from table import Tables
 import random
 from dataview import maindata
 import time
+from multiprocessing import Queue
+from queue import Empty
 
 
 
@@ -71,10 +74,10 @@ def day_in_range(programday:int)->bool:
     return (False)  
 
        
-def evaluate_program()->None:
+def evaluate_program(queue_to_backend:Queue)->None:
     '''Wertet die Programmsteuerungstabelle minütlich aus und setzt/löscht die Variablen für Brauchwasser, Heizung und Nachtabsenkung'''
     
-    while(datav.threadstop==True):
+    while(datav.threadstop==False):
         # Programmsteuerungsdaten einlesen
         # typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
         t=datetime.now()
@@ -86,37 +89,55 @@ def evaluate_program()->None:
             zs=datav.vZeitsteuerung[i]
             match (zs['type']):
                 case 'Brauchw':
-                    if day_in_range(zs['tage'] and time_in_range(zs['von'],zs['bis'],zeitpunkt)):
+                    if day_in_range(zs['tage']) and time_in_range(zs['von'],zs['bis'],zeitpunkt):
                         datav.vBrauchwasserbereiten=True
+                        datav.vZeitsteuerung[i]['active']=True
                     else:
-                        datav._Brauchwasserbereiten=False
+                        datav.vBrauchwasserbereiten=False
+                        datav.vZeitsteuerung[i]['active']=False
                         
                 case 'Heizen':
-                        if day_in_range(zs['tage'] and time_in_range(zs['von'],zs['bis'],zeitpunkt)):
+                        if day_in_range(zs['tage']) and time_in_range(zs['von'],zs['bis'],zeitpunkt):
                             datav.vHeizen=True
+                            datav.vZeitsteuerung[i]['active']=True
                         else:
                             datav.vHeizen=False
+                            datav.vZeitsteuerung[i]['active']=False
     
                 case 'Nachabsenk.':
-                        if day_in_range(zs['tage'] and time_in_range(zs['von'],zs['bis'],zeitpunkt)):
+                        if day_in_range(zs['tage']) and time_in_range(zs['von'],zs['bis'],zeitpunkt):
                             datav.vNachtabsenkung=True
+                            datav.vZeitsteuerung[i]['active']=True
                         else:
                             datav.vNachtabsenkung=False
+                            datav.vZeitsteuerung[i]['active']=False
                 case _:
                     # Hier sollte niemand vorbeischauen
                     logging.error(f"Der ausgewählte Heiztyp  {zs['type']} ist unbekannt!")
         time.sleep(sleeptime)
+        try:
+            message = queue_to_backend.get(timeout=1)
+            if message=="threadstop":
+                datav.threadstop=True
+                logging.info(f"evaluatethread ist gestoppt.")
+        except Empty:
+            continue
+        
+ 
+ 
     
-def start_evaluatethread()->None:
+def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue)->None:
 
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
     datav=maindata()
    
-    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung")
-    logging.info('Starte Prgrammsteuerungsthread')
+    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung", args=(queue_to_backend,))
+    logging.info('Starte Programmsteuerungsthread')
     settings.ThreadList.append(x)
     x.start()
     logging.debug('Programmsteuerungsthread gestartet!')
+    #jetzt ist hier alles gestartet, damit Info an die GUI
+    queue_from_backend.put("start_evaluatethread"+"_up")
 
     
