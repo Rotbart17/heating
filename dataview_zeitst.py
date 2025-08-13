@@ -4,11 +4,13 @@
 
 
 import settings
-from dataclasses import dataclass
-import logging
+from dataclasses import dataclass, field
+import logging 
 import sqlite3
 from enum import Enum
-from time import time
+import time
+from time import time,time_ns
+
 
 logging.basicConfig(
     filename='gui.log',
@@ -19,58 +21,63 @@ logging.basicConfig(
 
 @dataclass
 class ZeitView:
-    # Ein Feld von Tupeln die die gesamte Info der Zeitsteuerungsinfo beinhaltet
-    Zeitsteuerungszeilen=[]
+    # Ein Feld, das die gesamte Info der Zeitsteuerung beinhaltet.
+    # Durch default_factory wird sichergestellt, dass jede Instanz eine eigene Liste bekommt.
+    Zeitsteuerungszeilen: list = field(default_factory=list)
     
 
     # liest alle Daten der Zeitsteuerungstabelle
     def _zeitsteuerungload(self):
         try:
+            # Die 'with'-Anweisung kümmert sich um das Öffnen und Schließen der Verbindung.
             with sqlite3.connect(settings.DBPATH) as db:
                 logging.debug('Zeitsteuerungstabelle lesen!')
                 cursor=db.cursor()
                 sql= settings.sql_readzeitsteuerung
                 cursor.execute(sql)
                 self.Zeitsteuerungszeilen=cursor.fetchall()
-                # self._Zeitsteuerungszeilen=[item for item in t]
-                cursor.close()
-            db.close()
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
             exit(1)
 
     # schreibt die Liste der Dictionaryzeilen in die Zeitteuerungstabelle
-    def _zeitsteuerungwrite(self,value):
-        try:
-            db=sqlite3.connect(settings.DBPATH)
-            logging.debug('Zeitsteuerungs Datensätze in DB schreiben!')
-            cursor=db.cursor()
-            cursor.execute("BEGIN")
-            # Tabelleninhalt löschen
-            sql= settings.sql_deletezeitsteuerung
-            cursor.execute(sql)
-            # jetzt den Inhalt der Tabelle wieder in die DB schreiben 
-            sql= settings.sql_writezeitsteuerung
-            # Speicherzeit zum Vermerk damit man weiß ob man alles lesen muss.
-            changetime=time.time_ns()
-            for i in value:
-                i[6]=changetime
-                cursor.execute(sql,i)
-            cursor.execute("COMMIT")
-            cursor.close()
+    def _zeitsteuerungwrite(self, value: list[dict]):
+        """
+        Schreibt die komplette Zeitsteuerungstabelle atomar neu.
+        Erst wird alles gelöscht, dann die neuen Werte eingefügt.
+        """
+        changetime = time_ns()
         
+        # Erstelle eine Kopie der Daten und setze den aktuellen Zeitstempel.
+        # 'value' ist eine Liste von Dictionaries aus der GUI.
+        data_to_write = []
+        for row in value:
+            new_row = row.copy()
+            new_row['changetime'] = changetime
+            data_to_write.append(new_row)
+
+        try:
+            # Die 'with'-Anweisung stellt eine transaktionale Operation sicher.
+            with sqlite3.connect(settings.DBPATH) as db:
+                cursor = db.cursor()
+                logging.debug('Zeitsteuerungs Datensätze in DB schreiben!')
+                
+                # 1. Tabelleninhalt löschen
+                cursor.execute(settings.sql_deletezeitsteuerung)
+                
+                # 2. Den neuen Inhalt effizient mit executemany einfügen
+                if data_to_write:
+                    cursor.executemany(settings.sql_writezeitsteuerung, data_to_write)
         except sqlite3.Error as e:
-            cursor.execute("ROLLBACK")
             logging.error(f"Der Fehler {e} ist beim Schreiben der Zeitsteuerungstabelle aufgetreten")
-            exit(1)
-        finally:
-            db.close()
+            raise
     
     @property
     def vZeitsteuerung(self):
-        return (self.Zeitsteuerungszeilen)
+        return self.Zeitsteuerungszeilen
 
     @vZeitsteuerung.setter
-    def vZeitsteuerung(self,value):
+    def vZeitsteuerung(self, value: list[dict]):
         self._zeitsteuerungwrite(value)
-    
+        # Nach dem Schreiben die Daten neu laden, um den internen Zustand konsistent zu halten.
+        self._zeitsteuerungload()

@@ -69,7 +69,7 @@ if __name__ in ['__mp_main__', '__main__']:
         except Empty:
             continue
     logging.info("Alle Backend-Prozesse sind bereit. Initialisiere GUI-Daten.")
-    datav=maindata()
+    datav=maindata(queue_to_backend, queue_from_backend)
    
 
 # globale Variablen und Funktionen für die 3 Reiter "Einstellungen
