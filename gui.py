@@ -94,7 +94,7 @@ def update_table() ->None:
     rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 'bis': item[4], 'active':item[5], 'changetime':item[6]} for item in datav.vZeitsteuerung]
     table=ui.table(selection='single',columns=columns, rows=rows, row_key='line_id',on_select=handle_click).classes('w-11/12 mr-4').props('hide-no-data')
 
-# Zeilennummer in der Tabelle
+# Zeilennummer in der Tabelle setzen
 if len(datav.Zeitsteuerungszeilen)> 0:
     id = len (datav.Zeitsteuerungszeilen)
 else:
@@ -132,7 +132,8 @@ def init_data():
 
 # ich weiß noch nicht ob man das hier braucht. Aber die Hülle ist schon mal da.
 def de_init_data():
-    stopbackend(True)
+    queue_to_backend.put('threadstop')
+    # stopbackend(True)
     datav.threadstop=True
     backendproc.join()
     # del datav

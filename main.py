@@ -26,7 +26,7 @@ def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
     zst= Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns, queue_to_backend, queue_from_backend)
     bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, queue_to_backend, queue_from_backend)
     wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, queue_to_backend, queue_from_backend)
-    start_evaluatethread()
+    start_evaluatethread(queue_to_backend, queue_from_backend)
     
     # der Überwachungsprozess sollte aus system-d gestartet werden.
 
@@ -34,15 +34,15 @@ def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
 # hier ziehen wir dann wieder die Bremse    
 def stopbackend(stop:bool)->None:
     '''Stoppt alle Backendthreads'''
-    kss.threadstop=stop
-    ass.threadstop=stop
-    bws.threadstop=stop
-    iss.threadstop=stop
+    # kss.threadstop=stop
+    # ass.threadstop=stop
+    # bws.threadstop=stop
+    # iss.threadstop=stop
 
 #     zst.threadstop=True
 #     bst.threadstop=True
-    print("ich bin echt neugierig!")
-    time.sleep(5)
+    # print("ich bin echt neugierig!")
+    # time.sleep(5)
 
     # Ende Funktionen
     # Threads wieder einsammeln

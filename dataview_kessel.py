@@ -19,67 +19,41 @@ logging.basicConfig(
 
 @dataclass
 class KesselView:
-        # Laden der Kesselkennlinie mit x und y Werten
     def _kesseldataload(self):
+        """Lädt die Kesselkennlinie (x- und y-Werte) aus der Datenbank."""
         try:
             with sqlite3.connect(settings.DBPATH) as db:
                 logging.debug('Kesselkennlinie lesen!')
-                cursor=db.cursor()
-                sql= f"SELECT value_x from {settings.KesselSollTemperatur} ;"
+                cursor = db.cursor()
+                # Es ist effizienter, beide Spalten auf einmal abzurufen und die Reihenfolge sicherzustellen.
+                sql = f"SELECT value_x, value_y FROM {settings.KesselSollTemperatur} ORDER BY id;"
                 cursor.execute(sql)
-                t=cursor.fetchall()
-                self._KesselDaten_x=[item[0] for item in t]
-                sql= f"SELECT value_y from {settings.KesselSollTemperatur} ;"
-                cursor.execute(sql)
-                t=cursor.fetchall()
-                cursor.close()
-                self._KesselDaten_y=[item[0] for item in t]
-            db.close()
+                results = cursor.fetchall()
+                if results:
+                    # Entpackt die Liste von Tupeln in zwei separate Listen
+                    self._KesselDaten_x, self._KesselDaten_y = zip(*results)
+                    # zip gibt Tupel zurück, wir konvertieren sie in Listen
+                    self._KesselDaten_x = list(self._KesselDaten_x)
+                    self._KesselDaten_y = list(self._KesselDaten_y)
+                else:
+                    self._KesselDaten_x = []
+                    self._KesselDaten_y = []
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Kesselkennlinie aufgetreten")
             exit(1)
 
 
-    
-
-    # Speichern der Kesselkennlinie
-    # immer die ganze Kennlinie, wird nur beim Ändern der Daten aufgerufen.
-    # aber eigentlich muss man die x-Anteile nie schreiben die sind ja fix.
-    def _writeKesselDaten_x(self,value):
-        self._KesselDaten_x=value.copy()
+    def _writeKesselDaten_y(self, value):
+        """Speichert die y-Werte der Kesselkennlinie in der Datenbank."""
+        self._KesselDaten_y = value.copy()
         try:
+            # Die 'with'-Anweisung stellt eine transaktionale Operation sicher (automatisches Commit/Rollback)
+            # und schließt die Verbindung.
             with sqlite3.connect(settings.DBPATH) as db:
-                logging.debug('Kesselkennline in DB schreiben!')
-                cursor=db.cursor()
-                sql= settings.sql_write_KesselKennlinie_x
-                i=1
-                for _ in range(int(settings.AussenMinTemp),int(settings.AussenMaxTemp),int(settings.AussenTempStep)):
-                    t=(self._KesselDaten_x[i-1],i)
-                    cursor.execute(sql,t)
-                    i+=1
-                cursor.close()
-            db.close()
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_x aufgetreten")
-            exit(1)
-          
-
-    def _writeKesselDaten_y(self,value):
-        self._KesselDaten_y=value.copy()
-        try:
-            db=sqlite3.connect(settings.DBPATH)
-            logging.debug('Kesselkennline in DB schreiben!')
-            cursor=db.cursor()
-            sql= settings.sql_write_KesselKennlinie_y
-            i=1
-            for _ in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
-                t=(self._KesselDaten_y[i-1],i)
-                cursor.execute(sql,t)
-                i+=1
-            db.commit()
-            cursor.close()
-            db.close()
-
+                logging.debug('Kesselkennline (y-Werte) in DB schreiben!')
+                # Daten für eine effizientere `executemany`-Operation vorbereiten
+                data_to_update = [(y_value, idx + 1) for idx, y_value in enumerate(self._KesselDaten_y)]
+                db.executemany(settings.sql_write_KesselKennlinie_y, data_to_update)
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
             exit(1)
