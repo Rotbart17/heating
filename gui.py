@@ -134,7 +134,7 @@ def init_data():
 def de_init_data():
     queue_to_backend.put('threadstop')
     # stopbackend(True)
-    datav.threadstop=True
+    # datav.threadstop=True
     backendproc.join()
     # del datav
 
