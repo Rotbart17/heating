@@ -130,9 +130,9 @@ def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue)->None
 
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
-    datav=maindata()
+    datav=maindata(queue_to_backend,queue_from_backend)
    
-    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung", args=(queue_to_backend,))
+    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung", args=(queue_to_backend,queue_from_backend))
     logging.info('Starte Programmsteuerungsthread')
     settings.ThreadList.append(x)
     x.start()
