@@ -14,7 +14,7 @@ from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
-from multiprocessing import Queue
+# from multiprocessing.queues import Queue as MPQueue
 from typing import Any
 
 
@@ -79,11 +79,6 @@ class dv(Enum):
 ##### Start der Idee mit der Idee der Dataclass
 @dataclass
 class maindata(SensorView, KesselView, ZeitView):
-    
-    def __init__(self, queue_to_backend:Queue, queue_from_backend:Queue)->None:
-        self.queue_to_backend=queue_to_backend
-        self.queue_from_backend=queue_from_backend
-        
     # Erkenntnis zu dataclass: wenn man einen Defaultvalue für eine Variable vergibt muss man das für alle
     # folgenden Variablen auch machen. Damit nehme ich nun die Werte, die ich in settings.py vergeben habe.
     # Wenn ich die Variablen verwende, dann wird alles ungültig, wenn ich die anderen teile auch für die Datenklasse umbaue.
@@ -92,6 +87,8 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
+    queue_to_main : Any =None
+    queue_to_gui : Any =None
 
     # damit man den thread stoppen kann
     threadstop : bool = False
@@ -169,140 +166,54 @@ class maindata(SensorView, KesselView, ZeitView):
     _Brenner_an : bool =False
     _Brenner_Stoerung : bool = False
 
+    _VIEW_FIELDS = (
+        "Winter",
+        "Wintertemp",
+        "Kessel",
+        "KesselSoll",
+        "Heizen",
+        "Nachtabsenkung",
+        "Brauchwasser",
+        "BrauchwasserSoll",
+        "BrauchwasserAus",
+        "Brauchwasserbereiten",
+        "Innen",
+        "Aussen",
+        "Pumpe_oben_an",
+        "Pumpe_unten_an",
+        "Pumpe_Brauchwasser_an",
+        "Brenner_an",
+        "Brenner_Stoerung",
+        "Hand_Dusche",
+    )
+
+    def _update_view_field(self, results, name, force=False):
+        value = results[dv[name].value]
+        changetime_name = f"{name}_changetime"
+        changetime = results[dv[changetime_name].value]
+
+        attr = f"_{name}"
+        changetime_attr = f"_{changetime_name}"
+
+        if force or getattr(self, changetime_attr, 0) < changetime:
+            setattr(self, attr, value)
+            setattr(self, changetime_attr, changetime)
+
     # lädt die Daten aus der Datenbank aus der Tabelle WorkDataView 
     # in die klasseninternen Variablen
-    def _viewloader(self,initialrun):
+    def _viewloader(self, initialrun):
         try:
             with sqlite3.connect(settings.DBPATH) as db:
-                cursor=db.cursor()
-                sql= settings.read_WorkDataView_complete
+                cursor = db.cursor()
+                sql = settings.read_WorkDataView_complete
                 cursor.execute(sql)
-                results=cursor.fetchone()
-                self._lastruntime=(results[dv.ViewChanged.value])
+                results = cursor.fetchone()
 
-                if initialrun==True:
-                    # das läuft nur beim ersten Aufruf um die Variablen mit
-                    # DB Inhalt zu zu füllen
-                   
-                    
-                    self._Winter=results[dv.Winter.value]
-                    self._Winter_changetime=results[dv.Winter_changetime.value]
-                    self._Wintertemp=results[dv.Wintertemp.value]
-                    self._Wintertemp_changetime=results[dv.Wintertemp_changetime.value]
-                    self._Kessel=results[dv.Kessel.value]
-                    self._Kessel_changetime=results[dv.Kessel_changetime.value]
-                    self._KesselSoll=results[dv.KesselSoll.value]
-                    self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
-                    self._Heizen=results[dv.Heizen.value]
-                    self._Heizen_changetime=results[dv.Heizen_changetime.value]
-                    self._Nachtabsenkung=results[dv.Nachtabsenkung.value]
-                    self._Nachtabsenkung_changetime=results[dv.Nachtabsenkung_changetime.value]
-                    self._Brauchwasser=results[dv.Brauchwasser.value]
-                    self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
-                    self._BrauchwasserSoll=results[dv.BrauchwasserSoll.value]
-                    self._BrauchwasserSoll_changetime=results[dv.BrauchwasserSoll_changetime.value]
-                    self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
-                    self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
-                    self._Brauchwasserbereiten=results[dv.Brauchwasserbereiten.value]
-                    self._Brauchwasserbereiten_changetime=results[dv.Brauchwasserbereiten_changetime.value]
-                    self._Innen=results[dv.Innen.value]
-                    self._Innen_changetime=results[dv.Innen_changetime.value]
-                    self._Aussen=results[dv.Aussen.value]
-                    self._Aussen_changetime=results[dv.Aussen_changetime.value]
-                    self._Pumpe_oben_an=results[dv.Pumpe_oben_an.value]
-                    self._Pumpe_oben_an_changetime=results[dv.Pumpe_oben_an_changetime.value]
-                    self._Pumpe_unten_an=results[dv.Pumpe_unten_an.value]
-                    self._Pumpe_unten_an_changetime=results[dv.Pumpe_unten_an_changetime.value]
-                    self._Pumpe_Brauchwasser_an=results[dv.Pumpe_Brauchwasser_an.value]
-                    self._Pumpe_Brauchwasser_an_changetime=results[dv.Pumpe_Brauchwasser_an_changetime.value]
-                    self._Brenner_an=results[dv.Brenner_an.value]
-                    self._Brenner_an_changetime=results[dv.Brenner_an_changetime.value]
-                    self._Brenner_Stoerung=results[dv.Brenner_Stoerung.value]
-                    self._Brenner_Stoerung_changetime=results[dv.Brenner_Stoerung_changetime.value]
-                    self._Hand_Dusche=results[dv.Hand_Dusche.value]
-                    self._Hand_Dusche_changetime=results[dv.Hand_Dusche_changetime.value]
-                    self.threadstop=results[dv.threadstop.value]
-                else:
-                    # hier ist die regelmäßige Abfrage der Werte aus der DB weil ViewChanged
-                    # sagt, dass es was Neues gibt, jetzt ist nur noch die Frage welche Werte sich
-                    # geändert haben
-                        
-                   
-                    if self._Winter_changetime<results[dv.Winter_changetime.value]:
-                        self._Winter_changetime=results[dv.Winter_changetime.value]
-                        self._Winter=results[dv.Winter.value]
+            self._lastruntime = results[dv.ViewChanged.value]
+            for field in self._VIEW_FIELDS:
+                self._update_view_field(results, field, force=initialrun)
 
-                    if self._Wintertemp_changetime<results[dv.Wintertemp_changetime.value]:
-                        self._Wintertemp_changetime=results[dv.Wintertemp_changetime.value]
-                        self._Wintertemp=results[dv.Wintertemp.value]
-
-                    if self._Kessel_changetime<results[dv.Kessel_changetime.value]:
-                        self._Kessel=results[dv.Kessel.value]
-                        self._Kessel_changetime=results[dv.Kessel_changetime.value]
-                    
-                    if self._KesselSoll_changetime<results[dv.KesselSoll_changetime.value]:
-                        self._KesselSoll=results[dv.KesselSoll.value]
-                        self._KesselSoll_changetime=results[dv.KesselSoll_changetime.value]
-                    
-                    if self._Heizen_changetime<results[dv.Heizen_changetime.value]:
-                        self._Heizen=results[dv.Heizen.value]
-                        self._Heizen_changetime=results[dv.Heizen_changetime.value]
-                    
-                    if self._Nachtabsenkung_changetime<results[dv.Nachtabsenkung_changetime.value]:
-                        self._Nachtabsenkung=results[dv.Nachtabsenkung.value]
-                        self._Nachtabsenkung_changetime=results[dv.Nachtabsenkung_changetime.value]
-                    
-                    if self._Brauchwasser_changetime<results[dv.Brauchwasser_changetime.value]:
-                        self._Brauchwasser=results[dv.Brauchwasser.value]
-                        self._Brauchwasser_changetime=results[dv.Brauchwasser_changetime.value]
-                    
-                    if self._BrauchwasserSoll_changetime<results[dv.BrauchwasserSoll_changetime.value]:
-                        self._BrauchwasserSoll=results[dv.BrauchwasserSoll.value]
-                        self._BrauchwasserSoll_changetime=results[dv.BrauchwasserSoll_changetime.value]
-                    
-                    if self._BrauchwasserAus_changetime<results[dv.BrauchwasserAus_changetime.value]:
-                        self._BrauchwasserAus=results[dv.BrauchwasserAus.value]
-                        self._BrauchwasserAus_changetime=results[dv.BrauchwasserAus_changetime.value]
-                    
-                    if self._Brauchwasserbereiten_changetime<results[dv.Brauchwasserbereiten_changetime.value]:
-                        self._Brauchwasserbereiten=results[dv.Brauchwasserbereiten.value]
-                        self._Brauchwasserbereiten_changetime=results[dv.Brauchwasserbereiten_changetime.value]
-                    
-                    if self._Innen_changetime<results[dv.Innen_changetime.value]:
-                        self._Innen=results[dv.Innen.value]
-                        self._Innen_changetime=results[dv.Innen_changetime.value]
-
-                    if self._Aussen_changetime<results[dv.Aussen_changetime.value]:
-                        self._Aussen=results[dv.Aussen.value]
-                        self._Aussen_changetime=results[dv.Aussen_changetime.value]
-                    
-                    if self._Pumpe_oben_an_changetime<results[dv.Pumpe_oben_an_changetime.value]:
-                        self._Pumpe_oben_an=results[dv.Pumpe_oben_an.value]
-                        self._Pumpe_oben_an_changetime=results[dv.Pumpe_oben_an_changetime.value]
-                    
-                    if self._Pumpe_unten_an_changetime<results[dv.Pumpe_unten_an_changetime.value]:
-                        self._Pumpe_unten_an=results[dv.Pumpe_unten_an.value]
-                        self._Pumpe_unten_an_changetime=results[dv.Pumpe_unten_an_changetime.value]
-                    
-                    if self._Pumpe_Brauchwasser_an_changetime<results[dv.Pumpe_Brauchwasser_an_changetime.value]:
-                        self._Pumpe_Brauchwasser_an=results[dv.Pumpe_Brauchwasser_an.value]
-                        self._Pumpe_Brauchwasser_an_changetime=results[dv.Pumpe_Brauchwasser_an_changetime.value]
-                    
-                    if self._Brenner_an_changetime<results[dv.Brenner_an_changetime.value]:
-                        self._Brenner_an=results[dv.Brenner_an.value]
-                        self._Brenner_an_changetime=results[dv.Brenner_an_changetime.value]
-                    
-                    if self._Brenner_Stoerung_changetime<results[dv.Brenner_Stoerung_changetime.value]:
-                        self._Brenner_Stoerung=results[dv.Brenner_Stoerung.value]
-                        self._Brenner_Stoerung_changetime=results[dv.Brenner_Stoerung_changetime.value]
-                    
-                    if self._Hand_Dusche_changetime<results[dv.Hand_Dusche_changetime.value]:
-                        self._Hand_Dusche=results[dv.Hand_Dusche.value]
-                        self._Hand_Dusche_changetime=results[dv.Hand_Dusche_changetime.value]
-                    
-                    self.threadstop=results[dv.threadstop.value]
-            cursor.close()
-            db.close()
+            self.threadstop = results[dv.threadstop.value]
         except sqlite3.Error as e:
             logging.error(f"Error {e} ist aufgetreten")
             exit(1)
@@ -376,9 +287,6 @@ class maindata(SensorView, KesselView, ZeitView):
         logging.debug('DB-Abfrage Thread dataview gestartet!')
 
         self._start_sensor_thread()
-        # jetzt ist alles gestartet 
-        self.queue_from_backend.put("WorkDataView_up")
-        
     
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
