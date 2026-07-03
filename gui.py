@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 import settings
 from dataview import maindata
-from main import startbackend
+from main import BACKEND_READY, startbackend
 import logging
 import sys
 from multiprocessing import Queue
@@ -26,30 +26,29 @@ class GuiState:
     stopped: bool = False
 
 
-def wait_for_backend(queue_to_frontend: Any, timeout: int = 30) -> None:
-    # Warten, bis alle Backend-Prozesse (Tabellen) ihre Bereitschaft signalisiert haben.
-    expected_tables = set(settings.AllTableList)
-    ready_tables = set()
+def wait_for_backend(queue_to_frontend: Any, backendproc: multiprocessing.Process, timeout: int = 30) -> None:
+    # Warten, bis startbackend alle Backend-Komponenten gestartet hat.
     start_time = time.time()
 
-    logging.info("Warte auf Backend-Prozesse...")
-    while len(ready_tables) < len(expected_tables):
+    logging.info("Warte auf Backend-Start...")
+    while True:
         if time.time() - start_time > timeout:
-            missing = expected_tables - ready_tables
-            logging.error(f"Timeout beim Warten auf Backend-Prozesse. Fehlende Tabellen: {missing}")
+            logging.error("Timeout beim Warten auf Backend-Start.")
             sys.exit("Backend konnte nicht initialisiert werden.")
 
         try:
             message = queue_to_frontend.get(timeout=1)
         except Empty:
+            if not backendproc.is_alive():
+                logging.error("Backend-Prozess wurde vor dem Startsignal beendet.")
+                sys.exit("Backend-Prozess wurde vor dem Startsignal beendet.")
             continue
 
-        table_name = message.replace('_up', '')
-        if table_name in expected_tables and table_name not in ready_tables:
-            ready_tables.add(table_name)
-            logging.info(f"Backend-Tabelle '{table_name}' ist bereit. ({len(ready_tables)}/{len(expected_tables)})")
+        if message == BACKEND_READY:
+            logging.info("Backend ist bereit. Initialisiere GUI-Daten.")
+            return
 
-    logging.info("Alle Backend-Prozesse sind bereit. Initialisiere GUI-Daten.")
+        logging.debug(f"Ignoriere Backend-Startmeldung: {message}")
 
 
 def create_state() -> GuiState:
@@ -62,7 +61,7 @@ def create_state() -> GuiState:
     )
     backendproc.start()
     try:
-        wait_for_backend(queue_to_frontend)
+        wait_for_backend(queue_to_frontend, backendproc)
     except BaseException:
         queue_to_backend.put('threadstop')
         backendproc.join(timeout=5)

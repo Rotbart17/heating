@@ -12,6 +12,9 @@ from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataVi
 from multiprocessing import Queue
 from zeit import start_evaluatethread
 
+BACKEND_READY = "backend_up"
+
+
 def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
     '''Startet alle Backendthreads'''
     dbinit.init_db_environment()
@@ -27,6 +30,7 @@ def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
     bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, queue_to_backend, queue_from_backend)
     wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, queue_to_backend, queue_from_backend)
     start_evaluatethread(queue_to_backend, queue_from_backend)
+    queue_from_backend.put(BACKEND_READY)
     
     # der Überwachungsprozess sollte aus system-d gestartet werden.
 
