@@ -42,7 +42,7 @@ class SensorView:
     _InnenDaten_y : list = field(default_factory=list)
     _AussenDaten_x : list = field(default_factory=list)
     _AussenDaten_y : list = field(default_factory=list)
-        # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
+    # damit man die Sensoren in einer Schleife abfragen kann, müssen sie in eine Liste
     # Jason meinte man sollte ien Feld aus Pointern machen. Für C hat er recht.
     # aber so müsste es ja auchgehen.
     _SensorXListe.append(_KesselIstDaten_x)
@@ -57,7 +57,7 @@ class SensorView:
     # Wartezeit in Sec bevor die nächste Abfrage der Sensordaten durchgeführt werden
     _sensorsleeptime : int = 60
     
-    # dummy Definition wird dann in der Hauptlklasse gesetzt
+    # dummy Definition wird dann in der Hauptklasse gesetzt
     threadstop=False
     
     def _start_sensor_thread(self):           

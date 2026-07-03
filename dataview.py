@@ -87,8 +87,8 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
-    queue_to_main : Any =None
-    queue_to_gui : Any =None
+    queue_to_backend : Any =None
+    queue_to_frontend : Any =None
 
     # damit man den thread stoppen kann
     threadstop : bool = False
@@ -187,6 +187,8 @@ class maindata(SensorView, KesselView, ZeitView):
         "Hand_Dusche",
     )
 
+    # Setzt für jeder Attribut die Changezeit, wenn sie neuer ist als die bekannte.
+    # Force ist für die Initialisierung gesetzt
     def _update_view_field(self, results, name, force=False):
         value = results[dv[name].value]
         changetime_name = f"{name}_changetime"

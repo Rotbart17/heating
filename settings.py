@@ -34,7 +34,7 @@ AllTableList=["Aussensensor", "Kesselsensor", "Innensensor", "Brauchwassersensor
 # Sensornames ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwassersensor"]
 # Liste damit man alle Temperatur-Sensoren in einer Schleife bearbeiten kann.
 # wird in den Sensorklassen befüllt mit den einzelnen Sensor Threads
-# Es braucht auch noch einen Brenner Sensor: Brennersensor Der Thread mit dem Brennersensor kann auch in die Liste
+
 SensorList = []
 
 
@@ -46,7 +46,7 @@ TemperaturSensorList = ["Kesselsensor", "Aussensensor", "Innensensor", "Brauchwa
 
 # Sensor Dictionary um jede Sensorklasse mit der richtigen Formel zu versorgen, sonst muss der 
 # Code für jede Class kopiert werden.
-# DieFormel übersetzt die Messwerte (Tabelle aus dem Handbuch) in Temperaturen
+# Die Formeln übersetzten die Messwerte (Tabelle aus dem Handbuch) in Temperaturen
 
 sensordict = {
     "Kesselsensor" : "(-7.79670769172508*pow(rt,3)) + (39.9983314997706*pow(rt,2)) + (-109.299890516815*rt) + 163.716704847826",
@@ -166,7 +166,7 @@ Pumpe_unten_an : bool = False
 # die Tabelle der Anzeigeschicht heisst:----------
 WorkDataView = "WorkDataView"
 
-# SQL Statement für die Tabelle der Anxzeigeschicht
+# SQL Statement für das Erstelllen der Tabelle der Anxzeigeschicht
 # changetime ist der Zeitpunkt der letzten Änderung in ns
 # ViewChange ist der Zeitpunkt an dem die letzte Änderung an irgendeiner Stelle im View
 # vorgenommen wurde
@@ -292,10 +292,10 @@ sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 
 # als Programm brauchen wir 
 # Montag-Sonntag Nachtabsenkung 22:00-7:00,inaktiv, keine Zeit
-# Brauchwasser Mo-Fr 6:00-9.00,inaktiv, keine Zeit
-# Brauchwasser Sa,So 6:00-9:00,inaktiv, keine Zeit
+# Brauchwasser Mo-Fr 6:00-9.00,  inaktiv, keine Zeit
+# Brauchwasser Sa,So 6:00-9:00,  inaktiv, keine Zeit
 # Brauchwasser Sa,So 16:00-19:00,inaktiv, keine Zeit
-# Heizbetrieb Mo-So 00:00-24:00,inaktiv, keine Zeit
+# Heizbetrieb  Mo-So 00:00-24:00,inaktiv, keine Zeit
 changetime=time.time_ns()
 Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,changetime), \
                      (2,'Brauchw','Mo-Fr','6:00','9:00',0,changetime), \
