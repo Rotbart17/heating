@@ -90,7 +90,7 @@ def shutdown_state(state: GuiState) -> None:
 
 def build_gui(state: GuiState) -> None:
     global id, handle_id, heiztype, tage, von, bis
-    global gradv, gradb, gradanpass, s1, s2, s3, s4
+    global s1, s2, s3, s4
 
     datav = state.datav
     # Fügt eigenes CSS hinzu, um die Pfeile der numerischen Eingabe ui.input zu vergrößern
@@ -424,19 +424,40 @@ def build_gui(state: GuiState) -> None:
         #---------------------------------------------------------------------------------------------------------
         # Dritter Reiter -----------------------------------------------
         with ui.tab_panel(kesselsteuerung):
-            # ui.label('Kesselsteuerung')
-            gradv=0
-            gradb=0
-            gradanpass=0
+            kessel_x = datav.vKesselDaten_x.copy()
+            saved_kessel_y = datav.vKesselDaten_y.copy()
+            preview_kessel_y = saved_kessel_y.copy()
+            selected_range = {'min': settings.AussenMinTemp, 'max': settings.AussenMaxTemp}
+            history: list[list[float]] = []
+            adjustment_step = settings.AussenTempStep
 
             figkessel = {
                 'data':
                 [
                     {
                         'type': 'scatter',
-                        'name': 'Kessel',
-                        'x': datav.vKesselDaten_x,
-                        'y': datav.vKesselDaten_y,
+                        'name': 'Gespeichert',
+                        'x': kessel_x,
+                        'y': saved_kessel_y,
+                        'mode': 'lines',
+                        'line': {'color': '#8a8f98', 'dash': 'dot', 'width': 2},
+                    },
+                    {
+                        'type': 'scatter',
+                        'name': 'Vorschau',
+                        'x': kessel_x,
+                        'y': preview_kessel_y,
+                        'mode': 'lines+markers',
+                        'line': {'color': '#4f8cff', 'width': 3},
+                        'marker': {'color': '#4f8cff', 'size': 6},
+                    },
+                    {
+                        'type': 'scatter',
+                        'name': 'Auswahl',
+                        'x': kessel_x,
+                        'y': preview_kessel_y,
+                        'mode': 'markers',
+                        'marker': {'color': '#f59e0b', 'size': 10},
                     },
                 ],
                 'layout':
@@ -445,85 +466,149 @@ def build_gui(state: GuiState) -> None:
                     'plot_bgcolor': '#E5ECF6',
                     'xaxis': {'title': 'Aussentemp','gridcolor': 'white'},
                     'yaxis': {'title': 'Kesseltemp','gridcolor': 'white'},
+                    'legend': {'orientation': 'h', 'y': 1.12},
                 },
+                'config': {'displayModeBar': False, 'responsive': True},
             }
             plotkessel= ui.plotly(figkessel).classes('w-full h-64')
-            # jetzt braucht es noch Knöpfe und Funktionen um die Kurve zu verändern
-            # "von Grad", "bis Grad", "Yeränderung" -> 3Knöpfe
-            # alle in einer Zeile
-            def gradvon(value):
-                global gradv
-                gradv=value
-                # ui.notify(gradv)
 
-            # Die eingegebene Temperatur liegt im Bereich von -30 und 30 Grad
-            # Die "Bis Temperatur" muss größer sein als die "von Temperatur"
-            def gradbis(value):
-                global gradb
-                gradb=value
-                # ui.notify(gradb)
+            range_label = ui.label().classes('text-base ml-4')
+            status_label = ui.label().classes('text-sm ml-4')
 
-            def gradanpassen(value):
-                global gradanpass
-                gradanpass=value
-                # ui.notify(gradanpass)
+            def has_unsaved_changes() -> bool:
+                return any(abs(a - b) > 0.001 for a, b in zip(saved_kessel_y, preview_kessel_y))
 
-            # passt die Kesselkennlinie in einem Bereich (start-stop) um einen Wert ungleich Null an
-            def anpassen():
-                global gradv, gradb, gradanpass
-                with plotkessel:
-                    if gradanpass!=0:
-                        startidx = 0
-                        stopidx=0
-                        foundstart= False
-                        foundstop=False
+            def selected_points() -> tuple[list[float], list[float]]:
+                start = min(selected_range['min'], selected_range['max'])
+                stop = max(selected_range['min'], selected_range['max'])
+                points = [
+                    (x, y)
+                    for x, y in zip(kessel_x, preview_kessel_y)
+                    if start <= x <= stop
+                ]
+                if not points:
+                    return [], []
+                x_values, y_values = zip(*points)
+                return list(x_values), list(y_values)
 
-                        i=0
-                        for _ in datav.vKesselDaten_x:
-                            if (datav.vKesselDaten_x[i]>= gradv) and foundstart==False:
-                                # Anfang des zu veränderden Intervalls
-                                startidx=i
-                                foundstart=True
-                            if (datav.vKesselDaten_x[i]> gradb) and foundstop==False:
-                                # gerade übder das ENde des Intervalls hinaus
-                                stopidx=i-1
-                                foundstop=True
-                                break
-                            i+=1
-
-                        # So jetzt sollten Anfang und Ende festliegen
-                        # damit kann man dann alle betroffenen Y-Werte um den betrag Gradanpass anpassen
-                        # ui.notify(f"startidx:{startidx}, stopidx:{stopidx}, gradanpass:{gradanpass}")
-                        if startidx<=stopidx and startidx>=0 and stopidx>=0:
-                            # Liste vorher kopieren, denn der Speichervorgang löst ein vollständiges Schreiben der Liste in der DB aus.
-                            # hoffentlich passiert das nicht wenn man die .copy Funktion verwendet
-                            templist=datav.vKesselDaten_y.copy()
-                            for _ in range(startidx,stopidx+1):
-                                templist[_]+=gradanpass
-                            # i=startidx
-                            # while i<=stopidx:
-                            #     templist[i]+=gradanpass
-                            #     i+=1
-                            datav.vKesselDaten_y=templist.copy()
-                            figkessel['data'][0]['y']=templist.copy()
-                            ui.update(plotkessel)
-
-                        else:
-                            ui.notify(f"Kesselkurvenanpassung misslungen Starttemp:{datav.vKesselDaten_x[startidx]} Stoptemp:{datav.vKesselDaten_x[stopidx]}")
-                            ui.notify(f"startidx:{startidx}, stopidx:{stopidx}")
+            def update_plot() -> None:
+                selected_x, selected_y = selected_points()
+                figkessel['data'][0]['y'] = saved_kessel_y.copy()
+                figkessel['data'][1]['y'] = preview_kessel_y.copy()
+                figkessel['data'][2]['x'] = selected_x
+                figkessel['data'][2]['y'] = selected_y
+                range_label.set_text(f"Bereich: {selected_range['min']:.1f} °C bis {selected_range['max']:.1f} °C")
+                status_label.set_text('Vorschau geändert' if has_unsaved_changes() else 'Keine ungespeicherten Änderungen')
                 plotkessel.update()
 
+            def set_range(e):
+                selected_range['min'] = float(e.value['min'])
+                selected_range['max'] = float(e.value['max'])
+                update_plot()
 
+            def remember_preview() -> None:
+                history.append(preview_kessel_y.copy())
+                if len(history) > 20:
+                    history.pop(0)
 
-            # hier hätten wir noch 3 Eingaben und einen Knopf um die Kesselkurve zu verändern.
-            with ui.grid(columns=4, rows=1).classes('w-full'):
-                ui.number(label='Temp von',   value=gradv, step=settings.AussenTempStep, min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                          placeholder='Temp von', suffix='°C', on_change= lambda e: gradvon(e.value)).classes('w-22 mr-6 ml-10')
-                ui.number(label='Temp bis',   value=gradb, step=settings.AussenTempStep,  min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                          placeholder='Temp bis', suffix='°C', on_change= lambda e: gradbis(e.value)).classes('w-22 mr-6 ml-2')
-                ui.number(label='Anpassen um',value=gradanpass, step=(settings.AussenTempStep), min=settings.AussenMinTemp,max=settings.AussenMaxTemp,
-                          placeholder='Differenz', suffix='°C', on_change= lambda e: gradanpassen(e.value)).classes('w-22 mr-6 ml-2')
-                ui.button('OK', on_click=anpassen).classes('w-20 mt-4')
+            def smoothstep(value: float) -> float:
+                value = max(0.0, min(1.0, value))
+                return value * value * (3.0 - 2.0 * value)
+
+            def range_weight(x: float) -> float:
+                start = min(selected_range['min'], selected_range['max'])
+                stop = max(selected_range['min'], selected_range['max'])
+                if x < start or x > stop:
+                    return 0.0
+
+                span = stop - start
+                if span <= adjustment_step:
+                    return 1.0 if abs(x - start) <= adjustment_step / 2 else 0.0
+
+                edge_width = min(4.0, span / 4.0)
+                left_weight = 1.0
+                right_weight = 1.0
+                if start > settings.AussenMinTemp and edge_width > 0:
+                    left_weight = smoothstep((x - start) / edge_width)
+                if stop < settings.AussenMaxTemp and edge_width > 0:
+                    right_weight = smoothstep((stop - x) / edge_width)
+                return min(left_weight, right_weight)
+
+            def apply_to_preview(delta_func) -> None:
+                nonlocal preview_kessel_y
+                remember_preview()
+                changed = False
+                new_values = preview_kessel_y.copy()
+                for idx, x in enumerate(kessel_x):
+                    delta = delta_func(x)
+                    if abs(delta) > 0.001:
+                        new_values[idx] = round(new_values[idx] + delta, 1)
+                        changed = True
+                if changed:
+                    preview_kessel_y = new_values
+                    update_plot()
+                else:
+                    history.pop()
+                    ui.notify('Im ausgewählten Bereich liegt kein Kurvenpunkt.')
+
+            def adjust_level(amount: float) -> None:
+                apply_to_preview(lambda x: amount * range_weight(x))
+
+            def adjust_slope(direction: float) -> None:
+                start = min(selected_range['min'], selected_range['max'])
+                stop = max(selected_range['min'], selected_range['max'])
+                center = (start + stop) / 2.0
+                half_span = max((stop - start) / 2.0, adjustment_step)
+
+                def delta(x: float) -> float:
+                    cold_side_factor = (center - x) / half_span
+                    return direction * adjustment_step * cold_side_factor * range_weight(x)
+
+                apply_to_preview(delta)
+
+            def undo_preview() -> None:
+                nonlocal preview_kessel_y
+                if not history:
+                    ui.notify('Keine Änderung zum Rückgängig machen.')
+                    return
+                preview_kessel_y = history.pop()
+                update_plot()
+
+            def discard_preview() -> None:
+                nonlocal preview_kessel_y
+                preview_kessel_y = saved_kessel_y.copy()
+                history.clear()
+                update_plot()
+
+            def save_preview() -> None:
+                nonlocal saved_kessel_y
+                saved_kessel_y = preview_kessel_y.copy()
+                datav.vKesselDaten_y = saved_kessel_y.copy()
+                history.clear()
+                update_plot()
+                ui.notify('Kesselkurve gespeichert.')
+
+            with ui.column().classes('w-full gap-4'):
+                ui.range(
+                    min=settings.AussenMinTemp,
+                    max=settings.AussenMaxTemp,
+                    step=settings.AussenTempStep,
+                    value=selected_range,
+                    on_change=set_range,
+                ).props('label label-always snap').classes('w-11/12 ml-4 mt-2')
+
+                with ui.grid(columns=2).classes('w-full px-4 gap-4'):
+                    ui.button('Niveau -', on_click=lambda: adjust_level(-adjustment_step)).classes('h-16 text-lg')
+                    ui.button('Niveau +', on_click=lambda: adjust_level(adjustment_step)).classes('h-16 text-lg')
+                    ui.button('Flacher', on_click=lambda: adjust_slope(-1.0)).classes('h-16 text-lg')
+                    ui.button('Steiler', on_click=lambda: adjust_slope(1.0)).classes('h-16 text-lg')
+
+                with ui.grid(columns=3).classes('w-full px-4 gap-4'):
+                    ui.button('Rückgängig', on_click=undo_preview).classes('h-14 text-base')
+                    ui.button('Verwerfen', on_click=discard_preview).classes('h-14 text-base')
+                    ui.button('Speichern', color='#1e5569', on_click=save_preview).classes('h-14 text-base')
+
+            update_plot()
 
 
 
