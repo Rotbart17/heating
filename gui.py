@@ -427,7 +427,10 @@ def build_gui(state: GuiState) -> None:
             kessel_x = datav.vKesselDaten_x.copy()
             saved_kessel_y = datav.vKesselDaten_y.copy()
             preview_kessel_y = saved_kessel_y.copy()
-            selected_range = {'min': settings.AussenMinTemp, 'max': settings.AussenMaxTemp}
+            selected_range: dict[str, float] = {
+                'min': float(settings.AussenMinTemp),
+                'max': float(settings.AussenMaxTemp),
+            }
             history: list[list[float]] = []
             adjustment_step = settings.AussenTempStep
 
@@ -593,7 +596,7 @@ def build_gui(state: GuiState) -> None:
                     min=settings.AussenMinTemp,
                     max=settings.AussenMaxTemp,
                     step=settings.AussenTempStep,
-                    value=selected_range,
+                    value={'min': settings.AussenMinTemp, 'max': settings.AussenMaxTemp},
                     on_change=set_range,
                 ).props('label label-always snap').classes('w-11/12 ml-4 mt-2')
 
