@@ -30,6 +30,15 @@ from queue import Empty
 sleeptime= 60
 
 
+def sleep_until_stop(seconds: float)->None:
+    end_time = time.monotonic() + seconds
+    while datav.threadstop == False:
+        remaining = end_time - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(0.5, remaining))
+
+
 def time_in_range(von:str, bis:str,zeitpunkt:str)->bool:
     '''Prüft ob ein Zeitpunkt innerhalb eines Zeitbereichs liegt. Zeit in Form von hh:mm'''
     vonstunde, vonminute = von.split(":")
@@ -74,7 +83,7 @@ def day_in_range(programday:int)->bool:
     return (False)  
 
        
-def evaluate_program(queue_to_backend:Queue)->None:
+def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
     '''Wertet die Programmsteuerungstabelle minütlich aus und setzt/löscht die Variablen für Brauchwasser, Heizung und Nachtabsenkung'''
     
     while(datav.threadstop==False):
@@ -114,7 +123,7 @@ def evaluate_program(queue_to_backend:Queue)->None:
                 case _:
                     # Hier sollte niemand vorbeischauen
                     logging.error(f"Der ausgewählte Heiztyp  {zs['type']} ist unbekannt!")
-        time.sleep(sleeptime)
+        sleep_until_stop(sleeptime)
         try:
             message = queue_to_backend.get(timeout=1)
             if message=="threadstop":
@@ -126,7 +135,7 @@ def evaluate_program(queue_to_backend:Queue)->None:
  
  
     
-def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue)->None:
+def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue):
 
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
@@ -141,5 +150,6 @@ def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue)->None
     logging.debug('Programmsteuerungsthread gestartet!')
     #jetzt ist hier alles gestartet, damit Info an die GUI
     queue_from_backend.put("start_evaluatethread"+"_up")
+    return datav
 
     

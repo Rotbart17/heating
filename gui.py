@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 import settings
 from dataview import maindata
-from main import BACKEND_READY, startbackend
+from main import BACKEND_READY, STOP_MESSAGE, startbackend
 import logging
 import sys
 from multiprocessing import Queue
@@ -63,7 +63,7 @@ def create_state() -> GuiState:
     try:
         wait_for_backend(queue_to_frontend, backendproc)
     except BaseException:
-        queue_to_backend.put('threadstop')
+        queue_to_backend.put(STOP_MESSAGE)
         backendproc.join(timeout=5)
         raise
 
@@ -83,7 +83,7 @@ def shutdown_state(state: GuiState) -> None:
     if state.stopped:
         return
     state.stopped = True
-    state.queue_to_backend.put('threadstop')
+    state.queue_to_backend.put(STOP_MESSAGE)
     state.datav.threadstop = True
     state.backendproc.join()
 

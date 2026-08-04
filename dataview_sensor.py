@@ -68,6 +68,14 @@ class SensorView:
         settings.ThreadList.append(self.sensor_poll)
         self.sensor_poll.start()
         logging.debug('DB-Abfrage Thread Sensor gestartet!')
+
+    def _sleep_until_stop(self, seconds: float) -> None:
+        end_time = time.monotonic() + seconds
+        while self.threadstop == False:
+            remaining = end_time - time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(0.5, remaining))
         
         
 
@@ -110,7 +118,7 @@ class SensorView:
         while (self.threadstop ==False):
             self._sensordataload()
             logging.debug('Sensordata Pollen')
-            time.sleep(self._sensorsleeptime)
+            self._sleep_until_stop(self._sensorsleeptime)
             
    
    

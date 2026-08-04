@@ -248,9 +248,9 @@ class maindata(SensorView, KesselView, ZeitView):
                 
                 self._viewloader(False)
                 logging.debug('WorkdataView Pollen')
-                time.sleep(self._sleeptime)
+                self._sleep_until_stop(self._sleeptime)
             else:
-                time.sleep((self._sleeptime)/100)
+                self._sleep_until_stop((self._sleeptime)/100)
 
     
     # hier müssen die aktuellen Werte aus der DB eingelesen werden.

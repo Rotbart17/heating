@@ -58,6 +58,14 @@ class sensor(Tables):
         self.x.start()
         self._putqueuevalue()
         logging.debug('Sensorabfrage '+ self.tablename + ' gestartet!')
+
+    def _sleep_until_stop(self, seconds: float) -> None:
+        end_time = time.monotonic() + seconds
+        while self.threadstop == False:
+            remaining = end_time - time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(0.5, remaining))
         
     # Das hier ist der Teil, der im Thread läuft
     def sensor_envlope(self):
@@ -139,7 +147,7 @@ class sensor(Tables):
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                time.sleep(self.waittime)
+                self._sleep_until_stop(self.waittime)
                 self._getqueuevalue()
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
 
