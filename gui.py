@@ -83,9 +83,16 @@ def shutdown_state(state: GuiState) -> None:
     if state.stopped:
         return
     state.stopped = True
+
+    state.datav.stop_polling()
     state.queue_to_backend.put(STOP_MESSAGE)
-    state.datav.threadstop = True
-    state.backendproc.join()
+    state.backendproc.join(timeout=5)
+    if state.backendproc.is_alive():
+        logging.warning("Backend-Prozess konnte nicht innerhalb des Timeouts beendet werden. Erzwinge Stop.")
+        state.backendproc.terminate()
+        state.backendproc.join(timeout=5)
+    if state.backendproc.is_alive():
+        logging.error("Backend-Prozess läuft trotz terminate() weiter.")
 
 
 def build_gui(state: GuiState) -> None:
@@ -175,6 +182,7 @@ def build_gui(state: GuiState) -> None:
     # Backend stoppen
     def de_init_data() -> None:
         shutdown_state(state)
+        app.shutdown()
 
     # Hand Dusche toggeln
     def set_hand_dusche():

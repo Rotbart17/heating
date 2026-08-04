@@ -124,6 +124,7 @@ def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
     while(datav.threadstop==False):
         # Programmsteuerungsdaten einlesen
         # typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
+        datav._zeitsteuerungload()
         t=datetime.now()
         zeitpunkt=f'{t.hour:02d}:{t.minute:02d}'
         # rows.clear()
@@ -185,7 +186,7 @@ def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue):
 
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
-    datav=maindata()
+    datav=maindata(start_polling=False)
     datav.queue_to_backend=queue_from_backend
     datav.queue_to_frontend=queue_to_backend
    

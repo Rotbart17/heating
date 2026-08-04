@@ -89,6 +89,7 @@ class maindata(SensorView, KesselView, ZeitView):
 
     queue_to_backend : Any =None
     queue_to_frontend : Any =None
+    start_polling : bool = True
 
     # damit man den thread stoppen kann
     threadstop : bool = False
@@ -275,6 +276,9 @@ class maindata(SensorView, KesselView, ZeitView):
 
         # Zeitsteuerung laden
         self._zeitsteuerungload()
+
+        if self.start_polling == False:
+            return
     
         # starten des Threads für das periodische Update der Dataview-Werte oder Initialisierung
         # ZZ brauche noch einen Ort an dem ich den Thread wieder einfange!
@@ -339,12 +343,22 @@ class maindata(SensorView, KesselView, ZeitView):
             db.close()
             exit(1)
 
-    # Thread schliessen wenn Objekt gelöscht wird
-    def __del__(self):
+    def stop_polling(self) -> None:
         logging.debug('datav Klasse löschen,  Polling DB stop')
         self.threadstop = True
-        # wait for Thread to end
-        self.dv_poll.join()
+
+        for poll_thread in (getattr(self, 'dv_poll', None), getattr(self, 'sensor_poll', None)):
+            if poll_thread is None or poll_thread.ident is None:
+                continue
+            if poll_thread is threading.current_thread():
+                continue
+            poll_thread.join(timeout=2)
+            if poll_thread.is_alive():
+                logging.warning(f"Thread {poll_thread.name} konnte nicht innerhalb des Timeouts beendet werden.")
+
+    # Thread schliessen wenn Objekt gelöscht wird
+    def __del__(self):
+        self.stop_polling()
         logging.info("datav Klasse gelöscht, Polling gestoppt.")
 
     # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
