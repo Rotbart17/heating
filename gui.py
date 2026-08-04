@@ -129,13 +129,28 @@ def build_gui(state: GuiState) -> None:
 
 
     # Definitionen der verschiedenen Tagesmöglichkeiten die man für die Einstellungen hat
-    tagedict={   1:'Mo', 2:'Die', 3:'Mi', 4:'Do', 5:'Fr', 6:'Sa',  7:'So', 8:'Mo-Fr', 9:'Sa-So', 10:'Mo-So'}
-    tage_r_dict={'Mo':1, 'Die':2, 'Mi':3, 'Do':4, 'Fr':5 , 'Sa':6, 'So':7, 'Mo-Fr':8, 'Sa-So':9,'Mo-So':10}
+    tagedict = {
+        1: 'Mo',
+        2: 'Die',
+        3: 'Mi',
+        4: 'Do',
+        5: 'Fr',
+        6: 'Sa',
+        7: 'So',
+        8: 'Mo-Fr',
+        9: 'Sa-So',
+        10: 'Mo-So',
+    }
+    tage_r_dict = {label: value for value, label in tagedict.items()}
 
 
     # Definition der verschiedenen Heizungsmodi
-    typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
-    typ_r_dict = {'Brauchw':1, 'Heizen':2, 'Nachtabsenk.':3}
+    typdict = {
+        1: 'Brauchw',
+        2: 'Heizen',
+        3: 'Nachtabsenk.',
+    }
+    typ_r_dict = {label: value for value, label in typdict.items()}
 
 
     #---------------------------------------------------------------------------------------------------------
