@@ -323,3 +323,5 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,python,visualstudiocode,pycharm
 .idea
+heizung.db-wal
+heizung.db-shm
