@@ -7,6 +7,7 @@ import settings
 from dataclasses import dataclass, field
 import logging 
 import sqlite3
+from dbinit import connect_db
 from enum import Enum
 import time
 from time import time,time_ns
@@ -30,7 +31,7 @@ class ZeitView:
     def _zeitsteuerungload(self):
         try:
             # Die 'with'-Anweisung kümmert sich um das Öffnen und Schließen der Verbindung.
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 logging.debug('Zeitsteuerungstabelle lesen!')
                 cursor=db.cursor()
                 sql= settings.sql_readzeitsteuerung
@@ -58,7 +59,7 @@ class ZeitView:
 
         try:
             # Die 'with'-Anweisung stellt eine transaktionale Operation sicher.
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 cursor = db.cursor()
                 logging.debug('Zeitsteuerungs Datensätze in DB schreiben!')
                 

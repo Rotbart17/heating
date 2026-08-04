@@ -6,11 +6,27 @@ import settings
 from settings import DBPATH
 
 
+def connect_db(db_file=DBPATH):
+    conn = sqlite3.connect(db_file, timeout=settings.DB_TIMEOUT)
+    conn.execute(f"PRAGMA busy_timeout = {settings.DB_BUSY_TIMEOUT_MS};")
+    return conn
+
+
+def configure_db(db_file=DBPATH):
+    try:
+        with connect_db(db_file) as conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+    except Error as e:
+        logging.error(f'Die Datenbank konnte nicht konfiguriert werden! Fehler:{e}')
+        exit(1)
+
+
 # create SQlite DB 
 def create_db(db_file):
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
+        conn = connect_db(db_file)
         logging.info(f'DB Version {sqlite3.version} erstellt')
         conn.close()
     except Error as e:
@@ -22,7 +38,7 @@ def create_db(db_file):
 def open_connection(db_file):
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
+        conn = connect_db(db_file)
     except Error as e:
         logging.error(f'Die Datenbank konnte nicht geöffnet werden! Fehler:{e}')
         exit(1)
@@ -42,7 +58,7 @@ def checktable(tablename):
     erg=False    
     t=0
     try:
-        conn = sqlite3.connect(DBPATH)
+        conn = connect_db()
         logging.info('DB-Verbindung geöffnet')
         
     except Error as e:
@@ -67,11 +83,11 @@ def checktable(tablename):
 # Datenbank und "alle" Tabellen anlegen
 def init_db_environment():
     create_db(settings.DBPATH)
+    configure_db(settings.DBPATH)
  
    
    
 # noch offene Punkte ZZ
 # Loginfo
 # löscht Fehlerstatus
-
 

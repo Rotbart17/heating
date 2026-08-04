@@ -25,6 +25,8 @@ logging.basicConfig(
 # Pfad zu Datenbank
 DBPATH = "/home/ernst/Devel/heating/heizung.db"
 FastApiDBPath= "sqlite:///heizung.db"
+DB_TIMEOUT = 30
+DB_BUSY_TIMEOUT_MS = DB_TIMEOUT * 1000
 FastApiAPPName = "Heizung"
 
 # Alle Tabellennamen und Prozedurnamen um für jeden Thread start und stop steuern zu können.

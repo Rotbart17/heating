@@ -10,6 +10,7 @@ import sqlite3
 import time
 import threading
 from enum import Enum
+from dbinit import connect_db
 
 
 logging.basicConfig(
@@ -82,7 +83,7 @@ class SensorView:
     # lädt die letzten Werte der Sensoren für die Anzeige
     def _sensordataload(self):
         try:
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 cursor=db.cursor()
                 # Hier kommt nun eine Schleife über alle Sensoren
                 # die in jeder Sensortabelle, die Daten der letzten 24h abfragt

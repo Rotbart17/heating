@@ -661,7 +661,7 @@ def main() -> None:
     state = create_state()
     app.on_shutdown(lambda: shutdown_state(state))
     build_gui(state)
-    ui.run(favicon='🚀', port=8000, title='Buderus Ecomatic', dark=True, reload=False)
+    ui.run(favicon='🚀', port=8000, title='Buderus Ecomatic', dark=True, reload=False, show=False)
 
 
 if __name__ == '__main__':

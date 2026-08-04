@@ -6,6 +6,7 @@ import threading
 import settings
 from settings import SensorList
 from table import Tables
+from dbinit import connect_db
 import random
 from multiprocessing import Queue
 from queue import Empty
@@ -118,7 +119,7 @@ class sensor(Tables):
         def storevalue(temperature):
             maxtry=10
             t=0
-            conn = sqlite3.connect(settings.DBPATH)
+            conn = connect_db()
             sql = f"INSERT INTO {tn} (value, begin_date) VALUES ( {temperature}, datetime('now','localtime') );"
             while True:
                 try:

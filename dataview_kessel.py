@@ -7,6 +7,7 @@ import settings
 from dataclasses import dataclass
 import logging
 import sqlite3
+from dbinit import connect_db
 from enum import Enum
 
 logging.basicConfig(
@@ -22,7 +23,7 @@ class KesselView:
     def _kesseldataload(self):
         """Lädt die Kesselkennlinie (x- und y-Werte) aus der Datenbank."""
         try:
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 logging.debug('Kesselkennlinie lesen!')
                 cursor = db.cursor()
                 # Es ist effizienter, beide Spalten auf einmal abzurufen und die Reihenfolge sicherzustellen.
@@ -49,7 +50,7 @@ class KesselView:
         try:
             # Die 'with'-Anweisung stellt eine transaktionale Operation sicher (automatisches Commit/Rollback)
             # und schließt die Verbindung.
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 logging.debug('Kesselkennline (y-Werte) in DB schreiben!')
                 # Daten für eine effizientere `executemany`-Operation vorbereiten
                 data_to_update = [(y_value, idx + 1) for idx, y_value in enumerate(self._KesselDaten_y)]

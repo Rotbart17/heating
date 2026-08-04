@@ -6,7 +6,7 @@
 import settings
 from dataclasses import dataclass, field
 import logging
-from dbinit import checktable
+from dbinit import checktable, connect_db
 import threading
 import time
 import sqlite3
@@ -205,7 +205,7 @@ class maindata(SensorView, KesselView, ZeitView):
     # in die klasseninternen Variablen
     def _viewloader(self, initialrun):
         try:
-            with sqlite3.connect(settings.DBPATH) as db:
+            with connect_db() as db:
                 cursor = db.cursor()
                 sql = settings.read_WorkDataView_complete
                 cursor.execute(sql)
@@ -223,7 +223,7 @@ class maindata(SensorView, KesselView, ZeitView):
     # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
     # True= "neu lesen"
     def _checkview(self)->bool:
-        db=sqlite3.connect(settings.DBPATH)
+        db=connect_db()
         cursor=db.cursor()
         sql=f"SELECT ViewChanged FROM {settings.WorkDataView} WHERE id=1"
         cursor.execute(sql)
@@ -293,7 +293,7 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
     def _readitem(self,name,namect,value,timestamp):
-        db=sqlite3.connect(settings.DBPATH)
+        db=connect_db()
         try: 
             
             cursor=db.cursor()
@@ -320,7 +320,7 @@ class maindata(SensorView, KesselView, ZeitView):
 
     # scheibt jeden Wert einzeln in die DB zusammen mit den Zeitstempeln
     def _writeitem(self,value,name,namect):
-        db=sqlite3.connect(settings.DBPATH)
+        db=connect_db()
         try:
             self._datawrite=True
             cursor=db.cursor()

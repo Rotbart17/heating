@@ -17,6 +17,7 @@ from sqlite3 import Error
 import time
 from multiprocessing import Queue
 from queue import Empty
+from dbinit import connect_db
 
 
 
@@ -34,7 +35,7 @@ class Tables:
     def _create_table(self):
 
         try:
-            conn = sqlite3.connect(settings.DBPATH)
+            conn = connect_db()
             logging.info('DB-Verbindung geöffnet')
             
         except Error as e:
@@ -61,7 +62,7 @@ class Tables:
             # Sie müssen sicher in den SQL-String eingefügt werden.
             # Da der Tabellenname intern verwaltet wird, ist die Verwendung eines f-Strings hier unbedenklich.
             sql = f"DROP TABLE IF EXISTS {self.tablename}"
-            with sqlite3.connect(settings.DBPATH) as conn:
+            with connect_db() as conn:
                 logging.info(f"DB-Verbindung für DROP TABLE '{self.tablename}' geöffnet")
                 cursor = conn.cursor()
                 cursor.execute(sql)
@@ -77,7 +78,7 @@ class Tables:
     def _empty_table(self):
         ''' Tabelle leeren'''
         try:
-            with sqlite3.connect(settings.DBPATH) as conn:
+            with connect_db() as conn:
                 logging.info('DB-Verbindung geöffnet')
                 cursor = conn.cursor()
                 sql = f"DELETE FROM {self.tablename}"
@@ -93,7 +94,7 @@ class Tables:
         ''' Tabelle initialisieren'''
 
         try:
-            conn = sqlite3.connect(settings.DBPATH)
+            conn = connect_db()
             logging.info('DB-Verbindung geöffnet')
             
         except Error as e:
@@ -120,7 +121,7 @@ class Tables:
         t=0
         erg=False
         try:
-            conn = sqlite3.connect(settings.DBPATH)
+            conn = connect_db()
             logging.info('DB-Verbindung geöffnet')
             
         except Error as e:
