@@ -641,7 +641,7 @@ def build_gui(state: GuiState) -> None:
                 # hier brauchen wir nun Sommer Winterumschaltung Temp
                 def setwinter(value):
                     datav.vWintertemp=value
-                    ui.notify('Winter ab: '+str(datav.vWintertemp))
+                    ui.notify('Winter ab: '+str(datav.vWintertemp)+' Grad C°')
 
 
                 ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
