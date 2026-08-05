@@ -6,10 +6,10 @@
     "configurations": [
         
         {
-            "name": "Python: Current File",
+            "name": "Python: gui.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/gui.py",
             "python": "${workspaceFolder}/.venv/bin/python",
             "console": "integratedTerminal",
             "justMyCode": true

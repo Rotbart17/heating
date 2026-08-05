@@ -206,7 +206,7 @@ def build_gui(state: GuiState) -> None:
                 ui.label().bind_text_from(datav, 'vAussen', lambda v: f'Aussen-Temp = {v}').classes('text-sm col-start-1')
                 ui.label().bind_text_from(datav, 'vWinter', lambda v: 'Winterbetrieb' if v else 'Sommerbetrieb').classes('text-sm col-start-2 ')
                 ui.label().bind_text_from(datav, 'vInnen', lambda v: f'Innen-Temp = {v}').classes('text-sm col-start-3')
-                ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-25 h-25')
+                ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-32 h-12')
 
             # Zeile 2
             with ui.grid(columns=4, rows=1).classes('w-full'):
