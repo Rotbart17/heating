@@ -165,7 +165,7 @@ Pumpe_unten_an : bool = False
 
 
 
-# die Tabelle der Anzeigeschicht heisst:----------
+# die Tabelle der Anzeige- un Backendschicht heisst:----------
 WorkDataView = "WorkDataView"
 
 # SQL Statement für das Erstelllen der Tabelle der Anxzeigeschicht

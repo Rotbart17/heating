@@ -8,7 +8,8 @@
 #       Workdataview -> OK
 #       
 # Die Tables Class soll, Tabellen Anlegen, löschen, prüfen ob sie Inhalt haben 
-# Sie hat als Pararmeter den Tabellennamen, die beiden SQL Teile zur Anlage der Tabelle
+# Sie hat als Pararmeter den Tabellennamen, die beiden SQL Teile zur Anlage der Tabelle,
+# und die queues um Nachrichten (threadstop) zu übertragen
 
 import logging
 import settings
@@ -193,8 +194,8 @@ class KesselSollTemperatur(Tables):
 
 
 class Zeitsteuerung(Tables):
-    '''Zeitsteurungstabelle anlegen, und mit einem Defaultprogramm füllen
-       wenn die Tabelle nicht leer ist'''
+    '''Zeitsteuerungstabelle anlegen, und mit einem Defaultprogramm füllen
+       wenn die Tabelle  leer ist'''
        
     def __init__(self, tablename: str, sql_columns: str,queue_to_backend:Queue, queue_from_backend:Queue):
         super().__init__(tablename, sql_columns, queue_to_backend, queue_from_backend)
