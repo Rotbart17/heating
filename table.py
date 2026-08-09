@@ -182,6 +182,7 @@ class KesselSollTemperatur(Tables):
         ''' k wird als Variable in der Formel settings.KesselKennlinie verwendet
          alles mal 10, damit man range() mit int verwenden kann.
          die Kennlinie geht von -30 bis 30 Grad Schritt 0.5'''
+        k=0
         for i in range(int(settings.AussenMinTemp*10),int(settings.AussenMaxTemp*10),int(settings.AussenTempStep*10)):
             x= float(i/10)
             y=round(eval(settings.KesselKennlinie),1)
@@ -251,6 +252,8 @@ class WorkdataView(Tables):
                 settings.Brenner_an, t,\
                 settings.Brenner_Stoerung, t,\
                 settings.Hand_Dusche, t,\
+                settings.WintertempInnen, t,\
+                settings.Legionellenschutz, t,\
                 settings.threadstop )
             # so, die Tabelle existiert. Initdaten sind reingeschrieben.
             self._init_table(settings.init_WorkDataView_sql,data)

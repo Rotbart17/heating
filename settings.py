@@ -86,6 +86,9 @@ threadstop : bool = False
 
 Winter : bool = True
 Wintertemp: float = 17
+# WintertempInnen ist die Innentemperatur bei der auf Heizbetrieb geschaltet wird
+# wird nur von der GUI verändert
+WintertempInnen: float = 20
 
 # Kessel ist die aktuelle Kesseltemperatur, kommt vom Sensor, wird nur gelesen
 # KesselSoll ist die KesselSolltemperatur, wird mit der Kurve ermittelt. Kurve wird in der Gui angepasst
@@ -150,6 +153,11 @@ BrauchwasserError : float = 70
 BrauchwasserAus : bool = False
 Brauchwasserbereiten :bool = False
 
+# Legionellenschutz ist aktiv wenn das Brauchwasser regelmäßig über LegionellenschutzSoll
+# erhitzt werden soll, unabhängig von BrauchwasserSoll. Wird von der Zeitsteuerung gesetzt.
+Legionellenschutz : bool = False
+LegionellenschutzSoll : float = 65
+
 # Pumpe_Brauchwasser_an wird von dem Prozess der Brauchwasser überwachung verändert. GUI zeigt nur an.
 Pumpe_Brauchwasser_an : bool = False
 # Schaltet die manuelle Brauchwasserbereitung ein. Wird nur in der GUI verändert.
@@ -210,6 +218,10 @@ sql_create_view_table_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NUL
                                     Brenner_Stoerung_changetime int,
                                     Hand_Dusche int,
                                     Hand_Dusche_changetime int,
+                                    WintertempInnen real,
+                                    WintertempInnen_changetime int,
+                                    Legionellenschutz int,
+                                    Legionellenschutz_changetime int,
                                     threadstop int
                                 );"""
 
@@ -234,6 +246,8 @@ init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                             Brenner_an, Brenner_an_changetime,\
                             Brenner_Stoerung, Brenner_Stoerung_changetime,\
                             Hand_Dusche, Hand_Dusche_changetime,\
+                            WintertempInnen, WintertempInnen_changetime,\
+                            Legionellenschutz, Legionellenschutz_changetime,\
                             threadstop ) \
                         VALUES(:id, :Viewchanged, \
                             :Winter, :Winter_changetime, \
@@ -254,6 +268,8 @@ init_WorkDataView_sql = f"INSERT OR REPLACE INTO {WorkDataView} (\
                             :Brenner_an, :Brenner_an_changetime,\
                             :Brenner_Stoerung, :Brenner_Stoerung_changetime,\
                             :Hand_Dusche, :Hand_Dusche_changetime,\
+                            :WintertempInnen, :WintertempInnen_changetime,\
+                            :Legionellenschutz, :Legionellenschutz_changetime,\
                             :threadstop);"
 
 write_WorkDataView_value= f"UPDATE {WorkDataView} SET ?=? WHERE id=1;"
@@ -292,18 +308,20 @@ sql_writezeitsteuerung=f"INSERT OR REPLACE INTO {ZeitSteuerung} (line_id, type, 
       VALUES (:line_id,:type,:tage,:von,:bis,:active,:changetime);"
 sql_deletezeitsteuerung=f"DELETE from {ZeitSteuerung};"
 
-# als Programm brauchen wir 
+# als Programm brauchen wir
 # Montag-Sonntag Nachtabsenkung 22:00-7:00,inaktiv, keine Zeit
 # Brauchwasser Mo-Fr 6:00-9.00,  inaktiv, keine Zeit
 # Brauchwasser Sa,So 6:00-9:00,  inaktiv, keine Zeit
 # Brauchwasser Sa,So 16:00-19:00,inaktiv, keine Zeit
 # Heizbetrieb  Mo-So 00:00-24:00,inaktiv, keine Zeit
+# Legionellenschutz Donnerstag 3:00-4:00, inaktiv, keine Zeit
 changetime=time.time_ns()
 Standardprogramm = [ (1,'Nachtabsenk.','Mo-So','22:00','7:00',0,changetime), \
                      (2,'Brauchw','Mo-Fr','6:00','9:00',0,changetime), \
                      (3,'Brauchw','Sa-So','6:00','9:00',0,changetime), \
                      (4,'Brauchw','Sa-So','16:00','19:00',0,changetime), \
-                     (5,'Heizen','Mo-So','00:00','23:59',0,changetime)   ]
+                     (5,'Heizen','Mo-So','00:00','23:59',0,changetime), \
+                     (6,'Legionellenschutz','Do','3:00','4:00',0,changetime)   ]
 
 
 

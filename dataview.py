@@ -73,7 +73,11 @@ class dv(Enum):
     Brenner_Stoerung_changetime=35
     Hand_Dusche=36
     Hand_Dusche_changetime=37
-    threadstop=38
+    WintertempInnen=38
+    WintertempInnen_changetime=39
+    Legionellenschutz=40
+    Legionellenschutz_changetime=41
+    threadstop=42
 
 
 ##### Start der Idee mit der Idee der Dataclass
@@ -115,6 +119,7 @@ class maindata(SensorView, KesselView, ZeitView):
     # Wintertemp ist die Temperatur bei der auf Heizbetrieb geschaltet wird
     _Winter : bool = False
     _Wintertemp: float = 17
+    _WintertempInnen: float = 20
 
     # Kessel ist die aktuelle Kesseltemperatur
     # KesselSoll ist die KesselSolltemperatur
@@ -149,6 +154,10 @@ class maindata(SensorView, KesselView, ZeitView):
     _Pumpe_Brauchwasser_an : bool =False
     _Hand_Dusche : bool = False
 
+    # Legionellenschutz: wenn True soll das Brauchwasser auf LegionellenschutzSoll erhitzt werden,
+    # unabhängig von BrauchwasserSoll. Wird von der Zeitsteuerung gesetzt.
+    _Legionellenschutz : bool = False
+
     # Innen ist die aktuelle Innentemperatur
     _Innen : float = 0
     #_InnenDaten_x : list = field(default_factory=list)
@@ -170,6 +179,7 @@ class maindata(SensorView, KesselView, ZeitView):
     _VIEW_FIELDS = (
         "Winter",
         "Wintertemp",
+        "WintertempInnen",
         "Kessel",
         "KesselSoll",
         "Heizen",
@@ -178,6 +188,7 @@ class maindata(SensorView, KesselView, ZeitView):
         "BrauchwasserSoll",
         "BrauchwasserAus",
         "Brauchwasserbereiten",
+        "Legionellenschutz",
         "Innen",
         "Aussen",
         "Pumpe_oben_an",
@@ -376,7 +387,16 @@ class maindata(SensorView, KesselView, ZeitView):
     @vWintertemp.setter
     def vWintertemp(self,value):
         self._Wintertemp=value
-        self._writeitem(value,"Wintertemp", "Wintertemp_changetime")   
+        self._writeitem(value,"Wintertemp", "Wintertemp_changetime")
+
+    @property
+    def vWintertempInnen(self):
+        return self._WintertempInnen
+
+    @vWintertempInnen.setter
+    def vWintertempInnen(self,value):
+        self._WintertempInnen=value
+        self._writeitem(value,"WintertempInnen", "WintertempInnen_changetime")
 
     @property
     def vKessel(self):
@@ -437,6 +457,15 @@ class maindata(SensorView, KesselView, ZeitView):
     def vBrauchwasserbereiten(self,value):
         self._Brauchwasserbereiten=value
         self._writeitem(value,"Brauchwasserbereiten","Brauchwasserbereiten_changetime")
+
+    @property
+    def vLegionellenschutz(self):
+        return self._Legionellenschutz
+
+    @vLegionellenschutz.setter
+    def vLegionellenschutz(self,value):
+        self._Legionellenschutz=value
+        self._writeitem(value,"Legionellenschutz","Legionellenschutz_changetime")
 
     @property
     def vInnen(self):

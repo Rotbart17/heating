@@ -148,6 +148,7 @@ def build_gui(state: GuiState) -> None:
         9: 'Sa-So',
         10: 'Mo-So',
     }
+    # Reverse tagedict
     tage_r_dict = {label: value for value, label in tagedict.items()}
 
 
@@ -156,7 +157,9 @@ def build_gui(state: GuiState) -> None:
         1: 'Brauchw',
         2: 'Heizen',
         3: 'Nachtabsenk.',
+        4: 'Legionellenschutz',
     }
+    # Reverse typdict
     typ_r_dict = {label: value for value, label in typdict.items()}
 
 
@@ -206,7 +209,7 @@ def build_gui(state: GuiState) -> None:
                 ui.label().bind_text_from(datav, 'vAussen', lambda v: f'Aussen-Temp = {v}').classes('text-sm col-start-1')
                 ui.label().bind_text_from(datav, 'vWinter', lambda v: 'Winterbetrieb' if v else 'Sommerbetrieb').classes('text-sm col-start-2 ')
                 ui.label().bind_text_from(datav, 'vInnen', lambda v: f'Innen-Temp = {v}').classes('text-sm col-start-3')
-                ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-32 h-12')
+                ui.button('Hand-Dusche', color='#1e5569', on_click=lambda: set_hand_dusche()).classes('col-start-4 w-32 h-15')
 
             # Zeile 2
             with ui.grid(columns=4, rows=1).classes('w-full'):
@@ -649,11 +652,17 @@ def build_gui(state: GuiState) -> None:
                 # hier brauchen wir nun Sommer Winterumschaltung Temp
                 def setwinter(value):
                     datav.vWintertemp=value
-                    ui.notify('Winter ab: '+str(datav.vWintertemp)+' Grad C°')
+                    ui.notify('Aussentemp. Winter ab: '+str(datav.vWintertemp)+' Grad C°')
+                def setwinterinnen(value):
+                    datav.vWintertempInnen=value
+                    ui.notify('Innentemp. Winter ab: '+str(datav.vWintertempInnen)+' Grad C°')
 
 
-                ui.number(label='Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
+                ui.number(label='Aussentemp. Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
                     on_change=lambda e: setwinter(e.value)).classes('flex-1 w-32')
+
+                ui.number(label='Innenentemp. Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertempInnen, \
+                    on_change=lambda e: setwinterinnen(e.value)).classes('flex-1 w-32')
 
                 # Knopf zum Ausschalten
                 ui.button('Programm Stop', color='#1e5569', on_click=lambda: de_init_data()).classes('col-start-4 w-25 h-25')

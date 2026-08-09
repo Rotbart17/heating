@@ -128,11 +128,13 @@ def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
         t=datetime.now()
         zeitpunkt=f'{t.hour:02d}:{t.minute:02d}'
         # rows.clear()
-        # rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 'bis': item[4], 'active':item[5], 'changetime':item[6]} for item in datav.vZeitsteuerung]          
+        # rows= [{'line_id': item[0], 'type':item[1], 'tage':item[2], 'von':item[3], 
+        # 'bis': item[4], 'active':item[5], 'changetime':item[6]} for item in datav.vZeitsteuerung]          
         program_states = {
             'Brauchw': False,
             'Heizen': False,
             'Nachtabsenk.': False,
+            'Legionellenschutz': False,
         }
         zeitsteuerung_rows = []
         active_changed = False
@@ -154,8 +156,12 @@ def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
                 case 'Heizen':
                     program_states['Heizen'] = program_states['Heizen'] or active
     
-                case 'Nachabsenk.':
+                case 'Nachtabsenk.':
                     program_states['Nachtabsenk.'] = program_states['Nachtabsenk.'] or active
+
+                case 'Legionellenschutz':
+                    program_states['Legionellenschutz'] = program_states['Legionellenschutz'] or active
+
                 case _:
                     # Hier sollte niemand vorbeischauen
                     logging.error(f"Der ausgewählte Heiztyp  {zs['type']} ist unbekannt!")
@@ -170,6 +176,8 @@ def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
             datav.vHeizen = program_states['Heizen']
         if datav.vNachtabsenkung != program_states['Nachtabsenk.']:
             datav.vNachtabsenkung = program_states['Nachtabsenk.']
+        if datav.vLegionellenschutz != program_states['Legionellenschutz']:
+            datav.vLegionellenschutz = program_states['Legionellenschutz']
         sleep_until_stop(sleeptime)
         try:
             message = queue_to_backend.get(timeout=1)
