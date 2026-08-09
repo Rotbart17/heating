@@ -659,10 +659,10 @@ def build_gui(state: GuiState) -> None:
 
 
                 ui.number(label='Aussentemp. Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertemp, \
-                    on_change=lambda e: setwinter(e.value)).classes('flex-1 w-32')
+                    on_change=lambda e: setwinter(e.value)).classes('col-start-1  w-32')
 
                 ui.number(label='Innenentemp. Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertempInnen, \
-                    on_change=lambda e: setwinterinnen(e.value)).classes('flex-1 w-32')
+                    on_change=lambda e: setwinterinnen(e.value)).classes('col-start-1  w-32')
 
                 # Knopf zum Ausschalten
                 ui.button('Programm Stop', color='#1e5569', on_click=lambda: de_init_data()).classes('col-start-4 w-25 h-25')
