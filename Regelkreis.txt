@@ -1,0 +1,173 @@
+### Regelkreis Prozess
+
+Das ist die Prozedur, die die Regelkreise implementiert. die aktuellen Werte werde aus der datav Struktur geholt und in sie auch hinengeschrieben DIe datav Struktur kommuniziert mit der DB .
+
+"Brenner Störung" muss aus Vermutungen zusammengesetzt werden, dann als Event aus gewertet werden und ein Mail erzeugen!
+
+```
+Übergeordnete Beschreibung der Regelkreise
+Alle Aktionen dürfen nur statt finden, wenn 
+alle Werte innerhalb der Toleranzen sind.
+- Kesseltemperatur 2 < t < KesselMax
+- Brauchwasser Temperatur 2 < t < BrauchwasserError
+- Sensoren Werte müssen sich in erlaubten Bereichen befinden
+- 	Brennerstatus Brenner_Stoerung (kann nur indirekt ermittelt werden)
+- 	Aussentemperatur AussenMinTemp < t < AussenMaxTemp
+- 	Innentemperatur 2 < t < 30
+Wenn nicht muss ein Fehler ausgegeben (Bildschirm, Log, Mail) werden und das Programm 
+darf keine Aktion zulassen bis die Werte wieder in dem Normbereich 
+sind. Der Brenner & Pumpen müssen in jedem Fall ausgeschaltet werden.
+Wenn die Software neugestartet wird (Backend, oder / und Frontend) Werden Pumpen 
+und Brenner ausgeschaltet!
+
+Die verschiedenen Modi (Brauchwasser, HandDusche, Heizung, Nachtabs., 
+    Legionellen, Gefrierschutz) müssen in der Anzeige sichtbar sein. Man könnte sie jeweils im 
+    Footer der Anzeige einblenden (blinkend?), so lange sie aktiv sind
+Solange die Werte OK sind, minimal minütlich prüfen:
+- Prio1: Prüfen ob Gefrierschutz notwendig:
+		Aussentemperatur <3 Grad AND Kesseltemperatur <10 Grad AND InnenTemperatur <5-> aktivieren
+- Prio2: Prüfen ob Legionellenschutz notwendig ist -> aktivieren
+- Prio3: Prüfen ob Brauchwasser bereitet werden soll (auch ausgelöst durch HandDusche)
+		Brauchwasser nicht generell aus?
+   BrauchwasserZeitraum AND Brauchwassertemperatur zu niedrig
+						-> Brauchwasserbereitung aktivieren
+- Prio4: Prüfen ob der Heizbetrieb notwendig ist 
+						-> Heizwasserbereitung aktivieren
+						Prüfen ob Brauchwasser erwärmt werden muss -> Bruchwasserbereitung 
+						aktivieren und zurückkehren
+zum Schleifenanfang
+```
+
+#### Regelkreis Brauchwasser
+
+Relevante Sensoren: Brauchwasser, Kesselsensor, Brennerstatus, Brauchwassertemperatureinsteller
+
+* Soll der Brauchwassertemperatureinsteller tot gelegt werden, und die Einstellung per Software erfolgen?
+
+\- Der Brauchwassersensor ist im Speicher.
+
+\- die Brauchwasserbereitung hat Vorrang. Das heißt, wenn wenn die Speichertemperatur unter den eingestellten Wert fällt (zusätzlich -5 Grad Hysterese (Settings.py? einstellbar)), dann wird die Brauchwasserbereitung gestartet.
+
+```
+Prozessbeschreibung Brauchwasserbeschreibung:
+
+Die Vorraussetzungen werden übergeordnet geprüft.(Brauchwasser generell 
+Aus, HandDusche, Brauchwasser Zeitraum & Temperatur)
+- Heizungspumpen ausschalten
+- Brauchwasserpumpe einschalten
+- wenn die Kesseltemperatur nicht über KesselMax und unter BrachwasserSoll ist 
+  Brenner starten, bis die Soll-Wassertemperatur 
+  des Speichers erreicht ist. 
+  (Die Solltemperatur soll +2 Grad sein, Hysterese (Settings.py? einstellbar))
+
+- Wenn sich nach 3 Minuten die Kesseltemperatur nicht verändert
+  hat Fehler werfen! -> Brennerfehler
+
+- Mit dem Erreichen der Solltemperatur der Speichers Brenner 
+  ausschalten wenn kein Heizbetrieb notwendig ist. 
+  (ggf. kann man den Brenner auch früher ausschalten 
+  und dann noch die Wärme des Kessels abtransportieren 
+  und dann erst die Pumpe ausschalten, aber nur 
+  wenn kein Heizbetrieb ansteht. 
+  Dann müsste man die vorhandenen Energie mit "einberechnen")
+  
+- einmal in der Woche soll der Brauchwasserboiler auf >= 60 Grad 
+   aufgeheizt werden. Um eine Legionellenbildung zu verhindern.
+   Diesen Punkt sollte man über die Zeitsteuerung erledigen. 
+   Als fixen Eintrag. (Legionellenschutz)
+
+- Wenn kein Heizbetrieb ist, dann Brauchwasserpumpe noch 3 Min 
+  weiter laufen lassen um die Wärme abzutransportieren. Dann abschalten.
+
+```
+
+#### Regelkreis Heizungsbetrieb
+
+Relevante Sensoren / Einflüsse: Außensensor, Kesseltemperatur, Brennerstatus, Innensensor, Sommer / Winter
+
+Wenn "Sommer" ist, findet kein Heizbetrieb statt
+
+- wird die Sommerwinterumschaltung nur nach der Außentemperatur festgelegt? 
+- Oder sollte die Außentemperatur über einen gewissen Zeittraum gegeben sein. z.B. 3 Tage? 
+- Besser, die Sommer-/Winter umschaltung sollte mit der Innentemperatur gekoppelt sein. → Wert muss im Reiter 4 definiert werden.
+
+Die Nachtabsenkung von ... bis ... mit -10Grad (= 4x2,5Grad = 4 Grad Raumtemperatur) Kesseltemperatur muss berücksichtigt werden. Die Nachtabsenkung = die zeitliche Verringerung der Keselsolltemperatur.
+
+Der Übergang von Außentemperatur -> KesselSollTemperatur erfolgt mit der Kurve aus dem Handbuch.
+
+X ist die Außentemperatur, Y die KesselSollTemperatur. Das ist der Default der Heizung aus dem Handbuch.
+
+Y=-1.2 x+56 + k
+
+* \+ 10 Grad = 44Grad
+*  0 Grad = 56Grad
+* \- 10 Grad  =  68Grad
+
+Ein Grad Veränderung Raumtemperatur entspricht ca. 2,5 Grad Kesseltemperatur (Handbuch), k is dann der Faktor mit dem man die Kesseltemperatur verschieben kann.
+
+Mindestlaufzeit Brenner ist notwendig: 5min. Sollte während dieser Zeit schon die Solltemperatur erreicht werden, dann Brenner abschalten und eine Warnung auf dem Display ausgeben (Display, Log, Mail)
+
+Maximallaufzeit des Brenners: gibt es nicht → sollt man eine vorsehen können?
+
+Mindest Totzeit des Brenners: 5min. Das soll verhindern, dass der Brenner zu kurz läuft. Vermutich wird man das mit der Hysterese beim Prüfen der KesselTemperatur justieren müssen. Eine längere Brennzeit (20 min an, 20 min aus) ist einer kürzeren (5min an, 5 min aus vorzuziehen)
+
+```
+Prozessbeschreibung Heizbetrieb:
+Alle Vorrausstzungen bis auf die Brauchwasserbereitung werden außerhalb geprüft.
+Alle Temperaturen mit Hysterese!
+
+- solange die Kesseltemperatur niedriger als die Kesselsolltemperatur 
+  und KesselMaxTemperatur 
+	- Heizungspumpen an (Man könnte oben und unten trennen)
+	- Brenner an (Brenner Zyklus siehe unten) -> Eigner Thread!
+  - Sollte die Temperatur KesselMax erreicht werden 
+			Brenner aus. Pumpen weiterlaufen lassen bis 
+     die Kesseltemperatur kleiner der KesselMaxTemperatur ist. 
+     Das am besten in einem eigenen Minizyklus abbilden.
+------------------
+Weitere Details:
+Die Werte werden aus der Struktur dataview geholt und Änderungen darin abgelegt.
+
+Die KesselSolltemperatur wird dem Regelkreis aus der 
+Liste des Dataview vorgegeben. 
+Die "Nachtabsenkung=0 oder = -10" ist ein Wert der die Solltemperatur senkt. 
+Die Hysterese ist eine globale Variable = 2 Grad.
+
+Brenner Zyklus:
+"Stopzeit" des letzten Brennerlaufs aus der DB holen.
+- Ist die letzte Brennerlaufzeit nicht mind. x Minuten her -> Warten
+- Brennerstarten -> Status in dataview ablegen
+- Zeit merken, damit Brenner mindestens 5 Minuten läuft
+- KesselMaxtemperatur prüfen.
+	- überschritten -> Brennerstop
+  - Fehlermeldung, Mail
+  - Status in dataview ablegen
+  - Brennerlaufzeit protokollieren
+- Warten bis Kesselsolltemperatur erreicht.
+	- Brenner stoppen, 
+			Zeit merken
+			Status in dataview ablegen 
+- Brenner Maximal Laufzeit prüfen!(Die scheint es nicht zu geben.)
+
+- Brennerlaufzeit (Start / Stop) in die DB schreiben.
+- Wenn Brennerstörung, Mail schicken. Pumpe ausschalten wenn KesselTemperatur < KesselSollTemperatur
+
+Wenn die Laufzeit des Brenners nicht lang genug ist, 
+muss die Hysterese vergrößert werden.
+```
+
+#### Regelkreis Frostsicherung
+
+Wenn die Kesseltemperatur unter 10 Grad und Aussentemperatur unter 3Grad (Die Heizung ist im Keller!) fällt 
+
+Es muss in der Anzeige ein Status sichtbar sein!
+
+```
+- Aussentemperatur <3 Grad AND Kesseltemperatur <10 Grad 
+  AND InnenTemperatur <5 Grad
+- Testumwälzung machen (5-10min). 
+- dann wieder die Kesseltemperatur prüfen. Wenn sie jetzt unter 5Grad 
+		Gefrierschutz Heizbetrieb! 
+```
+
+### 
