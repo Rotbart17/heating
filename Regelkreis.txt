@@ -51,17 +51,6 @@ sind. Der Brenner & Pumpen müssen in jedem Fall ausgeschaltet werden.
                Warmeswasser zur Verfügung.
 zum Schleifenanfang
 ```
-#### Regelkreis Brennersteuerung
-- Der Brenner wird gestartet wenn 
- die Kesseltemperatur unter KesselMax ist.
-- Die Laufzeit der Brenners wird mitgeschrieben und in der Tabelle abgelegt.
-- Der Kessel wird bis zur Kesselsolltemperatur + 2Grad Hysterese erhitzt. 
-  Dann wird der Brenner abgeschaltet. Die KesselSollTemperatur ist für Heizbetrieb 
-  und für Brauchwwassererwärmung unterschiedlich. Die KesselSollTemperatur muss für Brauchwasser 5-10Grad 
-  über der benötigten Brauchwassertemperatur liegen. Für den Heizbetrieb kommt die KesselSollTemperatur 
-  aus der Kesselkurve
-  - Es muss eine Mindestlaufzeit und eine Brennerwrtezeit existieren, damit der Brenner nicht 
-  schnell hintereinander ein und augeschaltet werden kann. Das ist nicht gut für die Technik.
 
 
 
@@ -104,7 +93,7 @@ Aus, HandDusche, Brauchwasser Zeitraum & Temperatur)
    Diesen Punkt sollte man über die Zeitsteuerung erledigen. 
    Als fixen Eintrag. (Legionellenschutz)
 
-- Wenn Brauchwasserbereitung nicht aus dem Heizbetrieb aufgrufen wurde, dann Brauchwasserpumpe noch 3 Min? 
+- Wenn Brauchwasserbereitung nicht aus dem Heizbetrieb aufgerufen wurde, dann Brauchwasserpumpe noch 3 Min? 
   Oder besser so lange laufen lassen bis die KesselTemperatur = BrauchwasserSoll
   weiter laufen lassen um die Wärme abzutransportieren. 
 
@@ -164,6 +153,9 @@ Liste des Dataview vorgegeben.
 Die "Nachtabsenkung=0 oder = -10" ist ein Wert der die Solltemperatur senkt. 
 Die Hysterese ist eine globale Variable = 2 Grad.
 
+
+
+
 Brenner Zyklus:
 "Stopzeit" des letzten Brennerlaufs aus der DB holen.
 - Ist die letzte Brennerlaufzeit nicht mind. x Minuten her -> Warten
@@ -174,11 +166,15 @@ Brenner Zyklus:
   - Fehlermeldung, Mail
   - Status in dataview ablegen
   - Brennerlaufzeit protokollieren
-- Warten bis Kesselsolltemperatur erreicht.
+- Warten bis Kesselsolltemperatur + 2Grad erreicht.
+  Dann wird der Brenner abgeschaltet. Die KesselSollTemperatur ist für Heizbetrieb 
+  und für Brauchwwassererwärmung unterschiedlich. Die KesselSollTemperatur muss für Brauchwasser 5-10Grad 
+  über der benötigten Brauchwassertemperatur liegen. Für den Heizbetrieb kommt die KesselSollTemperatur 
+  aus der Kesselkurve
 	- Brenner stoppen, 
 			Zeit merken
 			Status in dataview ablegen 
-- Brenner Maximal Laufzeit prüfen!(Die scheint es nicht zu geben.)
+- Brenner Maximal Laufzeit prüfen! (Die scheint es nicht zu geben. Daher dann auch nicht notwendig)
 
 - Brennerlaufzeit (Start / Stop) in die DB schreiben.
 - Wenn Brennerstörung, Mail schicken. Pumpe ausschalten wenn KesselTemperatur < KesselSollTemperatur
