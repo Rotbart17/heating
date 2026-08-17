@@ -1,67 +1,95 @@
 ### Regelkreis Prozess
 
-Das ist die Prozedur, die die Regelkreise implementiert. die aktuellen Werte werde aus der datav Struktur geholt und in sie auch hinengeschrieben DIe datav Struktur kommuniziert mit der DB .
+Das ist die Prozedur, die die Regelkreise implementiert. 
+Die aktuellen Werte werde aus der datav Struktur geholt und in 
+sie auch hinengeschrieben. Die datav Struktur kommuniziert mit der DB .
 
-"Brenner Störung" muss aus Vermutungen zusammengesetzt werden, dann als Event aus gewertet werden und ein Mail erzeugen!
-
-```
-Übergeordnete Beschreibung der Regelkreise
-Alle Aktionen dürfen nur statt finden, wenn 
-alle Werte innerhalb der Toleranzen sind.
-- Kesseltemperatur 2 < t < KesselMax
-- Brauchwasser Temperatur 2 < t < BrauchwasserError
-- Sensoren Werte müssen sich in erlaubten Bereichen befinden
-- 	Brennerstatus Brenner_Stoerung (kann nur indirekt ermittelt werden)
-- 	Aussentemperatur AussenMinTemp < t < AussenMaxTemp
-- 	Innentemperatur 2 < t < 30
-Wenn nicht muss ein Fehler ausgegeben (Bildschirm, Log, Mail) werden und das Programm 
-darf keine Aktion zulassen bis die Werte wieder in dem Normbereich 
-sind. Der Brenner & Pumpen müssen in jedem Fall ausgeschaltet werden.
+"Brenner Störung" muss aus Vermutungen zusammengesetzt werden, 
+dann als Event aus gewertet werden und ein Mail erzeugen!
 Wenn die Software neugestartet wird (Backend, oder / und Frontend) Werden Pumpen 
 und Brenner ausgeschaltet!
 
 Die verschiedenen Modi (Brauchwasser, HandDusche, Heizung, Nachtabs., 
     Legionellen, Gefrierschutz) müssen in der Anzeige sichtbar sein. Man könnte sie jeweils im 
     Footer der Anzeige einblenden (blinkend?), so lange sie aktiv sind
-Solange die Werte OK sind, minimal minütlich prüfen:
+Solange die Werte OK sind, minimal minütlich (einstellbar)  prüfen:
+Die Mailadresse muss in Settings.py definiert werden. Sie könnte inder DB abgelegt werden um im 
+4. Reiter anpassbar gemacht werden.
+
+
+```
+#### Übergeordnete Beschreibung der Regelkreise
+
+Schleifenbeginn
+Alle Aktionen dürfen nur statt finden, wenn 
+alle Werte innerhalb der Toleranzen sind.
+- Kesseltemperatur 2 < t < KesselMax
+- Brauchwasser Temperatur 2 < t < BrauchwasserError
+- Sensoren Werte müssen sich in erlaubten Bereichen befinden
+- 	Brennerstatus: Brenner_Stoerung (kann nur indirekt ermittelt werden)
+- 	Aussentemperatur: AussenMinTemp < t < AussenMaxTemp
+- 	Innentemperatur: 2 < t < 30
+Wenn nicht, muss ein Fehler ausgegeben (Bildschirm, Log, Mail) werden und das Programm 
+darf keine Aktion zulassen bis die Werte wieder in dem Normbereich 
+sind. Der Brenner & Pumpen müssen in jedem Fall ausgeschaltet werden.
+
+
 - Prio1: Prüfen ob Gefrierschutz notwendig:
 		Aussentemperatur <3 Grad AND Kesseltemperatur <10 Grad AND InnenTemperatur <5-> aktivieren
-- Prio2: Prüfen ob Legionellenschutz notwendig ist -> aktivieren
+- Prio2: Prüfen ob Legionellenschutz notwendig ist, Leginellenschutz nicht notwendig wenn BrauchwasserAus 
+  aktiv ist, denn dann wird ja keinerlei Brauchwasser erhitzt  -> sonst aktivieren
 - Prio3: Prüfen ob Brauchwasser bereitet werden soll (auch ausgelöst durch HandDusche)
-		Brauchwasser nicht generell aus?
+		wenn BrauchwasserAus nicht aktiv ist?
    BrauchwasserZeitraum AND Brauchwassertemperatur zu niedrig
 						-> Brauchwasserbereitung aktivieren
 - Prio4: Prüfen ob der Heizbetrieb notwendig ist 
 						-> Heizwasserbereitung aktivieren
-						Prüfen ob Brauchwasser erwärmt werden muss -> Bruchwasserbereitung 
-						aktivieren und zurückkehren
+						-> Im Heizbetrieb muss immer wieder geprüft werden ob Brauchwasser erwärmt werden muss 
+               -> Bruchwasserbereitung aktivieren und zurückkehren
+               Der Grund für diese Prüfung ist, dass es sein kann dass bei sehr niedrigen Temperaturen
+               die Heizung mit dem Heizbetrieb länger ausgelastst ist. Dadurch shet ggf. 
+               Warmeswasser zur Verfügung.
 zum Schleifenanfang
 ```
+#### Regelkreis Brennersteuerung
+- Der Brenner wird gestartet wenn 
+ die Kesseltemperatur unter KesselMax ist.
+- Die Laufzeit der Brenners wird mitgeschrieben und in der Tabelle abgelegt.
+- Der Kessel wird bis zur Kesselsolltemperatur + 2Grad Hysterese erhitzt. 
+  Dann wird der Brenner abgeschaltet. Die KesselSollTemperatur ist für Heizbetrieb 
+  und für Brauchwwassererwärmung unterschiedlich. Die KesselSollTemperatur muss für Brauchwasser 5-10Grad 
+  über der benötigten Brauchwassertemperatur liegen. Für den Heizbetrieb kommt die KesselSollTemperatur 
+  aus der Kesselkurve
+  - Es muss eine Mindestlaufzeit und eine Brennerwrtezeit existieren, damit der Brenner nicht 
+  schnell hintereinander ein und augeschaltet werden kann. Das ist nicht gut für die Technik.
+
+
 
 #### Regelkreis Brauchwasser
 
 Relevante Sensoren: Brauchwasser, Kesselsensor, Brennerstatus, Brauchwassertemperatureinsteller
 
 * Soll der Brauchwassertemperatureinsteller tot gelegt werden, und die Einstellung per Software erfolgen?
-
-\- Der Brauchwassersensor ist im Speicher.
-
-\- die Brauchwasserbereitung hat Vorrang. Das heißt, wenn wenn die Speichertemperatur unter den eingestellten Wert fällt (zusätzlich -5 Grad Hysterese (Settings.py? einstellbar)), dann wird die Brauchwasserbereitung gestartet.
+- Der Brauchwassersensor ist im Speicher.
+- die Brauchwasserbereitung hat Vorrang. Das heißt, wenn wenn die Speichertemperatur unter den 
+eingestellten Wert fällt (zusätzlich -5 Grad Hysterese (Settings.py? einstellbar)), 
+dann wird die Brauchwasserbereitung gestartet.
 
 ```
-Prozessbeschreibung Brauchwasserbeschreibung:
+##### Prozessbeschreibung Brauchwasserbeschreibung:
 
 Die Vorraussetzungen werden übergeordnet geprüft.(Brauchwasser generell 
 Aus, HandDusche, Brauchwasser Zeitraum & Temperatur)
 - Heizungspumpen ausschalten
 - Brauchwasserpumpe einschalten
-- wenn die Kesseltemperatur nicht über KesselMax und unter BrachwasserSoll ist 
-  Brenner starten, bis die Soll-Wassertemperatur 
-  des Speichers erreicht ist. 
-  (Die Solltemperatur soll +2 Grad sein, Hysterese (Settings.py? einstellbar))
+- wenn die Kesseltemperatur nicht über KesselMax 
+- wenn die KesselTemperatur unter BrauchwasserSoll + 10Grad KesselTransferTemperatur -5Grad Hysterese ist 
+  Brenner starten, bis die BrauchwasserSoll  des Speichers erreicht ist. 
+  (Die KesselTemperatur muss dabei < KesselMax bleiben (Settings.py? einstellbar)) 
+   Sonst Brenner abschalten
 
 - Wenn sich nach 3 Minuten die Kesseltemperatur nicht verändert
-  hat Fehler werfen! -> Brennerfehler
+  hat Fehler werfen! -> Brennerfehler in der GUI zeigen und Mail schicken
 
 - Mit dem Erreichen der Solltemperatur der Speichers Brenner 
   ausschalten wenn kein Heizbetrieb notwendig ist. 
@@ -71,13 +99,16 @@ Aus, HandDusche, Brauchwasser Zeitraum & Temperatur)
   wenn kein Heizbetrieb ansteht. 
   Dann müsste man die vorhandenen Energie mit "einberechnen")
   
-- einmal in der Woche soll der Brauchwasserboiler auf >= 60 Grad 
+- einmal in der Woche soll der Speicher auf >= 60 Grad 
    aufgeheizt werden. Um eine Legionellenbildung zu verhindern.
    Diesen Punkt sollte man über die Zeitsteuerung erledigen. 
    Als fixen Eintrag. (Legionellenschutz)
 
-- Wenn kein Heizbetrieb ist, dann Brauchwasserpumpe noch 3 Min 
-  weiter laufen lassen um die Wärme abzutransportieren. Dann abschalten.
+- Wenn Brauchwasserbereitung nicht aus dem Heizbetrieb aufgrufen wurde, dann Brauchwasserpumpe noch 3 Min? 
+  Oder besser so lange laufen lassen bis die KesselTemperatur = BrauchwasserSoll
+  weiter laufen lassen um die Wärme abzutransportieren. 
+
+- Dann Brauchwasserpumpe abschalten.
 
 ```
 
@@ -158,7 +189,8 @@ muss die Hysterese vergrößert werden.
 
 #### Regelkreis Frostsicherung
 
-Wenn die Kesseltemperatur unter 10 Grad und Aussentemperatur unter 3Grad (Die Heizung ist im Keller!) fällt 
+Wenn die Kesseltemperatur unter 10 Grad und Aussentemperatur unter 3Grad (Die Heizung ist im Keller!) 
+fällt. 
 
 Es muss in der Anzeige ein Status sichtbar sein!
 
@@ -168,6 +200,9 @@ Es muss in der Anzeige ein Status sichtbar sein!
 - Testumwälzung machen (5-10min). 
 - dann wieder die Kesseltemperatur prüfen. Wenn sie jetzt unter 5Grad 
 		Gefrierschutz Heizbetrieb! 
+    - Senden eines Mails mit der Info, dass die Frostsicherung aktiv wurde.
+    - Die Innentemperatur soll mit dem Gefrierschutz auf 10 Grad angehoben werden.
+    - Es muss auf dem Bildschirm gezeigt werden das das Gefrierschutzprogramm läuft (blinken?)
 ```
 
 ### 
