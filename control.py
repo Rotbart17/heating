@@ -161,3 +161,27 @@ def decide(e: Eingang, g: Grenzen = Grenzen()) -> Entscheidung:
         return entscheidung
 
     return Entscheidung(Modus.AUS)
+
+
+def ist_winter(aussen: float, innen: float, wintertemp: float, wintertemp_innen: float,
+               winter: bool, hysterese: float = 1) -> bool:
+    '''Winterbetrieb, wenn es draußen UND drinnen unter der jeweiligen Wintertemperatur ist.
+    Einmal im Winterbetrieb, bleibt er bis hysterese über den Schwellen bestehen.'''
+    zuschlag = hysterese if winter else 0
+    return aussen < wintertemp + zuschlag and innen < wintertemp_innen + zuschlag
+
+
+def kennlinie_soll(x: list[float], y: list[float], aussen: float) -> float:
+    '''Kesselsolltemperatur aus der Heizkurve (x = Außentemperatur, aufsteigend), linear interpoliert.
+    Außerhalb der Kurve gilt der Randwert.'''
+    if not x or len(x) != len(y):
+        raise ValueError("Kesselkennlinie ist leer oder inkonsistent")
+    if aussen <= x[0]:
+        return y[0]
+    if aussen >= x[-1]:
+        return y[-1]
+    for i in range(1, len(x)):
+        if aussen <= x[i]:
+            anteil = (aussen - x[i - 1]) / (x[i] - x[i - 1])
+            return y[i - 1] + anteil * (y[i] - y[i - 1])
+    return y[-1]
