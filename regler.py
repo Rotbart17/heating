@@ -111,8 +111,9 @@ class Regler:
         pumpen = (entscheidung.pumpe_oben, entscheidung.pumpe_unten, entscheidung.pumpe_brauchwasser)
         if brenner and not entscheidung.brenner:
             # Mindestlaufzeit: der Brenner läuft weiter, also müssen auch die Pumpen weiterlaufen
-            pumpen = tuple(neu or alt for neu, alt in zip(pumpen, (
-                self.ausgabe.pumpe_oben, self.ausgabe.pumpe_unten, self.ausgabe.pumpe_brauchwasser)))
+            pumpen = (pumpen[0] or self.ausgabe.pumpe_oben,
+                      pumpen[1] or self.ausgabe.pumpe_unten,
+                      pumpen[2] or self.ausgabe.pumpe_brauchwasser)
 
         if entscheidung.modus is not self.modus or fehler:
             level = logging.WARNING if fehler else logging.INFO

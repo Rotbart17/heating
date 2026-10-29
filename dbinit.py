@@ -27,7 +27,7 @@ def create_db(db_file):
     conn = None
     try:
         conn = connect_db(db_file)
-        logging.info(f'DB Version {sqlite3.version} erstellt')
+        logging.info(f'DB Version {sqlite3.sqlite_version} erstellt')
         conn.close()
     except Error as e:
         logging.error(f'Die Datenbank konnte nicht erstellt werden! Fehler:{e}')

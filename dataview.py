@@ -14,7 +14,7 @@ from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
 # from multiprocessing.queues import Queue as MPQueue
-from typing import Any
+from typing import Any, overload
 
 
 # Muster für logging
@@ -41,6 +41,10 @@ class ViewField:
     def __init__(self, name:str) -> None:
         self.name = name
 
+    @overload
+    def __get__(self, obj: None, objtype: type) -> "ViewField": ...
+    @overload
+    def __get__(self, obj: object, objtype: type) -> Any: ...
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
