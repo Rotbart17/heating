@@ -70,8 +70,6 @@ rawvaluedict = {
 # zu können False = Echte Daten, True = Fakedaten
 V_Mode = False
 
-# Liste aller Threads, vielleicht kann man die ja noch brauchen
-ThreadList = [] 
 # TRUE bewirkt das stoppen aller Threads
 threadstop : bool = False
 # Alle gloalen Variablen, die für die Anzeigeschicht gebraucht werden

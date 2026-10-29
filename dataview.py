@@ -301,7 +301,6 @@ class maindata(SensorView, KesselView, ZeitView):
         global dv_poll
         self.dv_poll = threading.Thread(target=self._dataviewpolling, name="Thread-GUI-DataView", args=(dummy,))
         logging.info('Starte DB-Abfrage dataview Thread!')
-        settings.ThreadList.append(self.dv_poll)
         self.dv_poll.start()
         logging.debug('DB-Abfrage Thread dataview gestartet!')
 

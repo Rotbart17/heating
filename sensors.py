@@ -21,7 +21,8 @@ class sensor(Tables):
     # Zeit bis zur nächsten Abfrage eines Sensors in sec
     waittime = 10
 
-    # Thread Merk Variable, damit man den Thread später wieder anhalten kann
+    # Thread der Sensorabfrage, wird von Backend zum Einsammeln verwendet
+    thread : threading.Thread
 
     # DB Tabelle anlegen wenn notwendig
     # def __init__(self,tablename): 
@@ -35,10 +36,9 @@ class sensor(Tables):
 
 
     def startthread(self):
-        self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tablename)
+        self.thread = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tablename)
         logging.info('Starte Sensorabfrage '+ self.tablename + '!')
-        settings.ThreadList.append(self.x)
-        self.x.start()
+        self.thread.start()
         logging.debug('Sensorabfrage '+ self.tablename + ' gestartet!')
 
     # Das hier ist der Teil, der im Thread läuft

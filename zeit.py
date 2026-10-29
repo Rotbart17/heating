@@ -108,7 +108,7 @@ def _zeitsteuerung_row_as_dict(row):
     }
 
        
-def evaluate_program(stop_event:Event)->None:
+def evaluate_program(stop_event:Event, datav:maindata)->None:
     '''Wertet die Programmsteuerungstabelle minütlich aus und setzt/löscht die Variablen für Brauchwasser, Heizung und Nachtabsenkung'''
     
     while not stop_event.is_set():
@@ -172,23 +172,22 @@ def evaluate_program(stop_event:Event)->None:
     logging.info('evaluatethread ist gestoppt.')
 
 
-def _run_evaluate_program(stop_event:Event)->None:
+def _run_evaluate_program(stop_event:Event, datav:maindata)->None:
     try:
-        evaluate_program(stop_event)
+        evaluate_program(stop_event, datav)
     except Exception:
         # ohne Programmsteuerung darf das Backend nicht weiterlaufen: alles anhalten
         logging.exception('Programmsteuerungsthread ist abgebrochen, Backend wird gestoppt!')
         stop_event.set()
 
 
-def start_evaluatethread(stop_event:Event)->maindata:
-    '''Startet den eigenen Auswertethread der Programmsteuerung'''
-    global datav 
+def start_evaluatethread(stop_event:Event)->tuple[threading.Thread, maindata]:
+    '''Startet den eigenen Auswertethread der Programmsteuerung.
+    Gibt den Thread und die vom Thread verwendeten Daten zurück.'''
     datav=maindata(start_polling=False)
-   
-    x = threading.Thread(target=_run_evaluate_program, name="Thread-Programmsteuerung", args=(stop_event,))
+
+    x = threading.Thread(target=_run_evaluate_program, name="Thread-Programmsteuerung", args=(stop_event, datav))
     logging.info('Starte Programmsteuerungsthread')
-    settings.ThreadList.append(x)
     x.start()
     logging.debug('Programmsteuerungsthread gestartet!')
-    return datav
+    return x, datav

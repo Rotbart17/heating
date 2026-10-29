@@ -66,7 +66,6 @@ class SensorView:
         _dummy=0 
         self.sensor_poll = threading.Thread(target=self._sensorpolling, name="Thread-GUI-Sensorpolling", args=(_dummy,))
         logging.info('Starte DB-Abfrage Sensor Thread!')
-        settings.ThreadList.append(self.sensor_poll)
         self.sensor_poll.start()
         logging.debug('DB-Abfrage Thread Sensor gestartet!')
 
