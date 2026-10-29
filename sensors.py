@@ -4,12 +4,10 @@ from sqlite3 import Error, Connection
 import logging
 import threading
 import settings
-from settings import SensorList
 from table import Tables
 from dbinit import connect_db
 import random
-from multiprocessing import Queue
-from queue import Empty
+from multiprocessing.synchronize import Event
 
 
 # Definitionen der Sensorklasse
@@ -23,51 +21,26 @@ class sensor(Tables):
     # Zeit bis zur nächsten Abfrage eines Sensors in sec
     waittime = 10
 
-    # Thread zu Messung anhalten
-    threadstop : bool = False
-    
     # Thread Merk Variable, damit man den Thread später wieder anhalten kann
 
     # DB Tabelle anlegen wenn notwendig
     # def __init__(self,tablename): 
-    def __init__(self, tablename:str, sql_columns:str, queue_to_backend:Queue, queue_from_backend:Queue) -> None:
-        super().__init__(tablename, sql_columns, queue_to_backend,queue_from_backend)
+    def __init__(self, tablename:str, sql_columns:str, stop_event:Event) -> None:
+        super().__init__(tablename, sql_columns, stop_event)
         self._create_table()
 
 
-        # so, die Tabelle existiert, jetzt noch die Sensorliste aufbauen
-        settings.SensorList.append(self)
-        logging.info('Sensor '+ self.tablename +' in die Sensorliste eingehängt!')
-        # ok jetzt ist eigetlich alles vorbereitet, jetzt noch die Sensorabfrage starten
+        # die Tabelle existiert, jetzt die Sensorabfrage starten
         self.startthread()
 
-
-    # DB Verbindung schließen wenn Objekt gelöscht wird
-    def __del__(self):
-        logging.debug(f'Sensor {self.tablename} stoppen')
-        self.threadstop = True
-        # wait for Thread to end
-        self.conn.close()
-        self.x.join()
-        logging.info("Sensorobjekt " + self.tablename + " gelöscht.")
-        
 
     def startthread(self):
         self.x = threading.Thread(target=self.sensor_envlope, name="Thread-"+self.tablename)
         logging.info('Starte Sensorabfrage '+ self.tablename + '!')
         settings.ThreadList.append(self.x)
         self.x.start()
-        self._putqueuevalue()
         logging.debug('Sensorabfrage '+ self.tablename + ' gestartet!')
 
-    def _sleep_until_stop(self, seconds: float) -> None:
-        end_time = time.monotonic() + seconds
-        while self.threadstop == False:
-            remaining = end_time - time.monotonic()
-            if remaining <= 0:
-                return
-            time.sleep(min(0.5, remaining))
-        
     # Das hier ist der Teil, der im Thread läuft
     def sensor_envlope(self):
         tn=self.tablename
@@ -143,13 +116,12 @@ class sensor(Tables):
         # Die Daten Wandeln und speichern
         def processvalue(name:str):
             
-            while (self.threadstop == False):
+            while not self.stop_event.is_set():
                 rawtemp = getvalue(name)
                 temperature = convertvalue(rawtemp)
                 storevalue(temperature)
                 logging.debug('Sensorabfrage '+ name +' ist erfolgt!')
-                self._sleep_until_stop(self.waittime)
-                self._getqueuevalue()
+                self.stop_event.wait(self.waittime)
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
 
         # Warten, dass Thread wieder zurückkommt.

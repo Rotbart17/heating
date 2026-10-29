@@ -91,8 +91,6 @@ class maindata(SensorView, KesselView, ZeitView):
     # Es bleibt aber nicht schön.
     # Wenn ich die Dataclass für alles verwende, dann kann ich die globalen Variablen reduzieren.
 
-    queue_to_backend : Any =None
-    queue_to_frontend : Any =None
     start_polling : bool = True
 
     # damit man den thread stoppen kann

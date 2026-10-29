@@ -7,71 +7,42 @@ import dbinit
 import logging
 import settings
 from sensors import sensor
-# import threading
-import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
-from multiprocessing import Queue
-from queue import Empty
+from multiprocessing.synchronize import Event
 from zeit import start_evaluatethread
 
-BACKEND_READY = "backend_up"
-STOP_MESSAGE = "threadstop"
 
-
-def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
-    '''Startet alle Backendthreads'''
-    program_data = None
-
+def startbackend(stop_event:Event, ready_event:Event)-> None:
+    '''Startet alle Backendthreads.
+    stop_event: wird von der GUI gesetzt, um das Backend zu beenden.
+    ready_event: wird gesetzt, sobald alle Backendthreads laufen.'''
     try:
         dbinit.init_db_environment()
 
-        global kss,ass,bws,iss
-        kss= sensor(settings.Kesselsensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        ass= sensor(settings.Aussensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        bws= sensor(settings.Brauchwassersensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        iss= sensor(settings.Innensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        kst= KesselSollTemperatur(settings.KesselSollTemperatur, settings.sql_kennlinie_columns, queue_to_backend, queue_from_backend)
-        zst= Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns, queue_to_backend, queue_from_backend)
-        bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, queue_to_backend, queue_from_backend)
-        wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, queue_to_backend, queue_from_backend)
-        program_data = start_evaluatethread(queue_to_backend, queue_from_backend)
-        queue_from_backend.put(BACKEND_READY)
+        for name in (settings.Kesselsensor, settings.Aussensensor, settings.Brauchwassersensor, settings.Innensensor):
+            sensor(name, settings.sql_create_sensor_table_columns, stop_event)
+        KesselSollTemperatur(settings.KesselSollTemperatur, settings.sql_kennlinie_columns, stop_event)
+        Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns, stop_event)
+        Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, stop_event)
+        WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, stop_event)
+        program_data = start_evaluatethread(stop_event)
+        ready_event.set()
 
-        wait_for_stop_signal(queue_to_backend, program_data)
+        # warten bis die GUI das Stop-Signal setzt
+        stop_event.wait()
     finally:
-        stopbackend(True, program_data)
+        stopbackend(stop_event, locals().get('program_data'))
 
     # der Überwachungsprozess sollte aus system-d gestartet werden.
 
 
-def wait_for_stop_signal(queue_to_backend:Queue, program_data)->None:
-    '''Wartet auf das Stop-Signal der GUI.'''
-    while getattr(program_data, 'threadstop', False) == False:
-        try:
-            message = queue_to_backend.get(timeout=1)
-        except Empty:
-            continue
-
-        if message == STOP_MESSAGE:
-            return
-
-        queue_to_backend.put_nowait(message)
-        time.sleep(0.1)
-
-
-# hier ziehen wir dann wieder die Bremse    
-def stopbackend(stop:bool, program_data=None)->None:
-    '''Stoppt alle Backendthreads'''
-    settings.threadstop=stop
-
-    for sensor_object in settings.SensorList:
-        sensor_object.threadstop=stop
+def stopbackend(stop_event:Event, program_data=None)->None:
+    '''Stoppt alle Backendthreads und sammelt sie wieder ein'''
+    stop_event.set()
 
     if program_data is not None:
-        program_data.threadstop=stop
+        program_data.threadstop=True
 
-    # Ende Funktionen
-    # Threads wieder einsammeln
     for backend_thread in settings.ThreadList:
         if backend_thread.ident is None:
             continue

@@ -37,7 +37,6 @@ AllTableList=["Aussensensor", "Kesselsensor", "Innensensor", "Brauchwassersensor
 # Liste damit man alle Temperatur-Sensoren in einer Schleife bearbeiten kann.
 # wird in den Sensorklassen befüllt mit den einzelnen Sensor Threads
 
-SensorList = []
 
 
 # Liste aller Temperatursensorentabellen
