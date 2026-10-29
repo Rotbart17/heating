@@ -1,6 +1,6 @@
 import math
 import sys
-import threading
+import multiprocessing
 import unittest
 from pathlib import Path
 
@@ -106,7 +106,7 @@ class ReglerTest(unittest.TestCase):
                       "Aussensensor": 0.0, "Innensensor": 18.0}
         self.lauf = []
         self.ausgabe = Ausgabe()
-        self.regler = Regler(threading.Event(), self.d, self.ausgabe,
+        self.regler = Regler(multiprocessing.Event(), self.d, self.ausgabe,  # type: ignore[arg-type]
                              sensorquelle=lambda n: self.werte[n],
                              protokoll=lambda von, bis: self.lauf.append((von, bis)),
                              uhr=self.uhr)
