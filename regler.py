@@ -6,12 +6,13 @@ import logging
 import math
 import threading
 import time
+from dataclasses import replace
 from datetime import datetime
 from multiprocessing.synchronize import Event
 from typing import Callable
 
 import settings
-from ausgabe import Ausgabe, Brennerzyklus
+from ausgabe import Ausgabe, Brennerueberwachung, Brennerzyklus
 from control import Eingang, Grenzen, Modus, decide, ist_winter, kennlinie_soll
 from dbinit import connect_db
 from dataview import maindata
@@ -53,6 +54,7 @@ class Regler:
         self.protokoll = protokoll
         self.uhr = uhr
         self.zyklus = Brennerzyklus(uhr())
+        self.ueberwachung = Brennerueberwachung()
         self.modus = Modus.AUS
         self._brenner_start: str | None = None
 
@@ -96,7 +98,13 @@ class Regler:
 
     def schritt(self) -> None:
         '''Ein Regelschritt'''
-        entscheidung = decide(self._lese_eingang(), self.grenzen)
+        eingang = self._lese_eingang()
+        if self.ueberwachung.stoerung(eingang.brenner_an, eingang.kessel, self.uhr()):
+            # Die Störung bleibt bestehen (und der Regelkreis aus), bis das Backend neu gestartet wird
+            logging.error("Brennerstörung: Kesseltemperatur ist nach der Prüfzeit nicht gestiegen")
+            self._setze("vBrenner_Stoerung", True)
+            eingang = replace(eingang, brenner_stoerung=True)
+        entscheidung = decide(eingang, self.grenzen)
         fehler = entscheidung.modus is Modus.FEHLER
         brenner = self.zyklus.freigabe(entscheidung.brenner, self.uhr(), notaus=fehler)
 
@@ -132,8 +140,11 @@ class Regler:
         self._schalte(False, False, False, False)
 
     def run(self) -> None:
-        # Beim Start sind Pumpen und Brenner aus (Regelkreis.txt)
+        # Beim Start sind Pumpen und Brenner aus (Regelkreis.txt). Der Neustart quittiert eine Störung.
         try:
+            if self.datav.vBrenner_Stoerung:
+                logging.warning("Brennerstörung aus dem letzten Lauf wird beim Start zurückgesetzt")
+                self._setze("vBrenner_Stoerung", False)
             self.sicherer_zustand()
             while not self.stop_event.is_set():
                 try:

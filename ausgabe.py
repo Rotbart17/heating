@@ -53,3 +53,29 @@ class Brennerzyklus:
             self.an = True
             self._seit = jetzt
         return self.an
+
+
+class Brennerueberwachung:
+    '''Erkennt eine Brennerstörung indirekt: Läuft der Brenner die Prüfzeit (Sekunden), ohne dass
+    die Kesseltemperatur um mindestens min_anstieg gestiegen ist, ist er gestört.
+    Geprüft wird einmal pro Brennerlauf.'''
+
+    def __init__(self, pruefzeit: float = 180, min_anstieg: float = 0.5) -> None:
+        self.pruefzeit = pruefzeit
+        self.min_anstieg = min_anstieg
+        self._start: tuple[float, float] | None = None
+        self._geprueft = False
+
+    def stoerung(self, brenner_an: bool, kessel: float, jetzt: float) -> bool:
+        if not brenner_an:
+            self._start = None
+            self._geprueft = False
+            return False
+        if self._start is None:
+            self._start = (jetzt, kessel)
+            return False
+        zeit, kessel_start = self._start
+        if self._geprueft or jetzt - zeit < self.pruefzeit:
+            return False
+        self._geprueft = True
+        return kessel - kessel_start < self.min_anstieg

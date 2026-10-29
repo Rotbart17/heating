@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from ausgabe import Ausgabe, Brennerzyklus
+from ausgabe import Ausgabe, Brennerueberwachung, Brennerzyklus
 from control import Modus, ist_winter, kennlinie_soll
 from regler import Regler
 
@@ -56,6 +56,29 @@ class BrennerzyklusTest(unittest.TestCase):
         z.freigabe(True, 300)
         self.assertFalse(z.freigabe(True, 301, notaus=True))
         self.assertFalse(z.freigabe(True, 302))   # Totzeit gilt auch nach Notaus
+
+
+class BrennerueberwachungTest(unittest.TestCase):
+    def test_anstieg_ist_ok(self):
+        u = Brennerueberwachung()
+        self.assertFalse(u.stoerung(True, 30, 0))
+        self.assertFalse(u.stoerung(True, 35, 100))
+        self.assertFalse(u.stoerung(True, 40, 180))
+        self.assertFalse(u.stoerung(True, 30, 400))    # nur einmal pro Lauf geprüft
+
+    def test_kein_anstieg_ist_stoerung(self):
+        u = Brennerueberwachung()
+        u.stoerung(True, 30, 0)
+        self.assertFalse(u.stoerung(True, 30, 179))
+        self.assertTrue(u.stoerung(True, 30.2, 180))
+
+    def test_neuer_lauf_wird_neu_geprueft(self):
+        u = Brennerueberwachung()
+        u.stoerung(True, 30, 0)
+        u.stoerung(True, 40, 180)
+        u.stoerung(False, 40, 200)
+        u.stoerung(True, 40, 500)
+        self.assertTrue(u.stoerung(True, 40, 700))
 
 
 class ControlHelfer(unittest.TestCase):
@@ -125,6 +148,24 @@ class ReglerTest(unittest.TestCase):
         self.assertFalse(self.ausgabe.brenner or self.ausgabe.pumpe_oben or self.ausgabe.pumpe_unten)
         self.assertFalse(self.d.vBrenner_an)
         self.assertEqual(len(self.lauf), 1)
+
+    def test_brennerstoerung_nach_drei_minuten(self):
+        self.schritt(300)                           # Brenner an, Kessel bleibt bei 30 Grad
+        self.assertTrue(self.ausgabe.brenner)
+        self.schritt(400)
+        self.assertTrue(self.ausgabe.brenner)
+        self.schritt(590)
+        self.assertEqual(self.regler.modus, Modus.FEHLER)
+        self.assertTrue(self.d.vBrenner_Stoerung)
+        self.assertFalse(self.ausgabe.brenner or self.ausgabe.pumpe_oben)
+        self.schritt(900)                           # bleibt aus, bis zum Neustart
+        self.assertEqual(self.regler.modus, Modus.FEHLER)
+
+    def test_neustart_quittiert_stoerung(self):
+        self.d.vBrenner_Stoerung = True
+        self.regler.stop_event.set()
+        self.regler.run()
+        self.assertFalse(self.d.vBrenner_Stoerung)
 
     def test_sicherer_zustand_beim_stoppen(self):
         self.schritt(300)
