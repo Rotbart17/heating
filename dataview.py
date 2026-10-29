@@ -10,7 +10,6 @@ from dbinit import checktable, connect_db
 import threading
 import time
 import sqlite3
-from enum import Enum
 from dataview_sensor import SensorView, sens
 from dataview_kessel import KesselView
 from dataview_zeitst import ZeitView
@@ -35,49 +34,25 @@ logging.basicConfig(
 def str2bool(value):
     return {"True": True, "true": True}.get(value, False)
 
-class dv(Enum):
-    ViewChanged=1
-    Winter=2
-    Winter_changetime=3
-    Wintertemp=4
-    Wintertemp_changetime=5
-    Kessel=6
-    Kessel_changetime=7
-    KesselSoll=8
-    KesselSoll_changetime=9
-    Heizen=10
-    Heizen_changetime=11
-    Nachtabsenkung=12
-    Nachtabsenkung_changetime=13
-    Brauchwasser=14
-    Brauchwasser_changetime=15
-    BrauchwasserSoll=16
-    BrauchwasserSoll_changetime=17
-    BrauchwasserAus=18
-    BrauchwasserAus_changetime=19
-    Brauchwasserbereiten=20
-    Brauchwasserbereiten_changetime=21
-    Innen=22
-    Innen_changetime=23
-    Aussen=24
-    Aussen_changetime=25
-    Pumpe_oben_an=26
-    Pumpe_oben_an_changetime=27
-    Pumpe_unten_an=28
-    Pumpe_unten_an_changetime=29
-    Pumpe_Brauchwasser_an=30
-    Pumpe_Brauchwasser_an_changetime=31
-    Brenner_an=32
-    Brenner_an_changetime=33
-    Brenner_Stoerung=34
-    Brenner_Stoerung_changetime=35
-    Hand_Dusche=36
-    Hand_Dusche_changetime=37
-    WintertempInnen=38
-    WintertempInnen_changetime=39
-    Legionellenschutz=40
-    Legionellenschutz_changetime=41
-    threadstop=42
+class ViewField:
+    '''Zugriff auf ein Feld der Tabelle WorkDataView über die Variable _<name> der Datenklasse.
+    Schreibbare Felder schreiben beim Setzen den Wert und den Zeitstempel zusätzlich in die DB.'''
+
+    def __init__(self, name:str, writable:bool=False) -> None:
+        self.name = name
+        self.writable = writable
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        return getattr(obj, f"_{self.name}")
+
+    def __set__(self, obj, value) -> None:
+        if not self.writable:
+            raise AttributeError(f"{self.name} ist schreibgeschützt")
+        setattr(obj, f"_{self.name}", value)
+        timestamp = obj._writeitem(value, self.name, f"{self.name}_changetime")
+        setattr(obj, f"_{self.name}_changetime", timestamp)
 
 
 ##### Start der Idee mit der Idee der Dataclass
@@ -200,9 +175,9 @@ class maindata(SensorView, KesselView, ZeitView):
     # Setzt für jeder Attribut die Changezeit, wenn sie neuer ist als die bekannte.
     # Force ist für die Initialisierung gesetzt
     def _update_view_field(self, results, name, force=False):
-        value = results[dv[name].value]
+        value = results[name]
         changetime_name = f"{name}_changetime"
-        changetime = results[dv[changetime_name].value]
+        changetime = results[changetime_name]
 
         attr = f"_{name}"
         changetime_attr = f"_{changetime_name}"
@@ -216,37 +191,17 @@ class maindata(SensorView, KesselView, ZeitView):
     def _viewloader(self, initialrun):
         try:
             with connect_db() as db:
-                cursor = db.cursor()
-                sql = settings.read_WorkDataView_complete
-                cursor.execute(sql)
-                results = cursor.fetchone()
+                db.row_factory = sqlite3.Row
+                results = db.execute(settings.read_WorkDataView_complete).fetchone()
 
-            self._lastruntime = results[dv.ViewChanged.value]
+            self._lastruntime = results["ViewChanged"]
             for field in self._VIEW_FIELDS:
                 self._update_view_field(results, field, force=initialrun)
 
-            self.threadstop = results[dv.threadstop.value]
+            self.threadstop = results["threadstop"]
         except sqlite3.Error as e:
             logging.error(f"Error {e} ist aufgetreten")
             raise
-
-    # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
-    # True= "neu lesen"
-    def _checkview(self)->bool:
-        db=connect_db()
-        cursor=db.cursor()
-        sql=f"SELECT ViewChanged FROM {settings.WorkDataView} WHERE id=1"
-        cursor.execute(sql)
-        result=cursor.fetchone()
-        cursor.close()
-        db.close()
-        storetime=result[0]
-        if storetime > self._lastruntime:
-            return(True)
-        else:
-            return(False)
-
-
 
     # hier wird regelmäßig die DB abgefragt, damit immer frische Werte vorhanden sind
     # aber wenn gerade geschrieben wird, dann wird eine 1/50 sec gewartet. Vielleicht noch ein wenig viel.
@@ -307,33 +262,6 @@ class maindata(SensorView, KesselView, ZeitView):
         self._start_sensor_thread()
     
 
-    # liest einen Eintrag und seine Schreibzeit aus dem WorkDataView
-    def _readitem(self,name,namect,value,timestamp):
-        db=connect_db()
-        try: 
-            
-            cursor=db.cursor()
-            # t=(name,namect,settings.WorkDataView)
-            sql= f"SELECT {name}, {namect} FROM {settings.WorkDataView} WHERE id=1;"
-            cursor.execute(sql)
-            results=cursor.fetchone()
-            storevalue=results[0]
-            storetime= results[1]                               
-            cursor.close()
-            db.close()
-            if timestamp < storetime:
-                # neue Werte zurückgeben
-                return(storevalue,storetime)
-            else:
-                # alte Werte zurückgeben
-                return(value,timestamp)
-            
-        except sqlite3.Error as e:
-            logging.error(f"Der Fehler {e} ist beim Lesen von {name}:{namect} aufgetreten")
-            db.close()
-            raise
-
-
     # scheibt jeden Wert einzeln in die DB zusammen mit den Zeitstempeln
     def _writeitem(self,value,name,namect):
         db=connect_db()
@@ -343,7 +271,7 @@ class maindata(SensorView, KesselView, ZeitView):
             timestamp=time.time_ns()
             # den neuen Wert und den Time Stamp zwei Mal schreiben damit klar ist, dass sich was geändert hat.
             sql= f"UPDATE {settings.WorkDataView} SET {name}={value},{namect}={timestamp}, \
-                 {dv.ViewChanged.name}={timestamp} WHERE id=1"
+                 ViewChanged={timestamp} WHERE id=1"
             cursor.execute(sql)
             db.commit()
             cursor.close()
@@ -373,147 +301,29 @@ class maindata(SensorView, KesselView, ZeitView):
         self.stop_polling()
         logging.info("datav Klasse gelöscht, Polling gestoppt.")
 
-    # für jede Variable die es benötigt eine "Setter"-funktion erstellen.
-    # Denn ein Setzen der Variable soll auch immer den neuen Wert in die DB schreiben.
-    # viele Variablen werden nur gelesen. Sie werden durch Sensoren, Oder Regelkreise gesetzt
+    # Für jede Variable gibt es ein ViewField. Ein Setzen einer schreibbaren Variable schreibt den neuen Wert auch in die DB.
+    # Viele Variablen werden nur gelesen. Sie werden durch Sensoren oder Regelkreise gesetzt.
+    vWinter = ViewField("Winter")
+    vKessel = ViewField("Kessel")
+    vKesselSoll = ViewField("KesselSoll")
+    vBrauchwasser = ViewField("Brauchwasser")
+    vInnen = ViewField("Innen")
+    vAussen = ViewField("Aussen")
+    vPumpe_oben_an = ViewField("Pumpe_oben_an")
+    vPumpe_unten_an = ViewField("Pumpe_unten_an")
+    vPumpe_Brauchwasser_an = ViewField("Pumpe_Brauchwasser_an")
+    vBrenner_Stoerung = ViewField("Brenner_Stoerung")
+    vWintertemp = ViewField("Wintertemp", writable=True)
+    vWintertempInnen = ViewField("WintertempInnen", writable=True)
+    vHeizen = ViewField("Heizen", writable=True)
+    vNachtabsenkung = ViewField("Nachtabsenkung", writable=True)
+    vBrauchwasserSoll = ViewField("BrauchwasserSoll", writable=True)
+    vBrauchwasserAus = ViewField("BrauchwasserAus", writable=True)
+    vBrauchwasserbereiten = ViewField("Brauchwasserbereiten", writable=True)
+    vLegionellenschutz = ViewField("Legionellenschutz", writable=True)
+    vBrenner_an = ViewField("Brenner_an", writable=True)
+    vHand_Dusche = ViewField("Hand_Dusche", writable=True)
 
-    @property
-    def vWinter(self):
-        return self._Winter
-    
-    @property
-    def vWintertemp(self):
-        return self._Wintertemp
-    
-    @vWintertemp.setter
-    def vWintertemp(self,value):
-        self._Wintertemp=value
-        self._writeitem(value,"Wintertemp", "Wintertemp_changetime")
-
-    @property
-    def vWintertempInnen(self):
-        return self._WintertempInnen
-
-    @vWintertempInnen.setter
-    def vWintertempInnen(self,value):
-        self._WintertempInnen=value
-        self._writeitem(value,"WintertempInnen", "WintertempInnen_changetime")
-
-    @property
-    def vKessel(self):
-        return self._Kessel
-    
-    @property
-    def vKesselSoll(self):
-        return self._KesselSoll
-    
-    @property
-    def vHeizen(self):
-        return self._Heizen
-    
-    @vHeizen.setter
-    def vHeizen(self,value):
-        # so hier muss das in die DB geschrieben werden
-        self._Heizen=value
-        self._writeitem(value,"Heizen","Heizen_changetime")  
-    
-    @property
-    def vNachtabsenkung(self):
-        return self._Nachtabsenkung
-    
-    @vNachtabsenkung.setter
-    def vNachtabsenkung(self,value):
-        # so hier muss das in die DB geschrieben werden
-        self._Nachtabsenkung=value
-        self._writeitem(value,"Nachtabsenkung","Nachtabsenkung_changetime")  
-    
-    @property
-    def vBrauchwasser(self):
-        return self._Brauchwasser
-
-    @property
-    def vBrauchwasserSoll(self):
-        return self._BrauchwasserSoll
-    
-    @vBrauchwasserSoll.setter
-    def vBrauchwasserSoll(self,value):
-        # so hier muss das in die DB geschrieben werden
-        self._BrauchwasserSoll=value
-        self._writeitem(value,"BrauchwasserSoll","BrauchwasserSoll_changetime")  
-
-    @property
-    def vBrauchwasserAus(self):
-        return self._BrauchwasserAus
-    
-    @vBrauchwasserAus.setter
-    def vBrauchwasserAus(self,value):
-        self._BrauchwasserAus=value
-        self._writeitem(value,"BrauchwasserAus","BrauchwasserAus_changetime")
-        
-    @property
-    def vBrauchwasserbereiten(self):
-        return self._Brauchwasserbereiten
-    
-    @vBrauchwasserbereiten.setter
-    def vBrauchwasserbereiten(self,value):
-        self._Brauchwasserbereiten=value
-        self._writeitem(value,"Brauchwasserbereiten","Brauchwasserbereiten_changetime")
-
-    @property
-    def vLegionellenschutz(self):
-        return self._Legionellenschutz
-
-    @vLegionellenschutz.setter
-    def vLegionellenschutz(self,value):
-        self._Legionellenschutz=value
-        self._writeitem(value,"Legionellenschutz","Legionellenschutz_changetime")
-
-    @property
-    def vInnen(self):
-        return self._Innen
-    
-    @property
-    def vAussen(self):
-        return self._Aussen
-   
-    @property
-    def vPumpe_oben_an(self):
-        return self._Pumpe_oben_an
-
-    @property
-    def vPumpe_unten_an(self):
-        return self._Pumpe_unten_an
-
-    @property
-    def vPumpe_Brauchwasser_an(self):
-        return self._Pumpe_Brauchwasser_an
-    
-    @property
-    def vBrenner_an(self):
-        return self._Brenner_an
-    
-    @vBrenner_an.setter
-    def vBrenner_an(self,value):
-        # so hier muss das in die DB geschrieben werden
-        # aber als zeichenkette. Damit es leichter lesbar ist
-        self._Brenner_an=value
-        self._writeitem(value,"Brenner_an","Brenner_an_changetime")
-
-    @property
-    def vHand_Dusche(self):
-        return self._Hand_Dusche
-    
-    @vHand_Dusche.setter
-    def vHand_Dusche(self,value):
-        # so hier muss das in die DB geschrieben werden
-        # aber als zeichenkette. Damit es leichter lesbar ist
-        self._Hand_Dusche=value
-        self._Hand_Dusche_changetime=self._writeitem(value,"Hand_Dusche","Hand_Dusche_changetime")
-
-    @property
-    def vBrenner_Stoerung(self):
-        return self._Brenner_Stoerung
-    
     @property
     def vKesselDaten_x(self):
         return self._KesselDaten_x
