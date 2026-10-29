@@ -108,7 +108,8 @@ class sensor(Tables):
                     t+=1
                     if t>=10:
                        logging.error('DB-Fehler '+str(e)+' beim Schreiben in '+tn+' 10 Mal aufgetreten! Breche ab')
-                       exit(1) 
+                       conn.close()
+                       raise RuntimeError(f'DB-Fehler beim Schreiben in {tn}') from e
                     time.sleep(random.random())
                     continue
             conn.close()
@@ -125,7 +126,12 @@ class sensor(Tables):
             logging.info('Sensorabfrage '+ name +' ist jetzt beendet!')
 
         # Warten, dass Thread wieder zurückkommt.
-        processvalue(self.tablename)
+        try:
+            processvalue(self.tablename)
+        except Exception:
+            # ohne Sensorwerte darf das Backend nicht weiterlaufen: alles anhalten
+            logging.exception('Sensorthread '+self.tablename+' ist abgebrochen, Backend wird gestoppt!')
+            self.stop_event.set()
         
 
         

@@ -41,7 +41,7 @@ class KesselView:
                     self._KesselDaten_y = []
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Kesselkennlinie aufgetreten")
-            exit(1)
+            raise
 
 
     def _writeKesselDaten_y(self, value):
@@ -57,4 +57,4 @@ class KesselView:
                 db.executemany(settings.sql_write_KesselKennlinie_y, data_to_update)
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben der Kesselkennlinie_y aufgetreten")
-            exit(1)
+            raise

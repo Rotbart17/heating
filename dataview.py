@@ -228,7 +228,7 @@ class maindata(SensorView, KesselView, ZeitView):
             self.threadstop = results[dv.threadstop.value]
         except sqlite3.Error as e:
             logging.error(f"Error {e} ist aufgetreten")
-            exit(1)
+            raise
 
     # prüft ob mindestens eine Variable neu aus der DB gelesen werden mmuss, oder nicht
     # True= "neu lesen"
@@ -256,7 +256,11 @@ class maindata(SensorView, KesselView, ZeitView):
         while (self.threadstop ==False):
             if self._datawrite==False:
                 
-                self._viewloader(False)
+                try:
+                    self._viewloader(False)
+                except sqlite3.Error:
+                    # Fehler ist schon geloggt, im nächsten Zyklus erneut versuchen
+                    pass
                 logging.debug('WorkdataView Pollen')
                 self._sleep_until_stop(self._sleeptime)
             else:
@@ -271,7 +275,7 @@ class maindata(SensorView, KesselView, ZeitView):
     
         if checktable(settings.WorkDataView)==False:
             logging.error(f'Die Tabelle {settings.WorkDataView} existiert nicht. Programm wird beendet')
-            exit(1) 
+            raise RuntimeError(f'Die Tabelle {settings.WorkDataView} existiert nicht.')
         # jetzt die Daten zum ersten Mal aus der DB laden
         # Laden der historischen=letzten Werte der Sensoren (Aussen, Innen,Kessel, Brauchwasser)
         # die Defaults werden dabei überschrieben.
@@ -328,7 +332,7 @@ class maindata(SensorView, KesselView, ZeitView):
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen von {name}:{namect} aufgetreten")
             db.close()
-            exit(1)
+            raise
 
 
     # scheibt jeden Wert einzeln in die DB zusammen mit den Zeitstempeln
@@ -350,7 +354,7 @@ class maindata(SensorView, KesselView, ZeitView):
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Schreiben von {name}:{value} aufgetreten")
             db.close()
-            exit(1)
+            raise
 
     def stop_polling(self) -> None:
         logging.debug('datav Klasse löschen,  Polling DB stop')

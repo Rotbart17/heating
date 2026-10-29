@@ -172,12 +172,21 @@ def evaluate_program(stop_event:Event)->None:
     logging.info('evaluatethread ist gestoppt.')
 
 
+def _run_evaluate_program(stop_event:Event)->None:
+    try:
+        evaluate_program(stop_event)
+    except Exception:
+        # ohne Programmsteuerung darf das Backend nicht weiterlaufen: alles anhalten
+        logging.exception('Programmsteuerungsthread ist abgebrochen, Backend wird gestoppt!')
+        stop_event.set()
+
+
 def start_evaluatethread(stop_event:Event)->maindata:
     '''Startet den eigenen Auswertethread der Programmsteuerung'''
     global datav 
     datav=maindata(start_polling=False)
    
-    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung", args=(stop_event,))
+    x = threading.Thread(target=_run_evaluate_program, name="Thread-Programmsteuerung", args=(stop_event,))
     logging.info('Starte Programmsteuerungsthread')
     settings.ThreadList.append(x)
     x.start()

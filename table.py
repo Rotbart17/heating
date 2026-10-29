@@ -39,7 +39,7 @@ class Tables:
             
         except Error as e:
             logging.error('Es konnte keine Verbindung zu Datenbank erstellt werden. Programm wird beendet')
-            exit(1)
+            raise
         try:
             c = conn.cursor()
             create_table_sql = f"CREATE TABLE IF NOT EXISTS {self.tablename} {self.sql_columns}"
@@ -49,7 +49,7 @@ class Tables:
             logging.info(f'Tabelle: {self.tablename} erstellt')
         except Error as e:
             logging.error(f'Beim erzeugen von: {self.tablename} + ist Fehler {e} aufgetreten. Programm wird beendet!')
-            exit(1)
+            raise
         return
 
         
@@ -98,7 +98,7 @@ class Tables:
             
         except Error as e:
             logging.error(f'Es konnte keine Verbindung zur Datenbank {settings.DBPATH} erstellt werden. Programm wird beendet')
-            exit(1)
+            raise
         try:
             c = conn.cursor()
             c.execute(init_sql,data)
@@ -107,7 +107,7 @@ class Tables:
             logging.info('Tabelle initialisiert')
         except Error as e:
             logging.error(f'Es konnte das SQL nicht ausgeführt werden:{init_sql} Daten: {str(data)} Fehler:{str(e)}')
-            exit(1)
+            raise
         return  
 
 
@@ -125,7 +125,7 @@ class Tables:
             
         except Error as e:
             logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
-            exit(1)
+            raise
         try:
             c = conn.cursor()
             # prüfen ob Tabelle existiert

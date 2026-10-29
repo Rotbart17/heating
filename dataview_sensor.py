@@ -112,12 +112,16 @@ class SensorView:
             db.close()
         except sqlite3.Error as e:
             logging.error(f"Error {e} ist aufgetreten")
-            exit(1)
+            raise
 
     # pollt regelmäßig neue Sensordaten für die Anzeige 1 mal pro Minute
     def _sensorpolling(self,dummy):
         while (self.threadstop ==False):
-            self._sensordataload()
+            try:
+                self._sensordataload()
+            except sqlite3.Error:
+                # Fehler ist schon geloggt, im nächsten Zyklus erneut versuchen
+                pass
             logging.debug('Sensordata Pollen')
             self._sleep_until_stop(self._sensorsleeptime)
             
