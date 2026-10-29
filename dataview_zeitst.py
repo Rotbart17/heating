@@ -39,7 +39,7 @@ class ZeitView:
                 self.Zeitsteuerungszeilen=cursor.fetchall()
         except sqlite3.Error as e:
             logging.error(f"Der Fehler {e} ist beim Lesen der Zeitsteuerung aufgetreten")
-            exit(1)
+            raise
 
     # schreibt die Liste der Dictionaryzeilen in die Zeitteuerungstabelle
     def _zeitsteuerungwrite(self, value: list[dict]):

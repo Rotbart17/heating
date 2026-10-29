@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-from typing import Any
 
 import plotly.graph_objects as go
 # import pandas as pd
@@ -10,71 +9,56 @@ import time
 from datetime import datetime
 import settings
 from dataview import maindata
-from main import BACKEND_READY, STOP_MESSAGE, startbackend
+from main import startbackend
 import logging
 import sys
-from multiprocessing import Queue
 import multiprocessing
-from queue import Empty
+from multiprocessing.synchronize import Event
 
 @dataclass
 class GuiState:
     backendproc: multiprocessing.Process
-    queue_to_backend: Any
-    queue_to_frontend: Any
+    stop_event: Event
     datav: maindata
     stopped: bool = False
 
 
-def wait_for_backend(queue_to_frontend: Any, backendproc: multiprocessing.Process, timeout: int = 30) -> None:
+def wait_for_backend(ready_event: Event, backendproc: multiprocessing.Process, timeout: int = 30) -> None:
     # Warten, bis startbackend alle Backend-Komponenten gestartet hat.
-    start_time = time.time()
+    deadline = time.time() + timeout
 
     logging.info("Warte auf Backend-Start...")
-    while True:
-        if time.time() - start_time > timeout:
+    while not ready_event.wait(timeout=1):
+        if not backendproc.is_alive():
+            logging.error("Backend-Prozess wurde vor dem Startsignal beendet.")
+            sys.exit("Backend-Prozess wurde vor dem Startsignal beendet.")
+        if time.time() > deadline:
             logging.error("Timeout beim Warten auf Backend-Start.")
             sys.exit("Backend konnte nicht initialisiert werden.")
-
-        try:
-            message = queue_to_frontend.get(timeout=1)
-        except Empty:
-            if not backendproc.is_alive():
-                logging.error("Backend-Prozess wurde vor dem Startsignal beendet.")
-                sys.exit("Backend-Prozess wurde vor dem Startsignal beendet.")
-            continue
-
-        if message == BACKEND_READY:
-            logging.info("Backend ist bereit. Initialisiere GUI-Daten.")
-            return
-
-        logging.debug(f"Ignoriere Backend-Startmeldung: {message}")
+    logging.info("Backend ist bereit. Initialisiere GUI-Daten.")
 
 
 def create_state() -> GuiState:
-    queue_to_backend = Queue()
-    queue_to_frontend = Queue()
+    stop_event = multiprocessing.Event()
+    ready_event = multiprocessing.Event()
     backendproc = multiprocessing.Process(
         target=startbackend,
         name="Backend-Prozess",
-        args=(queue_to_backend, queue_to_frontend),
+        args=(stop_event, ready_event),
     )
     backendproc.start()
     try:
-        wait_for_backend(queue_to_frontend, backendproc)
+        wait_for_backend(ready_event, backendproc)
     except BaseException:
-        queue_to_backend.put(STOP_MESSAGE)
+        stop_event.set()
         backendproc.join(timeout=5)
         raise
 
     datav = maindata()
-    datav.queue_to_backend = queue_to_backend
-    datav.queue_to_frontend = queue_to_frontend
 
     return GuiState(
         backendproc=backendproc,
-        queue_to_backend=queue_to_backend,
-        queue_to_frontend=queue_to_frontend,
+        stop_event=stop_event,
         datav=datav,
     )
 
@@ -85,7 +69,7 @@ def shutdown_state(state: GuiState) -> None:
     state.stopped = True
 
     state.datav.stop_polling()
-    state.queue_to_backend.put(STOP_MESSAGE)
+    state.stop_event.set()
     state.backendproc.join(timeout=5)
     if state.backendproc.is_alive():
         logging.warning("Backend-Prozess konnte nicht innerhalb des Timeouts beendet werden. Erzwinge Stop.")

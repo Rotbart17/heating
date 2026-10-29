@@ -19,7 +19,7 @@ def configure_db(db_file=DBPATH):
             conn.execute("PRAGMA synchronous=NORMAL;")
     except Error as e:
         logging.error(f'Die Datenbank konnte nicht konfiguriert werden! Fehler:{e}')
-        exit(1)
+        raise
 
 
 # create SQlite DB 
@@ -31,7 +31,7 @@ def create_db(db_file):
         conn.close()
     except Error as e:
         logging.error(f'Die Datenbank konnte nicht erstellt werden! Fehler:{e}')
-        exit(1)
+        raise
     
 
 # open a database connection to a SQLite database
@@ -41,7 +41,7 @@ def open_connection(db_file):
         conn = connect_db(db_file)
     except Error as e:
         logging.error(f'Die Datenbank konnte nicht geöffnet werden! Fehler:{e}')
-        exit(1)
+        raise
     finally:
         if conn:
             logging.info('Datenbank geöffnet!')
@@ -63,7 +63,7 @@ def checktable(tablename):
         
     except Error as e:
         logging.error('Es konnte keine Verbindung zur Datenbank erstellt werden. Programm wird beendet')
-        exit(1)
+        raise
     try:
         c = conn.cursor()
         # t=c.execute(f"SELECT COUNT(*) FROM {tablename}").fetchone()[0]

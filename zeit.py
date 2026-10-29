@@ -21,22 +21,12 @@ from table import Tables
 import random
 from dataview import maindata
 import time
-from multiprocessing import Queue
-from queue import Empty
+from multiprocessing.synchronize import Event
 
 
 
 # 60 sec schlafen bevor die Programmsteuerung erneut die aktuellen Werte prüft.
 sleeptime= 60
-
-
-def sleep_until_stop(seconds: float)->None:
-    end_time = time.monotonic() + seconds
-    while datav.threadstop == False:
-        remaining = end_time - time.monotonic()
-        if remaining <= 0:
-            return
-        time.sleep(min(0.5, remaining))
 
 
 def _time_to_minutes(value: str) -> int:
@@ -118,10 +108,10 @@ def _zeitsteuerung_row_as_dict(row):
     }
 
        
-def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
+def evaluate_program(stop_event:Event, datav:maindata)->None:
     '''Wertet die Programmsteuerungstabelle minütlich aus und setzt/löscht die Variablen für Brauchwasser, Heizung und Nachtabsenkung'''
     
-    while(datav.threadstop==False):
+    while not stop_event.is_set():
         # Programmsteuerungsdaten einlesen
         # typdict = {1:'Brauchw', 2:'Heizen', 3:'Nachtabsenk.'}
         datav._zeitsteuerungload()
@@ -178,33 +168,26 @@ def evaluate_program(queue_to_backend:Queue, _queue_from_backend:Queue)->None:
             datav.vNachtabsenkung = program_states['Nachtabsenk.']
         if datav.vLegionellenschutz != program_states['Legionellenschutz']:
             datav.vLegionellenschutz = program_states['Legionellenschutz']
-        sleep_until_stop(sleeptime)
-        try:
-            message = queue_to_backend.get(timeout=1)
-            if message=="threadstop":
-                datav.threadstop=True
-                logging.info(f"evaluatethread ist gestoppt.")
-        except Empty:
-            continue
-        
- 
- 
-    
-def start_evaluatethread(queue_to_backend:Queue, queue_from_backend:Queue):
+        stop_event.wait(sleeptime)
+    logging.info('evaluatethread ist gestoppt.')
 
-    '''Startet den eigenen Auswertethread der Programmsteuerung'''
-    global datav 
+
+def _run_evaluate_program(stop_event:Event, datav:maindata)->None:
+    try:
+        evaluate_program(stop_event, datav)
+    except Exception:
+        # ohne Programmsteuerung darf das Backend nicht weiterlaufen: alles anhalten
+        logging.exception('Programmsteuerungsthread ist abgebrochen, Backend wird gestoppt!')
+        stop_event.set()
+
+
+def start_evaluatethread(stop_event:Event)->tuple[threading.Thread, maindata]:
+    '''Startet den eigenen Auswertethread der Programmsteuerung.
+    Gibt den Thread und die vom Thread verwendeten Daten zurück.'''
     datav=maindata(start_polling=False)
-    datav.queue_to_backend=queue_from_backend
-    datav.queue_to_frontend=queue_to_backend
-   
-    x = threading.Thread(target=evaluate_program, name="Thread-Programmsteuerung", args=(queue_to_backend,queue_from_backend))
+
+    x = threading.Thread(target=_run_evaluate_program, name="Thread-Programmsteuerung", args=(stop_event, datav))
     logging.info('Starte Programmsteuerungsthread')
-    settings.ThreadList.append(x)
     x.start()
     logging.debug('Programmsteuerungsthread gestartet!')
-    #jetzt ist hier alles gestartet, damit Info an die GUI
-    queue_from_backend.put("start_evaluatethread"+"_up")
-    return datav
-
-    
+    return x, datav

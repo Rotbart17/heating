@@ -7,75 +7,64 @@ import dbinit
 import logging
 import settings
 from sensors import sensor
-# import threading
-import time
 from table import KesselSollTemperatur, Zeitsteuerung, Brennersensor, WorkdataView
-from multiprocessing import Queue
-from queue import Empty
+import threading
+from dataview import maindata
+from multiprocessing.synchronize import Event
 from zeit import start_evaluatethread
 
-BACKEND_READY = "backend_up"
-STOP_MESSAGE = "threadstop"
 
+class Backend:
+    '''Besitzt alle Backendthreads und Tabellen und steuert Start und Stop.
+    stop_event: wird von der GUI gesetzt, um das Backend zu beenden.
+    ready_event: wird gesetzt, sobald alle Backendthreads laufen.'''
 
-def startbackend(queue_to_backend:Queue, queue_from_backend:Queue)-> None:
-    '''Startet alle Backendthreads'''
-    program_data = None
+    def __init__(self, stop_event:Event, ready_event:Event) -> None:
+        self.stop_event = stop_event
+        self.ready_event = ready_event
+        self.threads: list[threading.Thread] = []
+        self.program_data: maindata | None = None
 
-    try:
+    def start(self) -> None:
+        '''Legt die Tabellen an und startet alle Backendthreads'''
         dbinit.init_db_environment()
+        stop_event = self.stop_event
 
-        global kss,ass,bws,iss
-        kss= sensor(settings.Kesselsensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        ass= sensor(settings.Aussensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        bws= sensor(settings.Brauchwassersensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        iss= sensor(settings.Innensensor, settings.sql_create_sensor_table_columns, queue_to_backend, queue_from_backend)
-        kst= KesselSollTemperatur(settings.KesselSollTemperatur, settings.sql_kennlinie_columns, queue_to_backend, queue_from_backend)
-        zst= Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns, queue_to_backend, queue_from_backend)
-        bst= Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, queue_to_backend, queue_from_backend)
-        wdv= WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, queue_to_backend, queue_from_backend)
-        program_data = start_evaluatethread(queue_to_backend, queue_from_backend)
-        queue_from_backend.put(BACKEND_READY)
+        KesselSollTemperatur(settings.KesselSollTemperatur, settings.sql_kennlinie_columns, stop_event)
+        Zeitsteuerung(settings.ZeitSteuerung, settings.sql_zeitsteuerung_columns, stop_event)
+        Brennersensor(settings.Brennersensor, settings.sql_brennersensor_columns, stop_event)
+        WorkdataView(settings.WorkDataView, settings.sql_create_view_table_columns, stop_event)
+        for name in (settings.Kesselsensor, settings.Aussensensor, settings.Brauchwassersensor, settings.Innensensor):
+            self.threads.append(sensor(name, settings.sql_create_sensor_table_columns, stop_event).thread)
+        thread, self.program_data = start_evaluatethread(stop_event)
+        self.threads.append(thread)
+        self.ready_event.set()
 
-        wait_for_stop_signal(queue_to_backend, program_data)
-    finally:
-        stopbackend(True, program_data)
+    def stop(self) -> None:
+        '''Stoppt alle Backendthreads und sammelt sie wieder ein'''
+        self.stop_event.set()
+        if self.program_data is not None:
+            self.program_data.threadstop = True
+
+        for backend_thread in self.threads:
+            if backend_thread.ident is None:
+                continue
+            backend_thread.join(timeout=2)
+            if backend_thread.is_alive():
+                logging.warning(f"Thread {backend_thread.name} konnte nicht innerhalb des Timeouts beendet werden.")
+        print("Alles perfekt zu Ende!")
+
+    def run(self) -> None:
+        '''Startet das Backend und wartet auf das Stop-Signal'''
+        try:
+            self.start()
+            self.stop_event.wait()
+        finally:
+            self.stop()
+
+
+def startbackend(stop_event:Event, ready_event:Event)-> None:
+    '''Einstiegspunkt des Backendprozesses'''
+    Backend(stop_event, ready_event).run()
 
     # der Überwachungsprozess sollte aus system-d gestartet werden.
-
-
-def wait_for_stop_signal(queue_to_backend:Queue, program_data)->None:
-    '''Wartet auf das Stop-Signal der GUI.'''
-    while getattr(program_data, 'threadstop', False) == False:
-        try:
-            message = queue_to_backend.get(timeout=1)
-        except Empty:
-            continue
-
-        if message == STOP_MESSAGE:
-            return
-
-        queue_to_backend.put_nowait(message)
-        time.sleep(0.1)
-
-
-# hier ziehen wir dann wieder die Bremse    
-def stopbackend(stop:bool, program_data=None)->None:
-    '''Stoppt alle Backendthreads'''
-    settings.threadstop=stop
-
-    for sensor_object in settings.SensorList:
-        sensor_object.threadstop=stop
-
-    if program_data is not None:
-        program_data.threadstop=stop
-
-    # Ende Funktionen
-    # Threads wieder einsammeln
-    for backend_thread in settings.ThreadList:
-        if backend_thread.ident is None:
-            continue
-        backend_thread.join(timeout=2)
-        if backend_thread.is_alive():
-            logging.warning(f"Thread {backend_thread.name} konnte nicht innerhalb des Timeouts beendet werden.")
-    print("Alles perfekt zu Ende!")
