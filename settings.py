@@ -337,5 +337,4 @@ sql_brennersensor_columns = """(id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                                 bis text
                             );"""
 sql_readbrennersensor=f"SELECT von FROM {Brennersensor} WHERE von >= ? AND brenner_an='True';"
-sql_writebrennersensorbetrieb=f"INSERT INTO {Brennersensor} brenner_an=?, von=?, bis=?;"
-sql_writebrennersensorstoerung=f"INSERT INTO {Brennersensor} brenner_stoerung=?, von=?, bis=?;"
+sql_writebrennersensorbetrieb=f"INSERT INTO {Brennersensor} (brenner_an, brenner_stoerung, von, bis) VALUES (?, ?, ?, ?);"

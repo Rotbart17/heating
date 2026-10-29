@@ -36,11 +36,10 @@ def str2bool(value):
 
 class ViewField:
     '''Zugriff auf ein Feld der Tabelle WorkDataView über die Variable _<name> der Datenklasse.
-    Schreibbare Felder schreiben beim Setzen den Wert und den Zeitstempel zusätzlich in die DB.'''
+    Beim Setzen werden der Wert und der Zeitstempel zusätzlich in die DB geschrieben.'''
 
-    def __init__(self, name:str, writable:bool=False) -> None:
+    def __init__(self, name:str) -> None:
         self.name = name
-        self.writable = writable
 
     def __get__(self, obj, objtype=None):
         if obj is None:
@@ -48,8 +47,6 @@ class ViewField:
         return getattr(obj, f"_{self.name}")
 
     def __set__(self, obj, value) -> None:
-        if not self.writable:
-            raise AttributeError(f"{self.name} ist schreibgeschützt")
         setattr(obj, f"_{self.name}", value)
         timestamp = obj._writeitem(value, self.name, f"{self.name}_changetime")
         setattr(obj, f"_{self.name}_changetime", timestamp)
@@ -301,8 +298,7 @@ class maindata(SensorView, KesselView, ZeitView):
         self.stop_polling()
         logging.info("datav Klasse gelöscht, Polling gestoppt.")
 
-    # Für jede Variable gibt es ein ViewField. Ein Setzen einer schreibbaren Variable schreibt den neuen Wert auch in die DB.
-    # Viele Variablen werden nur gelesen. Sie werden durch Sensoren oder Regelkreise gesetzt.
+    # Für jede Variable der WorkDataView-Tabelle gibt es ein ViewField. Ein Setzen schreibt den neuen Wert auch in die DB.
     vWinter = ViewField("Winter")
     vKessel = ViewField("Kessel")
     vKesselSoll = ViewField("KesselSoll")
@@ -313,16 +309,16 @@ class maindata(SensorView, KesselView, ZeitView):
     vPumpe_unten_an = ViewField("Pumpe_unten_an")
     vPumpe_Brauchwasser_an = ViewField("Pumpe_Brauchwasser_an")
     vBrenner_Stoerung = ViewField("Brenner_Stoerung")
-    vWintertemp = ViewField("Wintertemp", writable=True)
-    vWintertempInnen = ViewField("WintertempInnen", writable=True)
-    vHeizen = ViewField("Heizen", writable=True)
-    vNachtabsenkung = ViewField("Nachtabsenkung", writable=True)
-    vBrauchwasserSoll = ViewField("BrauchwasserSoll", writable=True)
-    vBrauchwasserAus = ViewField("BrauchwasserAus", writable=True)
-    vBrauchwasserbereiten = ViewField("Brauchwasserbereiten", writable=True)
-    vLegionellenschutz = ViewField("Legionellenschutz", writable=True)
-    vBrenner_an = ViewField("Brenner_an", writable=True)
-    vHand_Dusche = ViewField("Hand_Dusche", writable=True)
+    vWintertemp = ViewField("Wintertemp")
+    vWintertempInnen = ViewField("WintertempInnen")
+    vHeizen = ViewField("Heizen")
+    vNachtabsenkung = ViewField("Nachtabsenkung")
+    vBrauchwasserSoll = ViewField("BrauchwasserSoll")
+    vBrauchwasserAus = ViewField("BrauchwasserAus")
+    vBrauchwasserbereiten = ViewField("Brauchwasserbereiten")
+    vLegionellenschutz = ViewField("Legionellenschutz")
+    vBrenner_an = ViewField("Brenner_an")
+    vHand_Dusche = ViewField("Hand_Dusche")
 
     @property
     def vKesselDaten_x(self):

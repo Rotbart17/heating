@@ -12,6 +12,7 @@ import threading
 from dataview import maindata
 from multiprocessing.synchronize import Event
 from zeit import start_evaluatethread
+from regler import start_regler
 
 
 class Backend:
@@ -38,6 +39,7 @@ class Backend:
             self.threads.append(sensor(name, settings.sql_create_sensor_table_columns, stop_event).thread)
         thread, self.program_data = start_evaluatethread(stop_event)
         self.threads.append(thread)
+        self.threads.append(start_regler(stop_event))
         self.ready_event.set()
 
     def stop(self) -> None:
