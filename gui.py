@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import plotly.graph_objects as go
 # import pandas as pd
-from nicegui import ui, app
+from nicegui import ui, app, run
 import time
 from datetime import datetime
 import settings
@@ -38,7 +38,8 @@ def wait_for_backend(ready_event: Event, backendproc: multiprocessing.Process, t
     logging.info("Backend ist bereit. Initialisiere GUI-Daten.")
 
 
-def create_state() -> GuiState:
+def start_backend_process() -> tuple[multiprocessing.Process, Event]:
+    '''Startet den Backendprozess und wartet, bis er bereit ist'''
     stop_event = multiprocessing.Event()
     ready_event = multiprocessing.Event()
     backendproc = multiprocessing.Process(
@@ -53,14 +54,34 @@ def create_state() -> GuiState:
         stop_event.set()
         backendproc.join(timeout=5)
         raise
+    return backendproc, stop_event
 
-    datav = maindata()
 
+def stop_backend_process(backendproc: multiprocessing.Process, stop_event: Event) -> None:
+    stop_event.set()
+    backendproc.join(timeout=5)
+    if backendproc.is_alive():
+        logging.warning("Backend-Prozess konnte nicht innerhalb des Timeouts beendet werden. Erzwinge Stop.")
+        backendproc.terminate()
+        backendproc.join(timeout=5)
+    if backendproc.is_alive():
+        logging.error("Backend-Prozess läuft trotz terminate() weiter.")
+
+
+def create_state() -> GuiState:
+    backendproc, stop_event = start_backend_process()
     return GuiState(
         backendproc=backendproc,
         stop_event=stop_event,
-        datav=datav,
+        datav=maindata(),
     )
+
+
+def restart_backend(state: GuiState) -> None:
+    '''Startet den Backendprozess neu. Das quittiert auch eine Brennerstörung.
+    Wirft SystemExit, wenn das Backend nicht wieder startet. Dann ist es aus.'''
+    stop_backend_process(state.backendproc, state.stop_event)
+    state.backendproc, state.stop_event = start_backend_process()
 
 
 def shutdown_state(state: GuiState) -> None:
@@ -69,14 +90,7 @@ def shutdown_state(state: GuiState) -> None:
     state.stopped = True
 
     state.datav.stop_polling()
-    state.stop_event.set()
-    state.backendproc.join(timeout=5)
-    if state.backendproc.is_alive():
-        logging.warning("Backend-Prozess konnte nicht innerhalb des Timeouts beendet werden. Erzwinge Stop.")
-        state.backendproc.terminate()
-        state.backendproc.join(timeout=5)
-    if state.backendproc.is_alive():
-        logging.error("Backend-Prozess läuft trotz terminate() weiter.")
+    stop_backend_process(state.backendproc, state.stop_event)
 
 
 def build_gui(state: GuiState) -> None:
@@ -170,6 +184,19 @@ def build_gui(state: GuiState) -> None:
     def de_init_data() -> None:
         shutdown_state(state)
         app.shutdown()
+
+    # Backend neu starten, das quittiert auch eine Brennerstörung
+    async def neustart_backend(button) -> None:
+        button.disable()
+        ui.notify('Backend wird neu gestartet...')
+        try:
+            await run.io_bound(restart_backend, state)
+        except SystemExit:
+            ui.notify('Backend konnte nicht neu gestartet werden! Die Heizung ist aus.', type='negative')
+        else:
+            ui.notify('Backend neu gestartet.', type='positive')
+        finally:
+            button.enable()
 
     # Hand Dusche toggeln
     def set_hand_dusche():
@@ -648,6 +675,9 @@ def build_gui(state: GuiState) -> None:
                 ui.number(label='Innenentemp. Winter ab:', suffix='Grad',min=10.0, max=25.0,  precision=2, value=datav.vWintertempInnen, \
                     on_change=lambda e: setwinterinnen(e.value)).classes('col-start-1  w-32')
 
+                # Knopf zum Neustart des Backends
+                neustart = ui.button('Neustart', color='#1e5569').classes('col-start-3 w-25 h-25')
+                neustart.on_click(lambda: neustart_backend(neustart))
                 # Knopf zum Ausschalten
                 ui.button('Programm Stop', color='#1e5569', on_click=lambda: de_init_data()).classes('col-start-4 w-25 h-25')
                 # offene Themen:
